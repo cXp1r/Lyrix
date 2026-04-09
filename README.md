@@ -1,5 +1,7 @@
 # Lyricify Lyrics Provider
-
+## 声明
+逻辑(C#源代码)源于[Lyricify-Lyrics-Helper](https://github.com/WXRIW/Lyricify-Lyrics-Helper)
+一下内容由ai代笔
 网络歌词获取库，提供音乐平台 API 调用、智能搜索匹配和 SMTC 一站式歌词获取管线。
 
 ## 功能
