@@ -1,6 +1,7 @@
 # Lyricify Lyrics Provider
 ## 声明
-**逻辑(C#源代码)**源于[Lyricify-Lyrics-Helper](https://github.com/WXRIW/Lyricify-Lyrics-Helper)
+
+逻辑(C#源代码)源于[Lyricify-Lyrics-Helper](https://github.com/WXRIW/Lyricify-Lyrics-Helper)
 
 以下下内容**由ai代笔**
 
