@@ -1,7 +1,6 @@
 use async_trait::async_trait;
 use crate::providers::netease::NeteaseApi;
-use super::{ISearcher, ISearchResult, SearcherType};
-use super::helpers::compare::MatchType;
+use super::{ISearcher, ISearchResult, SearcherType, MatchType};
 
 pub struct NeteaseSearcher {
     api: NeteaseApi,

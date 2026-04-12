@@ -116,11 +116,15 @@ pub fn get_first_running_player() -> Option<MusicPlayer> {
 /// # 返回
 /// - `Ok((MusicPlayer, LyricsData))` — 使用的播放器源 + 歌词数据
 /// - `Err(...)` — 未检测到播放器，或获取歌词失败
+
+
+//如果你发现了kugou的smtc和别的smtc有点不同,你不需要调整smtc信息再传入
+//因为我已经想到了....
 pub async fn get_lyrics(
     title: &str,
     artist: Option<&str>,
     album: Option<&str>,
-    duration_ms: Option<i32>,
+    album_artist: Option<&str>,
 ) -> Result<(MusicPlayer, LyricsData), Box<dyn std::error::Error + Send + Sync>> {
     let player = get_first_running_player()
         .ok_or("未检测到正在运行的音乐播放器")?;
@@ -129,7 +133,7 @@ pub async fn get_lyrics(
         title: Some(title.to_string()),
         artist: artist.map(|s| s.to_string()),
         album: album.map(|s| s.to_string()),
-        duration_ms,
+        album_artist: album_artist.map(|s| s.to_string()),
         ..Default::default()
     };
 
@@ -140,22 +144,26 @@ pub async fn get_lyrics(
 /// 指定播放器源获取歌词
 ///
 /// 当调用方已知要使用哪个播放器源时，可直接指定，跳过进程检测。
+///
+/// # 返回
+/// - `Ok(LyricsData)` — 歌词数据
+/// - `Err(...)` — 获取歌词失败
 pub async fn get_lyrics_with_player(
     player: &MusicPlayer,
     title: &str,
     artist: Option<&str>,
     album: Option<&str>,
-    duration_ms: Option<i32>,
+    album_artist: Option<&str>,
 ) -> Result<LyricsData, Box<dyn std::error::Error + Send + Sync>> {
     let metadata = TrackMetadata {
         title: Some(title.to_string()),
         artist: artist.map(|s| s.to_string()),
         album: album.map(|s| s.to_string()),
-        duration_ms,
+        album_artist: album_artist.map(|s| s.to_string()),
         ..Default::default()
     };
 
-    fetch_lyrics_from_player(player, &metadata).await
+    Ok(fetch_lyrics_from_player(player, &metadata).await?)
 }
 
 // ===== 内部: 按播放器分发 =====
