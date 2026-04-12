@@ -125,6 +125,7 @@ pub async fn get_lyrics(
     artist: Option<&str>,
     album: Option<&str>,
     album_artist: Option<&str>,
+    duration_ms: i32,
 ) -> Result<(MusicPlayer, LyricsData), Box<dyn std::error::Error + Send + Sync>> {
     let player = get_first_running_player()
         .ok_or("未检测到正在运行的音乐播放器")?;
@@ -134,6 +135,7 @@ pub async fn get_lyrics(
         artist: artist.map(|s| s.to_string()),
         album: album.map(|s| s.to_string()),
         album_artist: album_artist.map(|s| s.to_string()),
+        duration_ms: Some(duration_ms),
         ..Default::default()
     };
 
@@ -154,12 +156,14 @@ pub async fn get_lyrics_with_player(
     artist: Option<&str>,
     album: Option<&str>,
     album_artist: Option<&str>,
+    duration_ms: i32,
 ) -> Result<LyricsData, Box<dyn std::error::Error + Send + Sync>> {
     let metadata = TrackMetadata {
         title: Some(title.to_string()),
         artist: artist.map(|s| s.to_string()),
         album: album.map(|s| s.to_string()),
         album_artist: album_artist.map(|s| s.to_string()),
+        duration_ms: Some(duration_ms),
         ..Default::default()
     };
 
