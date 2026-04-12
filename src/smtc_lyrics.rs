@@ -226,13 +226,12 @@ async fn fetch_qqmusic_lyrics(
     use crate::providers::qqmusic::QQMusicApi;
 
     let searcher = QQMusicSearcher::new();
-    let best = searcher.search_for_result(track).await?
+    let result = searcher.search_for_result(track).await?
         .ok_or("QQ音乐: 未找到匹配的歌曲")?;
-
-    let mid = best.as_any()
+    let best = result.as_any()
         .downcast_ref::<QQMusicSearchResult>()
-        .ok_or("QQ音乐: 搜索结果类型不匹配")?
-        .mid.clone();
+        .ok_or("QQ音乐: 搜索结果类型不匹配")?;
+    let mid = best.mid.clone();
 
     let api = QQMusicApi::new();
     let lyric_result = api.get_lyric(&mid).await?
@@ -240,7 +239,8 @@ async fn fetch_qqmusic_lyrics(
 
     if let Some(lrc_text) = lyric_result.lyric {
         if !lrc_text.is_empty() {
-            return Ok(crate::parsers::lrc::parse(&lrc_text));
+            let data = crate::parsers::lrc::parse(&lrc_text);
+            return Ok(data);
         }
     }
 
@@ -286,12 +286,20 @@ async fn fetch_kugou_lyrics(
     }
 
     let krc_text = krc_decrypt(&encrypted).map_err(|e| format!("酷狗: KRC 解密失败: {}", e))?;
-    let data = parse_soda_lyric(&krc_text);
+    let mut data = parse_soda_lyric(&krc_text);
 
     if data.lines.is_empty() {
         return Err("酷狗: 解析歌词为空".into());
     }
-
+    data.track_metadata = Some(TrackMetadata {
+        title: Some(result.title.clone()),
+        artist: Some(result.artists.join(", ")),
+        album: Some(result.album.clone()),
+        album_artist: None,
+        duration_ms: result.duration_ms,
+        isrc: None,
+        language: None,
+    });
     Ok(data)
 }
 
@@ -345,13 +353,16 @@ async fn fetch_soda_music_lyrics(
     use crate::providers::soda_music::SodaMusicApi;
 
     let searcher = SodaMusicSearcher::new();
-    let best = searcher.search_for_result(track).await?
-        .ok_or("汽水音乐: 未找到匹配的歌曲")?;
+    let result = searcher.search_for_result(track).await?;
 
-    let id = best.as_any()
+    let result = result.ok_or("汽水音乐: 未找到匹配的歌曲")?;
+
+    let best = result
+        .as_any()
         .downcast_ref::<SodaMusicSearchResult>()
-        .ok_or("汽水音乐: 搜索结果类型不匹配")?
-        .id.clone();
+        .ok_or("汽水音乐: 搜索结果类型不匹配")?;
+
+    let id = best.id.clone();
 
     let api = SodaMusicApi::new();
     let detail = api.get_detail(&id).await?
@@ -361,7 +372,15 @@ async fn fetch_soda_music_lyrics(
         if let Some(content) = lyric_info.content {
             if !content.is_empty() {
                 let mut data = parse_soda_lyric(&content);
-                data.track_metadata = Some(track.clone());
+                data.track_metadata = Some(TrackMetadata {
+                    title: Some(best.title.clone()),
+                    artist: Some(best.artists.join(", ")),
+                    album: Some(best.album.clone()),
+                    album_artist: None,
+                    duration_ms: best.duration_ms,
+                    isrc: None,
+                    language: None,
+                });
                 return Ok(data);
             }
         }

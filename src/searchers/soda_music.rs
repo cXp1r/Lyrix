@@ -41,7 +41,6 @@ impl ISearcher for SodaMusicSearcher {
                                     let album = track.album.as_ref().and_then(|a| a.name.clone()).unwrap_or_default();
                                     let duration = track.duration.map(|d| d as i32);
                                     let id = track.id.unwrap_or_default();
-
                                     results.push(Box::new(SodaMusicSearchResult {
                                         id,
                                         title,
