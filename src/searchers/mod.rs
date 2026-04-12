@@ -6,15 +6,7 @@ pub mod soda_music;
 use async_trait::async_trait;
 use crate::models::ITrackMetadata;
 
-/// 匹配程度
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub enum MatchType {
-    None = 0,
-    Low = 1,
-    Medium = 2,
-    High = 3,
-    Perfect = 4,
-}
+
 
 /// 搜索源类型
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -32,8 +24,8 @@ pub trait ISearchResult: Send + Sync {
     fn album(&self) -> &str;
     fn album_artists(&self) -> Option<&[String]> { None }
     fn duration_ms(&self) -> Option<i32>;
-    fn match_type(&self) -> Option<MatchType>;
-    fn set_match_type(&mut self, mt: Option<MatchType>);
+    fn match_score(&self) -> i8;
+    fn set_match_score(&mut self, mt: i8);
     fn as_any(&self) -> &dyn std::any::Any;
 }
 
@@ -110,13 +102,13 @@ pub trait ISearcher: Send + Sync {
         // Set match types
         for result in search_results.iter_mut() {
             let mt = self.compare_track(track, result.as_ref());
-            result.set_match_type(Some(mt));
+            result.set_match_score(mt);
         }
 
         // Sort by match type (descending)
         search_results.sort_by(|a, b| {
-            let a_val = a.match_type().map(|m| m as i32).unwrap_or(0);
-            let b_val = b.match_type().map(|m| m as i32).unwrap_or(0);
+            let a_val = a.match_score();
+            let b_val = b.match_score();
             b_val.cmp(&a_val)
         });
 
@@ -134,9 +126,8 @@ pub trait ISearcher: Send + Sync {
     }
 
     /// 比较曲目与搜索结果的匹配程度（默认通用实现，各 searcher 可 override）
-    fn compare_track(&self, track: &dyn ITrackMetadata, result: &dyn ISearchResult) -> MatchType {
-        use MatchType;
-        let mut score = 0i32;
+    fn compare_track(&self, track: &dyn ITrackMetadata, result: &dyn ISearchResult) -> i8 {
+        let mut score = 0i8;
 
         // Name match
         let track_title = track.title().unwrap_or_default().to_lowercase();
@@ -188,13 +179,7 @@ pub trait ISearcher: Send + Sync {
             score += 1;
         }
 
-        match score {
-            0 => MatchType::None,
-            1..=3 => MatchType::Low,
-            4..=6 => MatchType::Medium,
-            7..=8 => MatchType::High,
-            _ => MatchType::Perfect,
-        }
+        score
     }
 
     /// 清理标题中的常见符号（供 compare_track 使用，可 override）

@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use crate::providers::kugou::KugouApi;
-use super::{ISearcher, ISearchResult, SearcherType, MatchType};
+use super::{ISearcher, ISearchResult, SearcherType};
 use crate::models::ITrackMetadata;
 pub struct KugouSearcher {
     api: KugouApi,
@@ -43,7 +43,7 @@ impl ISearcher for KugouSearcher {
                             artists,
                             album,
                             duration_ms: duration,
-                            match_type: None,
+                            match_score: 0,
                         }));
                     }
                 }
@@ -67,9 +67,8 @@ impl ISearcher for KugouSearcher {
         }
     }
 
-    fn compare_track(&self, track: &dyn ITrackMetadata, result: &dyn ISearchResult) -> MatchType {
-        use MatchType;
-        let mut score = 0i32;
+    fn compare_track(&self, track: &dyn ITrackMetadata, result: &dyn ISearchResult) -> i8 {
+        let mut score = 0i8;
 
         // Name match
         let track_title = track.title().unwrap_or_default().to_lowercase();
@@ -118,13 +117,7 @@ impl ISearcher for KugouSearcher {
             score += 1;
         }
 
-        match score {
-            0..=1 => MatchType::None,
-            2..=3 => MatchType::Low,
-            4..=5 => MatchType::Medium,
-            6 => MatchType::High,
-            _ => MatchType::Perfect,
-        }
+        score
     }
 }
 
@@ -134,7 +127,7 @@ pub struct KugouSearchResult {
     pub artists: Vec<String>,
     pub album: String,
     pub duration_ms: Option<i32>,
-    pub match_type: Option<MatchType>,
+    pub match_score: i8,
 }
 
 impl ISearchResult for KugouSearchResult {
@@ -142,8 +135,8 @@ impl ISearchResult for KugouSearchResult {
     fn artists(&self) -> &[String] { &self.artists }
     fn album(&self) -> &str { &self.album }
     fn duration_ms(&self) -> Option<i32> { self.duration_ms }
-    fn match_type(&self) -> Option<MatchType> { self.match_type }
-    fn set_match_type(&mut self, mt: Option<MatchType>) { self.match_type = mt; }
+    fn match_score(&self) -> i8 { self.match_score }
+    fn set_match_score(&mut self, score: i8) { self.match_score = score; }
     fn as_any(&self) -> &dyn std::any::Any { self }
 }
 //可以看到duration
@@ -178,13 +171,13 @@ async fn test_kugou_search_for_duration_debug() {
 
             for item in list.iter_mut() {
                 let mt = searcher.compare_track(&metadata, item.as_ref());
-                item.set_match_type(Some(mt));
+                item.set_match_score(mt);
             }
 
 
             list.sort_by(|a, b| {
-                let a_score = a.match_type().map(|m| m as i32).unwrap_or(0);
-                let b_score = b.match_type().map(|m| m as i32).unwrap_or(0);
+                let a_score = a.match_score() as i8;
+                let b_score = b.match_score() as i8;
                 b_score.cmp(&a_score)
             });
 
@@ -196,7 +189,7 @@ async fn test_kugou_search_for_duration_debug() {
                 println!("artists = {:?}", item.artists());
                 println!("album = {}", item.album());
                 println!("duration_ms = {:?}", item.duration_ms());
-                println!("match_type = {:?}", item.match_type());
+                println!("match_score = {}", item.match_score());
             }
         }
         Err(e) => {

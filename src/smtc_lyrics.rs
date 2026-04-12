@@ -360,7 +360,9 @@ async fn fetch_soda_music_lyrics(
     if let Some(lyric_info) = detail.lyric {
         if let Some(content) = lyric_info.content {
             if !content.is_empty() {
-                return Ok(parse_soda_lyric(&content));
+                let mut data = parse_soda_lyric(&content);
+                data.track_metadata = Some(track.clone());
+                return Ok(data);
             }
         }
     }
