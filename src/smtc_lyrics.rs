@@ -193,13 +193,12 @@ async fn fetch_netease_lyrics(
     use crate::providers::netease::NeteaseApi;
 
     let searcher = NeteaseSearcher::new();
-    let best = searcher.search_for_result(track).await?
+    let result = searcher.search_for_result(track).await?
         .ok_or("网易云: 未找到匹配的歌曲")?;
-
-    let id = best.as_any()
+    let best = result.as_any()
         .downcast_ref::<NeteaseSearchResult>()
-        .ok_or("网易云: 搜索结果类型不匹配")?
-        .id.clone();
+        .ok_or("网易云: 搜索结果类型不匹配")?;
+    let id = best.id.clone();
 
     let api = NeteaseApi::new();
     let lyric_result = api.get_lyric(&id).await?;
@@ -212,7 +211,17 @@ async fn fetch_netease_lyrics(
     }
     if let Some(lrc_text) = lyric_result.lrc.and_then(|l| l.lyric) {
         if !lrc_text.is_empty() {
-            return Ok(crate::parsers::lrc::parse(&lrc_text));
+            let mut data = crate::parsers::lrc::parse(&lrc_text);
+            data.track_metadata = Some(TrackMetadata {
+                title: Some(best.title.clone()),
+                artist: Some(best.artists.join(", ")),
+                album: Some(best.album.clone()),
+                album_artist: None,
+                duration_ms: best.duration_ms,
+                isrc: None,
+                language: None,
+            });
+            return Ok(data);
         }
     }
 
@@ -239,7 +248,16 @@ async fn fetch_qqmusic_lyrics(
 
     if let Some(lrc_text) = lyric_result.lyric {
         if !lrc_text.is_empty() {
-            let data = crate::parsers::lrc::parse(&lrc_text);
+            let mut data = crate::parsers::lrc::parse(&lrc_text);
+            data.track_metadata = Some(TrackMetadata {
+                title: Some(best.title.clone()),
+                artist: Some(best.artists.join(", ")),
+                album: Some(best.album.clone()),
+                album_artist: None,
+                duration_ms: best.duration_ms,
+                isrc: None,
+                language: None,
+            });
             return Ok(data);
         }
     }
