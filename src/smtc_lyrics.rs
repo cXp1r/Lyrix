@@ -128,7 +128,7 @@ pub async fn get_lyrics(
     duration_ms: i32,
 ) -> Result<(MusicPlayer, LyricsData), Box<dyn std::error::Error + Send + Sync>> {
     let player = get_first_running_player()
-        .ok_or("未检测到正在运行的音乐播放器")?;
+        .ok_or("未检测到支持的音乐播放器")?;
 
     let metadata = TrackMetadata {
         title: Some(title.to_string()),
@@ -216,10 +216,8 @@ async fn fetch_netease_lyrics(
                 title: Some(best.title.clone()),
                 artist: Some(best.artists.join(", ")),
                 album: Some(best.album.clone()),
-                album_artist: None,
                 duration_ms: best.duration_ms,
-                isrc: None,
-                language: None,
+                ..Default::default()
             });
             return Ok(data);
         }
@@ -253,10 +251,8 @@ async fn fetch_qqmusic_lyrics(
                 title: Some(best.title.clone()),
                 artist: Some(best.artists.join(", ")),
                 album: Some(best.album.clone()),
-                album_artist: None,
                 duration_ms: best.duration_ms,
-                isrc: None,
-                language: None,
+                ..Default::default()
             });
             return Ok(data);
         }
@@ -313,10 +309,8 @@ async fn fetch_kugou_lyrics(
         title: Some(result.title.clone()),
         artist: Some(result.artists.join(", ")),
         album: Some(result.album.clone()),
-        album_artist: None,
         duration_ms: result.duration_ms,
-        isrc: None,
-        language: None,
+        ..Default::default()
     });
     Ok(data)
 }
@@ -371,9 +365,11 @@ async fn fetch_soda_music_lyrics(
     use crate::providers::soda_music::SodaMusicApi;
 
     let searcher = SodaMusicSearcher::new();
-    let result = searcher.search_for_result(track).await?;
-
-    let result = result.ok_or("汽水音乐: 未找到匹配的歌曲")?;
+    let result = match searcher.search_for_result(track).await {
+        Ok(Some(r)) => r,
+        Ok(None) => return Err("汽水音乐: 未找到匹配的歌曲".into()),
+        Err(e) => return Err(e),
+    };
 
     let best = result
         .as_any()
@@ -394,17 +390,16 @@ async fn fetch_soda_music_lyrics(
                     title: Some(best.title.clone()),
                     artist: Some(best.artists.join(", ")),
                     album: Some(best.album.clone()),
-                    album_artist: None,
                     duration_ms: best.duration_ms,
-                    isrc: None,
-                    language: None,
+                    ..Default::default()
                 });
                 return Ok(data);
             }
+            return Err("汽水音乐: 歌词内容为空".into());
         }
+        return Err("汽水音乐: 无歌曲详细信息".into());
     }
-
-    Err("汽水音乐: 未获取到歌词内容".into())
+    return Err("汽水音乐: 歌曲没有歌词".into());
 }
 
 /// 解析汽水音乐歌词：支持 KRC 毫秒格式 [start_ms,duration_ms]<offset,dur,0>text

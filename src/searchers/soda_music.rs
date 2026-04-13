@@ -72,7 +72,7 @@ impl ISearcher for SodaMusicSearcher {
             Some(combined)
         }
     }
-
+    fn min_score(&self) -> i8 { 5 }
     fn compare_track(&self, track: &dyn ITrackMetadata, result: &dyn ISearchResult) -> i8 {
         let mut score = 0i8;
 

@@ -115,14 +115,24 @@ pub trait ISearcher: Send + Sync {
         Ok(search_results)
     }
 
+    /// 最低匹配分数线，低于此分数的结果将被丢弃（可 override）
+    fn min_score(&self) -> i8 { 4 }
+
     //smtc统一接口调用了这个
     async fn search_for_result(&self, track: &dyn ITrackMetadata) -> Result<Option<Box<dyn ISearchResult>>, Box<dyn std::error::Error + Send + Sync>> {
+        let threshold = self.min_score();
         let search = self.search_for_results(track, false).await?;
-        if !search.is_empty() {
-            return Ok(Some(search.into_iter().next().unwrap()));
+        if let Some(best) = search.into_iter().next() {
+            if best.match_score() >= threshold {
+                return Ok(Some(best));
+            }
+            return Err(format!("Low score: {}/{}; id:{}", best.match_score(), threshold, best.title()).into());
         }
         let search = self.search_for_results(track, true).await?;
-        Ok(search.into_iter().next())
+        if let Some(best) = search.into_iter().next() {
+            return Ok((best.match_score() >= threshold).then_some(best));
+        }
+        return Err("Low score".into());
     }
 
     /// 比较曲目与搜索结果的匹配程度（默认通用实现，各 searcher 可 override）
