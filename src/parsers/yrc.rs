@@ -11,7 +11,6 @@ static SYLLABLE_RE: Lazy<Regex> =
 /// 解析 YRC 歌词
 pub fn parse(lyrics: &str) -> LyricsData {
     let mut data = LyricsData {
-        track_metadata: Some(TrackMetadata::default()),
         file: Some(LyricsFileInfo {
             lyrics_type: LyricsTypes::Yrc,
             sync_type: SyncTypes::SyllableSynced,

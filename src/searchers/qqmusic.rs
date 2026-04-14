@@ -1,5 +1,6 @@
 use async_trait::async_trait;
 use crate::providers::qqmusic::QQMusicApi;
+use crate::models::ITrackMetadata;
 use super::{ISearcher, ISearchResult, SearcherType};
 
 pub struct QQMusicSearcher {
@@ -57,6 +58,9 @@ impl ISearcher for QQMusicSearcher {
 
         Ok(results)
     }
+    fn get_split_char(&self) -> char {
+        '/'
+    }
 }
 
 pub struct QQMusicSearchResult {
@@ -76,4 +80,56 @@ impl ISearchResult for QQMusicSearchResult {
     fn match_score(&self) -> i8 { self.match_score }
     fn set_match_score(&mut self, score: i8) { self.match_score = score; }
     fn as_any(&self) -> &dyn std::any::Any { self }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::TrackMetadata;
+
+    #[tokio::test]
+    async fn test_qqmusic_search_for_duration_debug() {
+        let searcher = QQMusicSearcher::new();
+
+        let metadata = TrackMetadata {
+            title: Some("私は、わたしの事が好き。".to_string()),
+            artist: Some("HoneyWorks/夏吉ゆうこ".to_string()),
+            album: Some("超かぐや姫！".to_string()),
+            album_artist: Some("".to_string()),
+            duration_ms: Some(251000),
+            ..Default::default()
+        };
+
+        let Some(search_string) = searcher.make_search_string(&metadata).await else {
+            return;
+        };
+        println!("search string = {}", search_string);
+        let result = searcher
+            .search_for_results_by_string(&search_string)
+            .await;
+
+        match result {
+            Ok(mut list) => {
+                for item in list.iter_mut() {
+                    let mt = searcher.compare_track(&metadata, item.as_ref());
+                    item.set_match_score(mt);
+                }
+
+                list.sort_by(|a, b| b.match_score().cmp(&a.match_score()));
+
+                println!("result count = {}", list.len());
+                for (i, item) in list.iter().enumerate() {
+                    println!("--- item {} ---", i);
+                    println!("title = {}", item.title());
+                    println!("artists = {:?}", item.artists());
+                    println!("album = {}", item.album());
+                    println!("duration_ms = {:?}", item.duration_ms());
+                    println!("match_score = {}", item.match_score());
+                }
+            }
+            Err(e) => {
+                panic!("search failed: {:?}", e);
+            }
+        }
+    }
 }

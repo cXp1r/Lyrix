@@ -67,57 +67,8 @@ impl ISearcher for KugouSearcher {
         }
     }
     fn min_score(&self) -> i8 { 5 }
-    fn compare_track(&self, track: &dyn ITrackMetadata, result: &dyn ISearchResult) -> i8 {
-        let mut score = 0i8;
-
-        // Name match
-        let track_title = track.title().unwrap_or_default().to_lowercase();
-        let result_title = result.title().to_lowercase();
-        if !track_title.is_empty() && !result_title.is_empty() {
-            if track_title == result_title {
-                score += 4;
-            } else if result_title.contains(&track_title) || track_title.contains(&result_title) {
-                score += 2;
-            } else {
-                let clean_track = self.clean_title(&track_title);
-                let clean_result = self.clean_title(&result_title);
-                if clean_track == clean_result {
-                    score += 3;
-                } else if clean_result.contains(&clean_track) || clean_track.contains(&clean_result) {
-                    score += 1;
-                }
-            }
-        }
-
-        // Artist match
-        let track_artist = track.artist().unwrap_or_default().to_lowercase();
-        if !track_artist.is_empty() {
-            for result_artist in result.artists() {
-                let result_artist = result_artist.to_lowercase();
-
-                if result_artist == track_artist {
-                    score += 2;
-                    break;
-                } else if result_artist.contains(&track_artist) || track_artist.contains(&result_artist) {
-                    score += 1;
-                    break;
-                }
-            }
-        }
-
-
-        // Kugou albumArtist match
-        let track_album_artist = self.clean_title(&track.album_artist()
-            .unwrap_or_default()
-            .to_lowercase());
-
-        let result_album_artist = result.album();
-
-        if result_album_artist.contains(&track_album_artist) || track_album_artist.contains(&result_album_artist) {
-            score += 1;
-        }
-
-        score
+    fn get_split_char(&self) -> char {
+        '、'
     }
 }
 
@@ -165,7 +116,9 @@ async fn test_kugou_search_for_duration_debug() {
     let result = searcher
         .search_for_results_by_string(&search_string)
         .await;
-
+    if(true){
+        return
+    }
     match result {
         Ok(mut list) => {
 

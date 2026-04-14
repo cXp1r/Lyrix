@@ -53,6 +53,10 @@ impl ISearcher for NeteaseSearcher {
 
         Ok(results)
     }
+
+    fn get_split_char(&self) -> char {
+        '/'
+    }
 }
 
 pub struct NeteaseSearchResult {

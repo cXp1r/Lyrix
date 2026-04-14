@@ -246,6 +246,7 @@ async fn fetch_qqmusic_lyrics(
 
     if let Some(lrc_text) = lyric_result.lyric {
         if !lrc_text.is_empty() {
+            println!("{:?}", lrc_text);
             let mut data = crate::parsers::lrc::parse(&lrc_text);
             data.track_metadata = Some(TrackMetadata {
                 title: Some(best.title.clone()),
@@ -477,4 +478,26 @@ fn parse_soda_lyric(content: &str) -> crate::models::LyricsData {
     let mut data = LyricsData::default();
     data.lines = lines;
     data
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+
+
+    #[tokio::test]
+    async fn test_qqmusic_full_flow(){
+        let track = TrackMetadata {
+            title: Some("私は、わたしの事が好き。".to_string()),
+            artist: Some("HoneyWorks/夏吉ゆうこ".to_string()),
+            album: Some("超かぐや姫！".to_string()),
+            album_artist: Some("".to_string()),
+            duration_ms: Some(251000),
+            ..Default::default()
+        };
+
+        let result = fetch_qqmusic_lyrics(&track).await;
+    }
 }

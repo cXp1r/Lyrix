@@ -134,12 +134,14 @@ pub trait ISearcher: Send + Sync {
         }
         return Err("Low score".into());
     }
-
+    fn get_split_char(&self) -> char {
+        ' '
+    }
     /// 比较曲目与搜索结果的匹配程度（默认通用实现，各 searcher 可 override）
     fn compare_track(&self, track: &dyn ITrackMetadata, result: &dyn ISearchResult) -> i8 {
         let mut score = 0i8;
 
-        // Name match
+        // 第一步没必要覆写,强制留着了
         let track_title = track.title().unwrap_or_default().to_lowercase();
         let result_title = result.title().to_lowercase();
         if !track_title.is_empty() && !result_title.is_empty() {
@@ -159,16 +161,19 @@ pub trait ISearcher: Send + Sync {
         }
 
         // Artist match
-        let track_artist = track.artist().unwrap_or_default().to_lowercase();
-        let result_artists = result.artists().to_vec();
-        if !track_artist.is_empty() && !result_artists.is_empty() {
-            for result_artist in result_artists{
-                if result_artist == track_artist {
-                    score += 2;
-                    
-                } else if result_artist.contains(&track_artist) {
-                    score += 1;
-                }
+        let artists: Vec<String> = track
+            .artist()
+            .unwrap_or_default()   // 👈 关键
+            .split(self.get_split_char())
+            .map(|s| s.trim().to_lowercase())
+            .filter(|s| !s.is_empty())
+            .collect();
+        for a in &artists {
+            if result.artists().iter().any(|b| {
+                let b = b.to_lowercase();
+                a == &b || a.contains(&b) || b.contains(a)
+            }) {
+                score += 1;
             }
         }
 
@@ -188,7 +193,18 @@ pub trait ISearcher: Send + Sync {
         if result_album_artist.iter().any(|s:&String| s.contains(&track_album_artist)) {
             score += 1;
         }
-
+        if let Some(duration_ms) = track.duration_ms() {
+            if let Some(result_duration_ms) = result.duration_ms() {
+                let diff = (duration_ms - result_duration_ms).abs();
+                if diff == 0 { // 完全匹配
+                    
+                    score += 2;
+                }else if diff <= 1000 { // 1秒内认为时长匹配
+                    score += 1;
+                }
+                
+            }
+        }
         score
     }
 
