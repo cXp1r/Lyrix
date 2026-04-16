@@ -59,35 +59,6 @@ let lyrics = smtc_lyrics::get_lyrics_with_player(
 ).await?;
 ```
 
-### 进程检测
-
-```rust
-use lyricify_lyrics_provider::smtc_lyrics;
-
-let players = smtc_lyrics::get_running_players();
-if let Some(first) = smtc_lyrics::get_first_running_player() {
-    println!("将使用: {}", first.display_name());
-}
-```
-
-### 直接调用平台 API
-
-```rust
-use lyricify_lyrics_provider::providers::netease::NeteaseApi;
-
-let api = NeteaseApi::new();
-let result = api.search("晴天 周杰伦", 1).await?;
-let lyric = api.get_lyric("186016").await?;
-```
-
-### 智能搜索
-
-```rust
-use lyricify_lyrics_provider::searchers::{ISearcher, netease::NeteaseSearcher};
-
-let searcher = NeteaseSearcher::new();
-let best = searcher.search_for_result(&track_metadata).await?;
-```
 
 ### 访问解析/模型/工具模块
 
@@ -101,7 +72,7 @@ use lyricify_lyrics_provider::helpers;
 
 | 播放器 | 枚举值 | 进程名 | 歌词源 |
 |--------|--------|--------|--------|
-| 酷狗音乐 | `MusicPlayer::Kugou` | `KGMusic.exe` | 酷狗 API |
+| 酷狗音乐 | `MusicPlayer::Kugou` | `KuGou.exe` | 酷狗 API |
 | 网易云音乐 | `MusicPlayer::Netease` | `cloudmusic.exe` | 网易云 API（优先 YRC 逐字，回退 LRC） |
 | QQ音乐 | `MusicPlayer::QQMusic` | `QQMusic.exe` | QQ音乐 API |
 | 汽水音乐 | `MusicPlayer::SodaMusic` | `SodaMusic.exe` | 汽水音乐 API |
