@@ -1,10 +1,15 @@
 use super::base_api::BaseApi;
 use serde::Deserialize;
-use std::collections::HashMap;
-
+use std::{collections::HashMap, sync::LazyLock};
+use regex::Regex;
 pub struct QQMusicApi {
     api: BaseApi,
 }
+static CDATA: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(r"CDATA\[([0-9A-F]+)\]").unwrap()
+});
+
+
 
 impl QQMusicApi {
     pub fn new() -> Self {
@@ -77,7 +82,7 @@ impl QQMusicApi {
     }
 
     /// 通过 ID 获取解密后的歌词 (QRC)
-    pub async fn get_lyrics_qrc(&self, id: &str) -> Result<Option<QqLyricsResponse>, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_lyrics_qrc(&self, id: &str) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
         let mut params = HashMap::new();
         params.insert("version".to_string(), "15".to_string());
         params.insert("miniversion".to_string(), "82".to_string());
@@ -88,11 +93,11 @@ impl QQMusicApi {
             "https://c.y.qq.com/qqmusic/fcgi-bin/lyric_download.fcg",
             &params,
         ).await?;
-
-        let _cleaned = resp.replace("<!--", "").replace("-->", "");
+        
+        
         // XML parsing and QRC decryption would go here
         // This is a simplified version - full implementation needs XML parsing + QRC decrypter
-        Ok(None)
+        Ok(CDATA.captures(&resp).ok_or("QQMusicApi: No match qrc")?.get(1).ok_or("QQMusicApi: Nothing here")?.as_str().to_string())
     }
 }
 
@@ -150,7 +155,7 @@ pub struct MusicFcgReq1DataMeta {
 #[derive(Debug, Deserialize, Default)]
 pub struct Song {
     pub album: Option<Album>,
-    pub id: Option<serde_json::Value>,
+    pub id: Option<String>,
     pub interval: Option<i32>,
     pub mid: Option<String>,
     pub name: Option<String>,

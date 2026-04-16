@@ -1,8 +1,6 @@
 use flate2::read::{DeflateDecoder, ZlibDecoder};
-use std::error::Error;
-use std::fmt::{Display, Formatter};
 use std::io::Read;
-
+//57行正片开始
 pub const ENCRYPT: u32 = 1;
 pub const DECRYPT: u32 = 0;
 
@@ -56,42 +54,13 @@ const SBOX8: [u8; 64] = [
     15, 12, 9, 0, 3, 5, 6, 11,
 ];
 
-#[derive(Debug)]
-pub enum DecryptError {
-    OddHexLength,
-    InvalidHex(std::num::ParseIntError),
-    CiphertextNotBlockAligned(usize),
-    Inflate(std::io::Error),
-}
-
-impl Display for DecryptError {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::OddHexLength => write!(f, "hex string has odd length"),
-            Self::InvalidHex(err) => write!(f, "invalid hex: {err}"),
-            Self::CiphertextNotBlockAligned(len) => {
-                write!(f, "ciphertext length is not aligned to 8-byte blocks: {len}")
-            }
-            Self::Inflate(err) => write!(f, "inflate failed: {err}"),
-        }
-    }
-}
-
-impl Error for DecryptError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        match self {
-            Self::InvalidHex(err) => Some(err),
-            Self::Inflate(err) => Some(err),
-            _ => None,
-        }
-    }
-}
-
-pub fn decrypt_lyrics(encrypted_lyrics: &str) -> Result<String, DecryptError> {
+//I'm here
+pub fn qrc_decrypt(encrypted_lyrics: &str) -> Result<String, String> {
     let encrypted_text_byte = hex_string_to_byte_array(encrypted_lyrics)?;
     if encrypted_text_byte.len() % 8 != 0 {
-        return Err(DecryptError::CiphertextNotBlockAligned(
-            encrypted_text_byte.len(),
+        return Err(format!(
+            "Decryptor: ciphertext length is not aligned to 8-byte blocks: {}",
+            encrypted_text_byte.len()
         ));
     }
 
@@ -432,7 +401,7 @@ fn triple_des_crypt(input: &[u8; 8], output: &mut [u8; 8], key: &[[[u8; 6]; 16];
     crypt(&tmp2, output, &key[2]);
 }
 
-fn inflate_bytes(data: &[u8]) -> Result<Vec<u8>, DecryptError> {
+fn inflate_bytes(data: &[u8]) -> Result<Vec<u8>, String> {
     let mut zlib_output = Vec::new();
     match ZlibDecoder::new(data).read_to_end(&mut zlib_output) {
         Ok(_) => return Ok(zlib_output),
@@ -441,26 +410,24 @@ fn inflate_bytes(data: &[u8]) -> Result<Vec<u8>, DecryptError> {
             match DeflateDecoder::new(data).read_to_end(&mut deflate_output) {
                 Ok(_) => return Ok(deflate_output),
                 Err(deflate_err) => {
-                    return Err(DecryptError::Inflate(std::io::Error::new(
-                        std::io::ErrorKind::InvalidData,
-                        format!(
-                            "zlib decode failed ({zlib_err}); raw deflate decode failed ({deflate_err})"
-                        ),
-                    )));
+                    return Err(format!(
+                        "Decryptor: inflate failed: zlib decode failed ({zlib_err}); raw deflate decode failed ({deflate_err})"
+                    ));
                 }
             }
         }
     }
 }
 
-fn hex_string_to_byte_array(hex_string: &str) -> Result<Vec<u8>, DecryptError> {
+fn hex_string_to_byte_array(hex_string: &str) -> Result<Vec<u8>, String> {
     if hex_string.len() % 2 != 0 {
-        return Err(DecryptError::OddHexLength);
+        return Err("Decryptor: hex string has odd length".to_string());
     }
 
     let mut bytes = Vec::with_capacity(hex_string.len() / 2);
     for i in (0..hex_string.len()).step_by(2) {
-        let parsed = u8::from_str_radix(&hex_string[i..i + 2], 16).map_err(DecryptError::InvalidHex)?;
+        let parsed = u8::from_str_radix(&hex_string[i..i + 2], 16)
+            .map_err(|err| format!("Decryptor: invalid hex: {err}"))?;
         bytes.push(parsed);
     }
     Ok(bytes)

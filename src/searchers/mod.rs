@@ -41,10 +41,9 @@ pub trait ISearcher: Send + Sync {
     
     async fn make_search_string(&self, track: &dyn ITrackMetadata) -> Option<String> {
         let combined = format!(
-            "{} {} {}",
+            "{} {}",
             track.title().unwrap_or_default(),
             track.artist().unwrap_or_default(),
-            track.album().unwrap_or_default(),
         ).replace(" - ", " ").trim().to_string();
 
         if combined.is_empty() {
@@ -69,6 +68,7 @@ pub trait ISearcher: Send + Sync {
             if let Ok(results) = self.search_for_results_by_string(&current_search).await {
                 search_results.extend(results);
             }
+            
 
             let mut new_title = track.title().unwrap_or_default().to_string();
             if let Some(idx) = new_title.find("(feat.") {
@@ -132,7 +132,7 @@ pub trait ISearcher: Send + Sync {
         if let Some(best) = search.into_iter().next() {
             return Ok((best.match_score() >= threshold).then_some(best));
         }
-        return Err("Low score".into());
+        Err("Nothing here".into())
     }
     fn get_split_char(&self) -> char {
         ' '
@@ -159,6 +159,7 @@ pub trait ISearcher: Send + Sync {
                 }
             }
         }
+        println!("{}:{}",result_title,score);
 
         // Artist match
         let artists: Vec<String> = track
@@ -177,6 +178,7 @@ pub trait ISearcher: Send + Sync {
             }
         }
 
+        println!("{} {}",result.artists().join("||"),score);
         // Album match
         let track_album = track.album().unwrap_or_default().to_lowercase();
         let result_album = result.album().to_lowercase();
@@ -186,6 +188,7 @@ pub trait ISearcher: Send + Sync {
             }
         }
 
+        println!("{} {}",result_album,score);
         // Album artist match
         let track_album_artist = self.clean_title(&track.album_artist().unwrap_or_default().to_lowercase());
         let result_album_artist = result.album_artists().unwrap_or_default().to_vec();
@@ -193,6 +196,7 @@ pub trait ISearcher: Send + Sync {
         if result_album_artist.iter().any(|s:&String| s.contains(&track_album_artist)) {
             score += 1;
         }
+        println!("(kugou) score:{}",score);
         if let Some(duration_ms) = track.duration_ms() {
             if let Some(result_duration_ms) = result.duration_ms() {
                 let diff = (duration_ms - result_duration_ms).abs();
@@ -205,6 +209,7 @@ pub trait ISearcher: Send + Sync {
                 
             }
         }
+        println!("{} {}\n",result.duration_ms().unwrap_or_default(),score);
         score
     }
 
