@@ -34,7 +34,7 @@ impl ISearcher for KugouSearcher {
                             .filter(|s| !s.is_empty())
                             .collect();
                         let album = info.album_name.clone().unwrap_or_default();
-                        let duration = info.duration.map(|d| d * 1000);
+                        let duration = info.duration.map(|d| (d * 1000) as u32);
                         let hash = info.hash.clone().unwrap_or_default();
 
                         results.push(Box::new(KugouSearchResult {
@@ -77,7 +77,7 @@ pub struct KugouSearchResult {
     pub title: String,
     pub artists: Vec<String>,
     pub album: String,
-    pub duration_ms: Option<i32>,
+    pub duration_ms: Option<u32>,
     pub match_score: i8,
 }
 
@@ -85,7 +85,7 @@ impl ISearchResult for KugouSearchResult {
     fn title(&self) -> &str { &self.title }
     fn artists(&self) -> &[String] { &self.artists }
     fn album(&self) -> &str { &self.album }
-    fn duration_ms(&self) -> Option<i32> { self.duration_ms }
+    fn duration_ms(&self) -> Option<u32> { self.duration_ms }
     fn match_score(&self) -> i8 { self.match_score }
     fn set_match_score(&mut self, score: i8) { self.match_score = score; }
     fn as_any(&self) -> &dyn std::any::Any { self }

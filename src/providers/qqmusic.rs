@@ -40,7 +40,7 @@ impl QQMusicApi {
         });
 
         let resp = self.api.post_json_async("https://u.y.qq.com/cgi-bin/musicu.fcg", &data).await?;
-        Ok(serde_json::from_str(&resp).ok())
+        Ok(serde_json::from_str(&resp)?)
     }
 
     /// 获取歌词
@@ -130,7 +130,7 @@ pub struct MusicFcgReq1 {
 #[derive(Debug, Deserialize, Default)]
 pub struct MusicFcgReq1Data {
     pub body: Option<MusicFcgReq1DataBody>,
-    pub meta: Option<MusicFcgReq1DataMeta>,
+
 }
 
 #[derive(Debug, Deserialize, Default)]
@@ -143,19 +143,11 @@ pub struct SongList {
     pub list: Option<Vec<Song>>,
 }
 
-#[derive(Debug, Deserialize, Default)]
-pub struct MusicFcgReq1DataMeta {
-    pub curpage: Option<i64>,
-    pub nextpage: Option<i64>,
-    pub perpage: Option<i64>,
-    pub query: Option<String>,
-    pub sum: Option<i64>,
-}
 
 #[derive(Debug, Deserialize, Default)]
 pub struct Song {
     pub album: Option<Album>,
-    pub id: Option<String>,
+    pub id: Option<u32>,
     pub interval: Option<i32>,
     pub mid: Option<String>,
     pub name: Option<String>,
@@ -163,10 +155,6 @@ pub struct Song {
     pub subtitle: Option<String>,
     pub singer: Option<Vec<Singer>>,
     pub time_public: Option<String>,
-    #[serde(default)]
-    pub language: Option<i32>,
-    #[serde(default)]
-    pub genre: Option<i32>,
 }
 
 #[derive(Debug, Deserialize, Default)]

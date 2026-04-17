@@ -1,7 +1,7 @@
 
 use crate::parsers::{IParsers, LRC_LINE_TIMESTAMP};
 use crate::models::LineInfo;
-use regex::{Regex, Captures};
+use regex::Captures;
 pub struct LrcParsers {}
 impl IParsers for LrcParsers{
     fn parse_line(&self, caps: Captures<'_>) -> Result<(u32, u32, String), String> {

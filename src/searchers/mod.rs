@@ -23,7 +23,7 @@ pub trait ISearchResult: Send + Sync {
     fn artists(&self) -> &[String];
     fn album(&self) -> &str;
     fn album_artists(&self) -> Option<&[String]> { None }
-    fn duration_ms(&self) -> Option<i32>;
+    fn duration_ms(&self) -> Option<u32>;
     fn match_score(&self) -> i8;
     fn set_match_score(&mut self, mt: i8);
     fn as_any(&self) -> &dyn std::any::Any;
@@ -65,9 +65,9 @@ pub trait ISearcher: Send + Sync {
         let mut current_search = search_string.clone();
 
         loop {
-            if let Ok(results) = self.search_for_results_by_string(&current_search).await {
+            let results = self.search_for_results_by_string(&current_search).await?;
                 search_results.extend(results);
-            }
+            
             
 
             let mut new_title = track.title().unwrap_or_default().to_string();
@@ -199,7 +199,7 @@ pub trait ISearcher: Send + Sync {
         println!("(kugou) score:{}",score);
         if let Some(duration_ms) = track.duration_ms() {
             if let Some(result_duration_ms) = result.duration_ms() {
-                let diff = (duration_ms - result_duration_ms).abs();
+                let diff = duration_ms as i64 - result_duration_ms as i64;
                 if diff == 0 { // 完全匹配
                     
                     score += 2;

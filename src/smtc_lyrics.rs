@@ -133,7 +133,7 @@ pub async fn get_lyrics(
     artist: Option<&str>,
     album: Option<&str>,
     album_artist: Option<&str>,
-    duration_ms: i32,
+    duration_ms: u32,
 ) -> Result<(MusicPlayer, LyricsData), Box<dyn std::error::Error + Send + Sync>> {
     let player = get_first_running_player()
         .ok_or("未检测到支持的音乐播放器")?;
@@ -164,7 +164,7 @@ pub async fn get_lyrics_with_player(
     artist: Option<&str>,
     album: Option<&str>,
     album_artist: Option<&str>,
-    duration_ms: i32,
+    duration_ms: u32,
 ) -> Result<LyricsData, Box<dyn std::error::Error + Send + Sync>> {
     let metadata = TrackMetadata {
         title: Some(title.to_string()),
@@ -275,7 +275,7 @@ async fn fetch_qqmusic_lyrics(
             }),
     };
 
-    if let Ok(qrc) = api.get_lyrics_qrc(&id).await {
+    if let Ok(qrc) = api.get_lyrics_qrc(&id.to_string()).await {
         let parser = QQMusicParsers {};
         data.lines = parser.decrypt_and_parse(qrc)?;
         return Ok(data);
@@ -315,7 +315,6 @@ async fn fetch_kugou_lyrics(
 
     let lyrics_resp = api.get_search_lyrics(
         Some(&keyword),
-        best.duration_ms,
         Some(&best.hash),
     ).await?
         .ok_or("酷狗: 获取歌词候选失败")?;
@@ -428,6 +427,28 @@ mod tests {
         
         #[allow(unused_variables)]
         let result = fetch_netease_lyrics(&track).await;
+
+        
+        println!("{:?}",result)
+        
+        
+    }
+
+    #[tokio::test]
+    async fn test_qqmusic(){
+        let track = TrackMetadata {
+            title: Some("Remember".to_string()),
+            artist: Some("yuigot / 早見沙織".to_string()),
+            album: Some("超かぐや姫！".to_string()),
+            album_artist: Some("".to_string()),
+            duration_ms: Some(232616),
+            ..Default::default()
+        };
+        
+
+        
+        #[allow(unused_variables)]
+        let result = fetch_qqmusic_lyrics(&track).await;
 
         
         println!("{:?}",result)
