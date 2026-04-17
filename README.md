@@ -1,9 +1,9 @@
 ﻿# Lyricify Lyrics Provider
 ## 声明
 
+仓库自用,并提供给自己参与开发的仓库用
+
 逻辑(C#源代码)源于[Lyricify-Lyrics-Helper](https://github.com/WXRIW/Lyricify-Lyrics-Helper)
-
-
 
 ## 功能
 
@@ -103,13 +103,10 @@ src/
 │   ├── netease.rs
 │   ├── qqmusic.rs
 │   ├── soda_music.rs
-│   ├── decrypt/
-│   │   ├── mod.rs
-│   │   ├── krc.rs
-│   │   └── qrc.rs
-│   └── models/
+│   └── decrypt/
 │       ├── mod.rs
-│       └── yrc_models.rs
+│       ├── krc.rs
+│       └── qrc.rs
 ├── providers/
 │   ├── mod.rs
 │   ├── base_api.rs
