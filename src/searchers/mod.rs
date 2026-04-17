@@ -159,7 +159,7 @@ pub trait ISearcher: Send + Sync {
                 }
             }
         }
-        println!("{}:{}",result_title,score);
+        //println!("{}:{}",result_title,score);
 
         // Artist match
         let artists: Vec<String> = track
@@ -178,7 +178,7 @@ pub trait ISearcher: Send + Sync {
             }
         }
 
-        println!("{} {}",result.artists().join("||"),score);
+        //println!("{} {}",result.artists().join("||"),score);
         // Album match
         let track_album = track.album().unwrap_or_default().to_lowercase();
         let result_album = result.album().to_lowercase();
@@ -188,7 +188,7 @@ pub trait ISearcher: Send + Sync {
             }
         }
 
-        println!("{} {}",result_album,score);
+        //println!("{} {}",result_album,score);
         // Album artist match
         let track_album_artist = self.clean_title(&track.album_artist().unwrap_or_default().to_lowercase());
         let result_album_artist = result.album_artists().unwrap_or_default().to_vec();
@@ -196,7 +196,7 @@ pub trait ISearcher: Send + Sync {
         if result_album_artist.iter().any(|s:&String| s.contains(&track_album_artist)) {
             score += 1;
         }
-        println!("(kugou) score:{}",score);
+        //println!("(kugou) score:{}",score);
         if let Some(duration_ms) = track.duration_ms() {
             if let Some(result_duration_ms) = result.duration_ms() {
                 let diff = duration_ms as i64 - result_duration_ms as i64;
@@ -209,7 +209,7 @@ pub trait ISearcher: Send + Sync {
                 
             }
         }
-        println!("{} {}\n",result.duration_ms().unwrap_or_default(),score);
+        //println!("{} {}\n",result.duration_ms().unwrap_or_default(),score);
         score
     }
 

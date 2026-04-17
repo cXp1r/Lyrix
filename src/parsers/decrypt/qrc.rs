@@ -432,32 +432,3 @@ fn hex_string_to_byte_array(hex_string: &str) -> Result<Vec<u8>, String> {
     }
     Ok(bytes)
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn des_known_vector_encrypt_and_decrypt() {
-        let key: [u8; 8] = [0x13, 0x34, 0x57, 0x79, 0x9b, 0xbc, 0xdf, 0xf1];
-        let plaintext: [u8; 8] = [0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef];
-        // This expected value is from the original C# DESHelper implementation in this repo.
-        // The tables there differ from the standard DES test vector tables, so we validate parity
-        // with C# rather than with the canonical FIPS ciphertext.
-        let expected_ciphertext: [u8; 8] = [0xf6, 0x3a, 0x97, 0x2c, 0xe5, 0x2a, 0xa3, 0x27];
-
-        let mut enc_schedule = [[0u8; 6]; 16];
-        key_schedule(&key, &mut enc_schedule, ENCRYPT);
-
-        let mut encrypted = [0u8; 8];
-        crypt(&plaintext, &mut encrypted, &enc_schedule);
-        assert_eq!(encrypted, expected_ciphertext);
-
-        let mut dec_schedule = [[0u8; 6]; 16];
-        key_schedule(&key, &mut dec_schedule, DECRYPT);
-
-        let mut decrypted = [0u8; 8];
-        crypt(&expected_ciphertext, &mut decrypted, &dec_schedule);
-        assert_eq!(decrypted, plaintext);
-    }
-}

@@ -32,8 +32,8 @@ impl IParsers for LrcParsers{
         Ok((t1*60000+t2*1000+t3*10, 0, text))
     }
     fn parse(&self, lyrics: String) -> Result<Vec<LineInfo>, String> {
-        use std::time::Instant;
-        let start = Instant::now();
+        /*use std::time::Instant;
+        let start = Instant::now();*/
         
         
         let mut lineinfo: Vec<LineInfo> = Vec::new();
@@ -48,8 +48,8 @@ impl IParsers for LrcParsers{
             });
         }
 
-        let elapsed = start.elapsed();
-        println!("耗时: {:?}", elapsed);
+        /*let elapsed = start.elapsed();
+        println!("解析歌词耗时耗时: {:?}", elapsed);*/
 
 
         Ok(lineinfo)

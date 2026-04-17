@@ -1,5 +1,4 @@
 //pub mod attributes_helper;//整改了还没修
-pub mod models;
 pub mod qqmusic;
 pub mod netease;
 pub mod soda_music;
@@ -151,8 +150,8 @@ pub trait IParsers {
     }
 
     fn parse(&self, lyrics: String) -> Result<Vec<LineInfo>, String> {
-        use std::time::Instant;
-        let start = Instant::now();
+        /*use std::time::Instant;
+        let start = Instant::now();*/
         
         
         let mut lineinfo: Vec<LineInfo> = Vec::new();
@@ -177,8 +176,8 @@ pub trait IParsers {
             });
         }
 
-        let elapsed = start.elapsed();
-        println!("耗时: {:?}", elapsed);
+        /*let elapsed = start.elapsed();
+        println!("解析歌词耗时耗时: {:?}", elapsed);*/
 
 
         Ok(lineinfo)
