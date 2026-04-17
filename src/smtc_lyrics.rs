@@ -404,26 +404,37 @@ async fn fetch_soda_music_lyrics(
     return Err("汽水音乐: 歌曲没有歌词".into());
 }
 
-/// 解析汽水音乐歌词：支持 KRC 毫秒格式 [start_ms,duration_ms]<offset,dur,0>text
-
 
 #[cfg(test)]
 mod tests {
+
     use super::*;
-    fn ttrack() -> TrackMetadata {
+    #[allow(unused_variables)]
+    fn jtrack(s: &str) -> TrackMetadata {
         TrackMetadata {
             title: Some("Remember".to_string()),
-            artist: Some("yuigot 、 早見沙織".to_string()),
-            album: Some("".to_string()),
+            artist: Some(format!("yuigot {} 早見沙織", s)),
+            album: Some("超かぐや姫！".to_string()),
             album_artist: Some("超かぐや姫！".to_string()),
             duration_ms: Some(232616),
+            ..Default::default()
+        }
+    }
+    #[allow(unused_variables)]
+    fn etrack(s: &str) -> TrackMetadata {
+        TrackMetadata {
+            title: Some("Is There Someone Else?".to_string()),
+            artist: Some(format!("The Weeknd")),
+            album: Some("".to_string()),
+            album_artist: Some("".to_string()),
+            duration_ms: None,
             ..Default::default()
         }
     }
 
     #[tokio::test]
     async fn test_netease(){
-        let track = ttrack();
+        let track = jtrack("\\");
         #[allow(unused_variables)]
         let result = fetch_netease_lyrics(&track).await;
         println!("{:?}",result)
@@ -433,7 +444,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_qqmusic(){
-        let track = ttrack();
+        let track = etrack("\\");
         #[allow(unused_variables)]
         let result = fetch_qqmusic_lyrics(&track).await;
         println!("{:?}",result)        
@@ -441,7 +452,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_kugou_music(){
-        let track = ttrack();
+        let track = jtrack("、");
         #[allow(unused_variables)]
         let result = fetch_kugou_lyrics(&track).await;
         println!("{:?}",result)
@@ -449,7 +460,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_soda_music(){
-        let track = ttrack();
+        let track = jtrack(",");
         #[allow(unused_variables)]
         let result = fetch_soda_music_lyrics(&track).await;
         println!("{:?}",result)
