@@ -451,8 +451,44 @@ mod tests {
         let result = fetch_qqmusic_lyrics(&track).await;
 
         
+        //println!("{:?}",result)
+        
+        
+    }
+
+    #[tokio::test]
+    async fn test_kugou_music(){
+        let track = TrackMetadata {
+            title: Some("Remember".to_string()),
+            artist: Some("yuigot 、 早見沙織".to_string()),
+            album: Some("".to_string()),
+            album_artist: Some("超かぐや姫！".to_string()),
+            duration_ms: Some(232616),
+            ..Default::default()
+        };
+        
+
+        
+        #[allow(unused_variables)]
+        let result = fetch_kugou_lyrics(&track).await;
         println!("{:?}",result)
+    }
+
+    #[tokio::test]
+    async fn test_soda_music(){
+        let track = TrackMetadata {
+            title: Some("Remember".to_string()),
+            artist: Some("yuigot 、 早見沙織".to_string()),
+            album: Some("".to_string()),
+            album_artist: Some("超かぐや姫！".to_string()),
+            duration_ms: Some(232616),
+            ..Default::default()
+        };
         
+
         
+        #[allow(unused_variables)]
+        let result = fetch_soda_music_lyrics(&track).await;
+        println!("{:?}",result)
     }
 }
