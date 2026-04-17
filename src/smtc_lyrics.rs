@@ -410,25 +410,22 @@ async fn fetch_soda_music_lyrics(
 #[cfg(test)]
 mod tests {
     use super::*;
-
+    fn ttrack() -> TrackMetadata {
+        TrackMetadata {
+            title: Some("Remember".to_string()),
+            artist: Some("yuigot 、 早見沙織".to_string()),
+            album: Some("".to_string()),
+            album_artist: Some("超かぐや姫！".to_string()),
+            duration_ms: Some(232616),
+            ..Default::default()
+        }
+    }
 
     #[tokio::test]
     async fn test_netease(){
-        let track = TrackMetadata {
-            title: Some("Remember".to_string()),
-            artist: Some("yuigot / 早見沙織".to_string()),
-            album: Some("超かぐや姫！".to_string()),
-            album_artist: Some("".to_string()),
-            duration_ms: Some(232616),
-            ..Default::default()
-        };
-        
-
-        
+        let track = ttrack();
         #[allow(unused_variables)]
         let result = fetch_netease_lyrics(&track).await;
-
-        
         println!("{:?}",result)
         
         
@@ -436,39 +433,15 @@ mod tests {
 
     #[tokio::test]
     async fn test_qqmusic(){
-        let track = TrackMetadata {
-            title: Some("Remember".to_string()),
-            artist: Some("yuigot / 早見沙織".to_string()),
-            album: Some("超かぐや姫！".to_string()),
-            album_artist: Some("".to_string()),
-            duration_ms: Some(232616),
-            ..Default::default()
-        };
-        
-
-        
+        let track = ttrack();
         #[allow(unused_variables)]
         let result = fetch_qqmusic_lyrics(&track).await;
-
-        
-        //println!("{:?}",result)
-        
-        
+        println!("{:?}",result)        
     }
 
     #[tokio::test]
     async fn test_kugou_music(){
-        let track = TrackMetadata {
-            title: Some("Remember".to_string()),
-            artist: Some("yuigot 、 早見沙織".to_string()),
-            album: Some("".to_string()),
-            album_artist: Some("超かぐや姫！".to_string()),
-            duration_ms: Some(232616),
-            ..Default::default()
-        };
-        
-
-        
+        let track = ttrack();
         #[allow(unused_variables)]
         let result = fetch_kugou_lyrics(&track).await;
         println!("{:?}",result)
@@ -476,17 +449,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_soda_music(){
-        let track = TrackMetadata {
-            title: Some("Remember".to_string()),
-            artist: Some("yuigot 、 早見沙織".to_string()),
-            album: Some("".to_string()),
-            album_artist: Some("超かぐや姫！".to_string()),
-            duration_ms: Some(232616),
-            ..Default::default()
-        };
-        
-
-        
+        let track = ttrack();
         #[allow(unused_variables)]
         let result = fetch_soda_music_lyrics(&track).await;
         println!("{:?}",result)
