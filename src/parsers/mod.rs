@@ -88,49 +88,6 @@ pub trait IParsers {
                             .to_string();
         Ok((t1, t2, text))
     }
-    fn parse_lrc_lyrics(&self, original_lines: Vec<String>, start_index: usize) -> Result<Vec<LineInfo>, String> {
-        let mut t: Vec<LineInfo> = Vec::new();
-        for s in original_lines.iter().skip(start_index) {
-            let caps = LRC_LINE_TIMESTAMP.captures(s).ok_or("Parser: no match")?;
-
-            let t1 = caps.get(1)
-                        .ok_or("LRC Parser: Missing MM".to_string())?
-                        .as_str()
-                        .parse::<u32>()
-                        .map_err(|_| "LRC Parser: Can't parse MM".to_string())?;
-
-            let t2 = caps.get(2)
-                        .ok_or("LRC Parser: Missing SS".to_string())?
-                        .as_str()
-                        .parse::<u32>()
-                        .map_err(|_| "LRC Parser: Can't parse SS".to_string())?;
-
-            let t3 = caps.get(3)
-                        .ok_or("LRC Parser: Missing XX".to_string())?
-                        .as_str()
-                        .parse::<u32>()
-                        .map_err(|_| "LRC Parser: Can't parse XX".to_string())?;
-
-            let text = caps.get(4)
-                        .ok_or("LRC Parser: Missing lyrics".to_string())?
-                        .as_str();
-
-            t.push(
-                LineInfo { 
-                    start_time: t1*6000+t2*1000+10*t3,
-                    duration: 0u16,
-                    syllables: vec![],
-                    text: text.to_string(),
-                }
-            )
-        }
-        if t.is_empty() {
-            return Err("LRC Parser: Unknown error".into());
-        }
-        
-        
-        Ok(t)
-    }
     
     fn get_line_re(&self) -> &Regex {
         &RE
