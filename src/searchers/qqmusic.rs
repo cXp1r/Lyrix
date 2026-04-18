@@ -56,6 +56,7 @@ impl ISearcher for QQMusicSearcher {
                                         match_score: 0,
                                     }));
                                 }
+                                return Ok(results);
                             }
                         }
                         return Err("QQMusicApi: No song".into());
@@ -66,10 +67,7 @@ impl ISearcher for QQMusicSearcher {
             }
             return Err("QQMusicApi: No req_1".into());      
         }
-        match results.is_empty() {
-            true => Ok(results),
-            false => Err("QQMusicApi: No resp".into()),
-        }
+        return Err("QQMusicApi: No resp".into());
     }
     fn get_split_char(&self) -> char {
         '/'
