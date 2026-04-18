@@ -1,7 +1,6 @@
 use async_trait::async_trait;
 use crate::providers::kugou::KugouApi;
 use super::{ISearcher, ISearchResult, SearcherType};
-use crate::models::ITrackMetadata;
 pub struct KugouSearcher {
     api: KugouApi,
 }

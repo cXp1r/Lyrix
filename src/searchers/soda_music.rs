@@ -1,6 +1,5 @@
 use async_trait::async_trait;
 use crate::providers::soda_music::SodaMusicApi;
-use crate::models::ITrackMetadata;
 use super::{ISearcher, ISearchResult, SearcherType};
 
 pub struct SodaMusicSearcher {

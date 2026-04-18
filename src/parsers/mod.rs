@@ -13,10 +13,7 @@ pub static RE: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"\[(\d+),(\d+)\]([^\[\n]+)").unwrap()
 });
 
-pub static LRC_LINE_TIMESTAMP: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"\[(\d+):(\d+)[\.:](\d+)\]([^\[\n]+)").unwrap()
-    //你知道吗 网易云的lrc是[mm:ss:xx]而翻译歌词是[mm:ss.xx]
-});
+
 
 pub static LINE_TIMESTAMP: LazyLock<Regex> = LazyLock::new(|| {
     Regex::new(r"\[(\d+),(\d+)\](.+)").unwrap()
