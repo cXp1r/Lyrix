@@ -410,11 +410,11 @@ mod tests {
     #[allow(unused_variables)]
     fn jtrack(s: &str) -> TrackMetadata {
         TrackMetadata {
-            title: Some("Remember".to_string()),
-            artist: Some(format!("yuigot {} 早見沙織", s)),
+            title: Some("メルト (Melt) (CPK! Remix|かぐや ver.)".to_string()),
+            artist: Some(format!("ryo {} 夏吉ゆうこ", s)),
             album: Some("超かぐや姫！".to_string()),
             album_artist: Some("超かぐや姫！".to_string()),
-            duration_ms: Some(232616),
+            duration_ms: Some(271627),
             ..Default::default()
         }
     }
@@ -453,10 +453,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_qqmusic(){
-        let track = etrack("\\");
+        let track = jtrack("/");
         #[allow(unused_variables)]
         let result = fetch_qqmusic_lyrics(&track).await;
-        println!("{:?}",result)        
+        //println!("{:?}",result)        
     }
 
     #[tokio::test]
