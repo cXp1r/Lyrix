@@ -71,10 +71,7 @@ impl ISearcher for SodaMusicSearcher {
         ','
     }
     async fn make_search_string(&self, track: &dyn ITrackMetadata) -> Option<String> {
-        let combined = format!(
-            "{}",
-            track.title().unwrap_or_default(),
-        ).replace(" - ", " ").trim().to_string();
+        let combined = track.title().unwrap_or_default().to_string();
 
         if combined.is_empty() {
             None

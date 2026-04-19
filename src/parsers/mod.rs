@@ -57,7 +57,7 @@ pub trait IParsers {
                 (None, None)         => break,
             };
             let d1 = content[cpos..d1_end]
-                .parse::<u32>()
+                .parse::<u16>()
                 .map_err(|e| format!("d1: {:?} raw={:?}", e, &content[cpos..d1_end]))?;
 
             // 跳到 '>' 后面
@@ -72,8 +72,8 @@ pub trait IParsers {
             cpos = text_end;
 
             result.push(TextInfo {
-                start_time: self.get_offset_time(s, s1)? as u16,
-                duration: d1 as u16,
+                start_time: self.get_offset_time(s, s1)?,
+                duration: d1,
                 text: text_raw,
             });
         }

@@ -1,15 +1,40 @@
 use crate::parsers::{IParsers, lrc::*};
-use memchr::memchr;
+use memchr::{memchr, memchr2};
 use crate::models::*;
 
 pub struct NeteaseLrcParser{
     pub version: u8,
 }
 impl LrcParser for NeteaseLrcParser {
-    fn calc_timestamp(&self, t1: u32, t2: u32, t3: u32) -> u32 {
-        match self.version {
-            3 => t1 * 60000 + t2 * 1000 + t3,
-            _ => t1 * 60000 + t2 * 1000 + t3*10
+    fn parse_lrc_time(&self, tag: &str) -> Result<u32, String> {
+        let tbytes = tag.as_bytes();
+
+        // 找第一个 ':'
+        let Some(col) = memchr(b':', tbytes) else {
+            return Err(format!("no ':' in time tag: {:?}", tag));
+        };
+
+        let minutes = tag[..col]
+            .parse::<u32>()
+            .map_err(|e| format!("minutes: {:?} raw={:?}", e, &tag[..col]))?;
+
+        // col 之后找 ':' 或 '.'，看哪个先出现来盲判格式
+        let Some(sep) = memchr2(b':', b'.', &tbytes[col + 1..]) else {
+            return Err(format!("no second separator in time tag: {:?}", tag));
+        };
+        let sep = col + 1 + sep; // 转绝对偏移
+
+        let seconds = tag[col + 1..sep]
+            .parse::<u32>()
+            .map_err(|e| format!("seconds: {:?} raw={:?}", e, &tag[col+1..sep]))?;
+        let centis = tag[sep + 1..]
+            .parse::<u32>()
+            .map_err(|e| format!("centis: {:?} raw={:?}", e, &tag[sep+1..]))?;
+
+        // ':' → v3 毫秒直接用，'.' → v4 百分秒 *10
+        match tbytes[sep] {
+            b'.' => Ok(minutes * 60_000 + seconds * 1_000 + centis),
+            _    => Ok(minutes * 60_000 + seconds * 1_000 + centis * 10),
         }
     }
 }
@@ -51,7 +76,7 @@ impl IParsers for NeteaseParser {
                 (None, None)         => break,
             };
             let d1 = content[cpos..d1_end]
-                .parse::<u32>()
+                .parse::<u16>()
                 .map_err(|e| format!("d1: {:?} raw={:?}", e, &content[cpos..d1_end]))?;
 
             // 跳到 ')' 后面
@@ -66,8 +91,8 @@ impl IParsers for NeteaseParser {
             cpos = text_end;
 
             result.push(TextInfo {
-                start_time: self.get_offset_time(s, s1)? as u16,
-                duration: d1 as u16,
+                start_time: self.get_offset_time(s, s1)?,
+                duration: d1,
                 text: text_raw,
             });
         }
