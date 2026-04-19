@@ -3,7 +3,7 @@
 
 仓库自用,并提供给自己参与开发的仓库用
 
-逻辑(C#源代码)源于[Lyricify-Lyrics-Helper](https://github.com/WXRIW/Lyricify-Lyrics-Helper)
+Api接口抓取歌词源于[Lyricify-Lyrics-Helper](https://github.com/WXRIW/Lyricify-Lyrics-Helper)
 
 ## 功能
 
