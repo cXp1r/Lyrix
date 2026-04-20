@@ -2,6 +2,7 @@
 ## 声明
 
 仓库自用,并提供给自己参与开发的仓库用
+parsers实现µs级别解析(<1ms无需预热)
 
 Api接口抓取歌词源于[Lyricify-Lyrics-Helper](https://github.com/WXRIW/Lyricify-Lyrics-Helper)
 
@@ -83,9 +84,6 @@ use lyricify_lyrics_provider::helpers;
 src/
 ├── lib.rs
 ├── smtc_lyrics.rs
-├── helpers/
-│   ├── mod.rs
-│   └── string_helper.rs
 ├── models/
 │   ├── mod.rs
 │   ├── additional_file_info.rs
