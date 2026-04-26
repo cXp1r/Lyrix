@@ -1,7 +1,7 @@
-﻿# Lyricify Lyrics Provider
+﻿# Lyrix
 ## 声明
 
-仓库自用,并提供给自己参与开发的仓库用
+仓库自用,并提供给自己参与开发的仓库用,不处理歌词元信息
 µs级别解析
 
 smtc信息请在外部处理好,对照接口传入
@@ -19,7 +19,7 @@ smtc信息请在外部处理好,对照接口传入
 
 ```toml
 [dependencies]
-lyricify-lyrics-provider = { path = "../lyricify-lyrics-provider-rs" }
+lyrix = { path = "../lyrix" }
 tokio = { version = "1", features = ["full"] }
 ```
 

@@ -1,8 +1,8 @@
 [package]
-name = "lyricify-lyrics-provider"
+name = "Lyrix"
 version = "26.2.1"
 edition = "2021"
-description = "Network lyrics provider for Lyricify. Searchers, providers and SMTC lyrics pipeline."
+description = "High-performance lyrics tool"
 license = "Apache-2.0"
 
 
