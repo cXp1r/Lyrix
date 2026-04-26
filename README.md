@@ -41,9 +41,9 @@ get_lyrics(
 ### 访问解析/模型/工具模块
 
 ```rust
-use lyricify_lyrics_provider::parsers;
-use lyricify_lyrics_provider::models;
-use lyricify_lyrics_provider::helpers;
+use lyrix::parsers;
+use lyrix::models;
+use lyrix::helpers;
 ```
 
 ## 支持的播放器
@@ -101,8 +101,8 @@ src/
 ## 代理设置
 
 ```rust
-use lyricify_lyrics_provider::providers::proxy;
-use lyricify_lyrics_provider::providers::netease::NeteaseApi;
+use lyrix::providers::proxy;
+use lyrix::providers::netease::NeteaseApi;
 
 let client = proxy::create_proxy_client("127.0.0.1", 7890, None, None)?;
 let api = NeteaseApi::with_client(client);
