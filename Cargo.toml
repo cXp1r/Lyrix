@@ -1,5 +1,5 @@
 [package]
-name = "Lyrix"
+name = "lyrix"
 version = "26.2.1"
 edition = "2021"
 description = "High-performance lyrics tool"
