@@ -2,6 +2,7 @@ use crate::parsers::{IParsers, lrc::*};
 use memchr::{memchr, memchr2};
 use crate::models::*;
 
+///网易LRC歌词解析器
 pub struct NeteaseLrcParser{
     pub version: u8,
 }
@@ -39,7 +40,7 @@ impl LrcParser for NeteaseLrcParser {
     }
 }
 
-
+///网易逐字歌词解析器
 pub struct NeteaseParser;
 
 impl IParsers for NeteaseParser {

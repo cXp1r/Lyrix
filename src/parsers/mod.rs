@@ -7,6 +7,7 @@ pub mod lrc;
 pub mod decrypt;
 use memchr::memchr;
 use crate::models::*;
+///逐字歌词解析器
 pub trait IParsers {
 
     fn get_offset_time(&self, t1: u32, t2: u32) -> Result<u16, String> {

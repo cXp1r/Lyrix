@@ -1,6 +1,6 @@
 use super::{SyncTypes, AdditionalFileInfo, LyricsTypes};
 
-
+///歌词文件信息,占位给后面歌词元信息解析用
 #[derive(Debug, Clone)]
 pub struct LyricsFileInfo {
     pub lyrics_type: LyricsTypes,

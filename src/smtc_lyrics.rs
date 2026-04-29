@@ -102,7 +102,7 @@ pub async fn get_lyrics_with_player(
 
     fetch_lyrics_from_player(player, &metadata).await
 }
-
+/// 获取歌词 appid为smtc获取到的appid
 pub async fn get_lyrics_with_appid(
     app_id: &str,
     title: &str,

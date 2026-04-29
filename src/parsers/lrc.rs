@@ -1,6 +1,6 @@
 use crate::models::LineInfo;
 use memchr::memchr;
-
+///LRC歌词解析器
 pub trait LrcParser {
     fn parse_lrc_time(&self, tag: &str) -> Result<u32, String> {
         let tbytes = tag.as_bytes();

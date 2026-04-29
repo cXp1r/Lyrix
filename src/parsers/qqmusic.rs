@@ -2,8 +2,10 @@ use crate::parsers::lrc::LrcParser;
 use crate::parsers::{IParsers, decrypt::qrc::*};
 use crate::models::*;
 use memchr::memchr;
+///QQ音乐LRC歌词解析器
 pub struct QQMusicLrcParser;
 impl LrcParser for QQMusicLrcParser {}
+///QQ音乐逐字歌词解析器
 pub struct QQMusicParser;
 impl QQMusicParser {
     fn decrypt(&self, lyrics: &str) -> Result<String, String> {

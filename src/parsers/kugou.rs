@@ -1,5 +1,6 @@
 use crate::parsers::{IParsers, decrypt::krc::*};
 use crate::models::*;
+///酷狗歌词解析器
 pub struct KugouParser;
 impl KugouParser {
     fn decrypt(&self, lyrics: &str) -> Result<String, String> {
