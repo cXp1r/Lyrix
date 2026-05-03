@@ -1,4 +1,5 @@
 //pub mod attributes_helper;//整改了还没修
+pub mod applemusic;
 pub mod qqmusic;
 pub mod netease;
 pub mod soda_music;
