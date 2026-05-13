@@ -4,46 +4,42 @@ use std::collections::HashMap;
 
 pub struct ApplemusicApi {
     api: BaseApi,
-    _auth: String,
     _token: String,
 }
 
 impl ApplemusicApi {
-    fn applemusic_headers(auth: &str, token: &str) -> HashMap<String, String> {
+    fn applemusic_headers(token: &str) -> HashMap<String, String> {
         let mut h = HashMap::new();
-        h.insert("Authorization".to_string(), auth.to_string());
+        h.insert("Authorization".to_string(), "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IldlYlBsYXlLaWQifQ.eyJpc3MiOiJBTVBXZWJQbGF5IiwiaWF0IjoxNzc3MjQwMjk4LCJleHAiOjE3ODQ0OTc4OTgsInJvb3RfaHR0cHNfb3JpZ2luIjpbImFwcGxlLmNvbSJdfQ.VYQzXEvKE1lE7AUim5cnBwge3aOWDOi1Y5E0gf6cUQeF3qLOS8clnzOkmiHySfr0wgGcDKM49l4YQe-K5GiuZg".to_string());
         h.insert("Media-User-Token".to_string(), token.to_string());
         h.insert("Origin".to_string(), "https://music.apple.com".to_string());
         h
     }
 
-    pub fn new(auth: String, token: String) -> Self {
-        let headers = Self::applemusic_headers(&auth, &token);
+    pub fn new(token: String) -> Self {
+        let headers = Self::applemusic_headers(&token);
         Self {
             api: BaseApi::new(None, Some(headers)),
-            _auth: auth,
             _token: token,
         }
     }
 
-    pub fn with_client(client: reqwest::Client, auth: String, token: String) -> Self {
-        let headers = Self::applemusic_headers(&auth, &token);
+    pub fn with_client(client: reqwest::Client, token: String) -> Self {
+        let headers = Self::applemusic_headers(&token);
         Self {
             api: BaseApi::with_client(client, None, Some(headers)),
-            _auth: auth,
             _token: token,
         }
     }
 
-    pub async fn search(&self, keyword: &str) -> Result<SearchResult, reqwest::Error> {
+    pub async fn search(&self, keyword: &str) -> Result<Option<SearchResult>, reqwest::Error> {
         let encoded = urlencoding::encode(keyword);
         let url = format!(
             "https://amp-api-edge.music.apple.com/v1/catalog/cn/search?term={}&types=songs&limit=20",
             encoded
         );
         let resp = self.api.get_async(&url).await?;
-        let parsed: SearchResult = serde_json::from_str(&resp).unwrap_or_default();
-        Ok(parsed)
+        Ok(serde_json::from_str(&resp).ok())
     }
 
     pub async fn get_lyric(&self, id: &str) -> Result<LyricResult, reqwest::Error> {
@@ -63,7 +59,7 @@ impl ApplemusicApi {
 
 impl Default for ApplemusicApi {
     fn default() -> Self {
-        Self::new(String::new(), String::new())
+        Self::new(String::new())
     }
 }
 
@@ -81,7 +77,7 @@ pub struct Results {
 
 #[derive(Debug, Deserialize, Default)]
 pub struct Songs {
-    pub data: Vec<Song>,
+    pub data: Option<Vec<Song>>,
 }
 
 #[derive(Debug, Deserialize, Default)]
