@@ -10,7 +10,7 @@ pub struct ApplemusicApi {
 impl ApplemusicApi {
     fn applemusic_headers(token: &str) -> HashMap<String, String> {
         let mut h = HashMap::new();
-        h.insert("Authorization".to_string(), "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IldlYlBsYXlLaWQifQ.eyJpc3MiOiJBTVBXZWJQbGF5IiwiaWF0IjoxNzc3MjQwMjk4LCJleHAiOjE3ODQ0OTc4OTgsInJvb3RfaHR0cHNfb3JpZ2luIjpbImFwcGxlLmNvbSJdfQ.VYQzXEvKE1lE7AUim5cnBwge3aOWDOi1Y5E0gf6cUQeF3qLOS8clnzOkmiHySfr0wgGcDKM49l4YQe-K5GiuZg".to_string());
+        h.insert("Authorization".to_string(), "Bearer eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IldlYlBsYXlLaWQifQ.eyJpc3MiOiJBTVBXZWJQbGF5IiwiaWF0IjoxNzc3MjQwMjk4LCJleHAiOjE3ODQ0OTc4OTgsInJvb3RfaHR0cHNfb3JpZ2luIjpbImFwcGxlLmNvbSJdfQ.VYQzXEvKE1lE7AUim5cnBwge3aOWDOi1Y5E0gf6cUQeF3qLOS8clnzOkmiHySfr0wgGcDKM49l4YQe-K5GiuZg".to_string());
         h.insert("Media-User-Token".to_string(), token.to_string());
         h.insert("Origin".to_string(), "https://music.apple.com".to_string());
         h
@@ -39,6 +39,7 @@ impl ApplemusicApi {
             encoded
         );
         let resp = self.api.get_async(&url).await?;
+        
         Ok(serde_json::from_str(&resp).ok())
     }
 
@@ -99,8 +100,14 @@ pub struct SongAttributes {
     pub has_lyrics: Option<bool>,         // snake_case
 }
 
+
 #[derive(Debug, Deserialize, Default)]
+
 pub struct LyricResult {
+    pub data: Option<Vec<LyricData>>,
+}
+#[derive(Debug, Deserialize, Default)]
+pub struct LyricData {
     #[serde(rename = "type")]
     pub lyrics_type: Option<String>,
     pub attributes: Option<LyricAttributes>,
