@@ -21,8 +21,9 @@ pub trait IParsers {
     }
     fn parse(&self, lyrics: String) -> Result<Vec<LineInfo>, String> {
         let start = std::time::Instant::now();
-        let result = self.parse_without_re(lyrics);
-        println!("parse took: {:?}", start.elapsed());
+        let result = self.parse_without_st(lyrics);
+        let t = start.elapsed();
+        println!("parse took: {:?}", t);
         result
     }
     fn parse_syllables(&self, s: u32, content: &str) -> Result<Vec<TextInfo>, String> {
@@ -85,7 +86,7 @@ pub trait IParsers {
     
 
     
-    fn parse_without_re(&self, lyrics: String) -> Result<Vec<LineInfo>, String> {
+    fn parse_without_st(&self, lyrics: String) -> Result<Vec<LineInfo>, String> {
         let mut lineinfo: Vec<LineInfo> = Vec::new();
         let src = lyrics.as_bytes();
         let len = src.len();
