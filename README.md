@@ -9,10 +9,12 @@
 
 ## 计划(按优先级排序)
 - [ ] 试听音乐区间捕获
-- [ ] AppleMusic 逐字解析
+- [ ] AppleMusic 防碰撞
 - [ ] Spotify totp逆向(已完成, 待接入)
 - [ ] 洛雪音乐
 
+## 已完成
+- [x] AppleMusic 逐字解析
 ## 功能
 
 - **Providers** — 网易云,QQ音乐,酷狗,汽水音乐,AppleMusic的 API 客户端

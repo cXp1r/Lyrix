@@ -488,7 +488,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_apple_music(){
+    async fn test_apple_music_normal(){
         *TOKEN.lock().unwrap() = "自己填自己的".to_string();
         let a = "小糸 侑(CV:高田憂希)、七海燈子(CV:寿 美菜子) — TVアニメ「やがて君になる」エンディングテーマ「hectopascal」 - EP".to_string();
         let track = TrackMetadata {
@@ -497,6 +497,23 @@ mod tests {
             album: Some(a.clone()),
             album_artist: Some(a),
             duration_ms: Some(237507),
+            ..Default::default()
+        };
+        #[allow(unused_variables)]
+        let result = fetch_apple_music_lyrics(&track).await;
+        println!("{:?}",result)
+    }
+
+    #[tokio::test]
+    async fn test_apple_music(){
+        *TOKEN.lock().unwrap() = "自己填自己的".to_string();
+        let a = "Meg Myers — Running Up That Hill - Single".to_string();
+        let track = TrackMetadata {
+            title: Some("Running Up That Hill".to_string()),
+            artist: Some(a.clone()),
+            album: Some(a.clone()),
+            album_artist: Some(a),
+            duration_ms: Some(263717),
             ..Default::default()
         };
         #[allow(unused_variables)]

@@ -1,4 +1,4 @@
-use crate::models::LineInfo;
+use crate::models::{LineInfo, TextInfo};
 use memchr::{memchr, memmem};
 
 pub struct AppleMusicParser {
@@ -7,23 +7,165 @@ pub struct AppleMusicParser {
 
 impl AppleMusicParser {
     #[allow(unused_variables)]
-    pub fn parse_time(&self, tag: &str, syllables_by_word: bool) -> Result<u32,String> {
-        //完全要求格式化
-        //00:03:26.910
-        //012345678901
+    pub fn parse_syllables_time(&self, tag: &str) -> Result<u32, String> {
+        //mm:ss.xxx
+        let mut cpos = 0;
+        let len = tag.len();
+        let bytes = tag.as_bytes();
+        
+        let mut time: u32 = if let Some(m) = memchr(b':',bytes) {
+            cpos = m + 1;
+            60_000 * tag[0..m].parse::<u32>().map_err(|_e| "Applemusic Parser: failed to parse hours")?
+        } else {
+            0
+        };
+        let Some(s) = memchr(b'.',bytes) else {
+            return Err("Applemusic Parser: seconds not found".into());
+        };
+        time += 1000 * tag[cpos..s].parse::<u32>().map_err(|_e| "Applemusic Parser: failed to parse seconds")?;
+        time += tag[s + 1..].parse::<u32>().map_err(|_e| "Applemusic Parser: failed to parse centis")?;
+    
+        Ok(time)
+    }
+    pub fn parse_time(&self, tag: &str) -> Result<u32, String> {
         //时:分:秒.毫秒
         let hours = tag[0..2].parse::<u32>()
             .map_err(|_e| "Applemusic Parser: failed to parse hours")?;
         let minutes = tag[3..5].parse::<u32>()
-            .map_err(|_e| "Applemusic Parser: failed to parse hours")?;
+            .map_err(|_e| "Applemusic Parser: failed to parse minutes")?;
         let seconds = tag[6..8].parse::<u32>()
-            .map_err(|_e| "Applemusic Parser: failed to parse hours")?;
+            .map_err(|_e| "Applemusic Parser: failed to parse seconds")?;
         let centis = tag[9..11].parse::<u32>()
-            .map_err(|_e| "Applemusic Parser: failed to parse hours")?;
+            .map_err(|_e| "Applemusic Parser: failed to parse centis")?;
 
         Ok(hours * 3_600_000 +minutes * 60_000 + seconds * 1_000 + centis * 10)
     }
-    pub fn parse(&self, lyrics: String) -> Result<Vec<LineInfo>, String> {
+    pub fn parse_syllables_line(&self, line: &str) -> Result<LineInfo, String> {
+        let mut textinfo: Vec<TextInfo> = Vec::new();
+        let mut cpos ;
+        let bytes = line.as_bytes();
+        let mut it = memmem::find_iter(bytes, "=\"");
+        let lst = loop {
+            let c: usize = match it.next() {
+                Some(l) => {
+                    if &line[l - 3 .. l] != "gin"{
+                        continue;
+                    }
+                    l
+                },
+                None => {
+                    return Err("Applemusic Parser: line start_time not found".into());
+                }
+            } + 2;
+            let Some(w) = memchr(b'\"', &bytes[c..]) else {
+                return Err("Applemusic Parser: line start_time not found".into());
+            };
+            break self.parse_syllables_time(&line[c .. c + w])?
+        };
+        let ld = loop {
+            let c: usize = match it.next() {
+                Some(l) => {
+                    if &line[l - 3 .. l] != "end"{
+                        continue;
+                    }
+                    l
+                },
+                None => {
+                    return Err("Applemusic Parser: line start_time not found".into());
+                }
+            } + 2;
+            let Some(w) = memchr(b'\"', &bytes[c + 2..]) else {
+                return Err("Applemusic Parser: line start_time not found".into());
+            };
+            break self.parse_syllables_time(&line[c .. c + w])?
+        } - lst;
+        'outer: loop {
+            match it.next() {
+                Some(l) => {
+                    if &line[l - 3 .. l] != "gin"{
+                        continue;
+                    }//抓取begin,如果不是 走下一个
+                    cpos = l + 2;
+                    let Some(c) = memchr(b'\"', &bytes[cpos..]) else {
+                        return Err("Applemusic Parser: word start_time not found".into());
+                    };
+                    let st = self.parse_syllables_time(&line[cpos..cpos + c])?;
+
+                    let e = loop {
+                        match it.next() {
+                            Some(e) => {
+                                if &line[e - 3 .. e] != "end"{
+                                    continue;
+                                }
+                                break e
+                            },
+                            None => {
+                                break 'outer;
+                            }
+                        };
+                    };
+                    cpos = e + 2;
+                    let Some(c2) = memchr(b'\"', &bytes[cpos..]) else {
+                        return Err("Applemusic Parser: word end_time not found".into());
+                    };
+                    let du = self.parse_syllables_time(&line[cpos..cpos + c2])? - st;
+                    cpos += c2;
+                    let Some(t1) = memchr(b'>',&bytes[cpos..]) else {
+                        return Err("Applemusic Parser: failed to parse lyrics".into());
+                    };
+                    cpos += t1 + 1;
+                    
+                    let Some(t2) = memchr(b'<',&bytes[cpos..]) else {
+                        return Err("Applemusic Parser: failed to parse lyrics".into());
+                    };
+                    let text =  line[cpos..cpos + t2].to_string();
+                    
+                    
+
+                    textinfo.push(
+                        TextInfo { start_time: (st - lst) as u16, duration: du as u16, text: text }
+                    );
+                },
+                None => {
+                    break;
+                }
+            }
+        }
+        Ok(
+            LineInfo { start_time: lst, duration: ld as u16, text: String::new(), syllables: textinfo }
+        )
+
+    }
+
+    pub fn parse_syllables(&self, lyrics: String) -> Result<Vec<LineInfo>, String> {
+        let mut lineinfo: Vec<LineInfo> = Vec::new();
+        let bytes = lyrics.as_bytes();
+        let mut its = memmem::find_iter(bytes, "<p");
+        let mut ite = memmem::find_iter(bytes, "</p");
+        loop {
+            match its.next() {
+                Some(l) => {
+                    let e = match ite.next() {
+                        Some(e) => {
+                            e
+                        },
+                        None => {
+                            break;
+                        }
+                    };
+                    if l >= e {
+                        return Err("Applemusic Parser: Unexpected error".into());
+                    }
+                    lineinfo.push(self.parse_syllables_line(&lyrics[l..e])?);
+                },
+                None => {
+                    break;
+                }
+            }
+        }
+        Ok(lineinfo)
+    }
+    pub fn parse_w(&self, lyrics: String) -> Result<Vec<LineInfo>, String> {
         let mut lineinfo: Vec<LineInfo> = Vec::new();
         
         let Some(mut cpos) = memmem::find(lyrics.as_bytes(), b"div") else {
@@ -44,7 +186,7 @@ impl AppleMusicParser {
                         return Err("Applemusic Parser: start_time not found".into());
                     };
                     //println!("{}",&ulyrics[cpos..cpos + c]);
-                    self.parse_time(&ulyrics[cpos..cpos + c], false)?
+                    self.parse_time(&ulyrics[cpos..cpos + c])?
                 },
                 None => {
                     break;
@@ -56,7 +198,7 @@ impl AppleMusicParser {
                     let Some(c) = memchr(b'\"', &bytes[cpos..]) else {
                         return Err("Applemusic Parser: start_time not found".into());
                     };
-                    self.parse_time(&ulyrics[cpos..cpos + c], false)?
+                    self.parse_time(&ulyrics[cpos..cpos + c])?
                 },
                 None => {
                     break;
@@ -80,21 +222,19 @@ impl AppleMusicParser {
         }
         Ok(lineinfo)
     }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn test() {
-        let lyrics = "<tt xmlns=\"http://www.w3.org/ns/ttml\" xmlns:itunes=\"http://music.apple.com/lyric-ttml-internal\" itunes:timing=\"Line\" xml:lang=\"en\"><head><metadata><iTunesMetadata xmlns=\"http://music.apple.com/lyric-ttml-internal\"><translations/><songwriters><songwriter>Kanae Nakamura (pka Kanata Nakamura)</songwriter><songwriter>Yuki Honda</songwriter></songwriters></iTunesMetadata></metadata></head><body dur=\"00:03:47.830\"><div begin=\"00:00:04.540\" end=\"00:03:47.830\"><p begin=\"00:00:04.540\" end=\"00:00:11.100\">知りたくて知りたくない このままでいい</p><p begin=\"00:00:11.100\" end=\"00:00:34.070\">(マルバツ)がつくのなら ずっとずっと明日にならないで</p><p begin=\"00:00:34.070\" end=\"00:00:41.360\">遠いセカイのことだと思っていた (思っていた)</p><p begin=\"00:00:41.360\" end=\"00:00:48.030\">わたしには関係ないこんなキモチ (こんなキモチ)</p><p begin=\"00:00:48.030\" end=\"00:00:55.400\">君にだったらアリかもね ココロの中を見せても だってきっと変わらない</p><p begin=\"00:00:55.400\" end=\"00:00:59.250\">ココロの位置がわかったよ なんだか苦しくなるよ</p><p begin=\"00:00:59.250\" end=\"00:01:02.820\">ふいに変わる 風向きが</p><p begin=\"00:01:02.820\" end=\"00:01:06.680\">明日は何になる? やがて君になる</p><p begin=\"00:01:06.680\" end=\"00:01:10.320\">繊細な中身 覗いてみて</p><p begin=\"00:01:10.320\" end=\"00:01:14.260\">モヤモヤしてる 気持ちがバレたら</p><p begin=\"00:01:14.260\" end=\"00:01:32.980\">君は逃げてしまうかな</p><p begin=\"00:01:32.980\" end=\"00:01:40.100\">なんとなく毎日が輝いてる (輝いてる)</p><p begin=\"00:01:40.100\" end=\"00:01:47.280\">特別を特別と気付かないまま (気付かないまま)</p><p begin=\"00:01:47.280\" end=\"00:01:54.800\">そんなことより明日は 2人でどこかへ行こう 今の距離は壊さずに</p><p begin=\"00:01:54.800\" end=\"00:01:58.630\">少しずつ壊れていく 2人の距離はそのうち</p><p begin=\"00:01:58.630\" end=\"00:02:01.510\">限界越えて ああ ゼロに</p><p begin=\"00:02:01.510\" end=\"00:02:05.520\">明日は誰になる? やがて君になる</p><p begin=\"00:02:05.520\" end=\"00:02:09.380\">どんなに早く逃げたとして</p><p begin=\"00:02:09.380\" end=\"00:02:13.010\">すれ違っても ずっと君でいて</p><p begin=\"00:02:13.010\" end=\"00:02:32.350\">きっと会いに行くから</p><p begin=\"00:02:32.350\" end=\"00:02:47.250\">近くて (まだ) 遠くて (ああ) もう少しで届くのに</p><p begin=\"00:02:47.250\" end=\"00:02:53.250\">透明なガラスの向こう</p><p begin=\"00:02:53.250\" end=\"00:02:57.550\">君の剥き出しのココロ</p><p begin=\"00:02:57.550\" end=\"00:03:04.290\">守ってあげたくて 触れられず</p><p begin=\"00:03:04.290\" end=\"00:03:08.520\">明日は何になる? やがて君になる</p><p begin=\"00:03:08.520\" end=\"00:03:12.220\">繊細な中身 覗いてみて</p><p begin=\"00:03:12.220\" end=\"00:03:16.030\">モヤモヤしてる 気持ちがバレたら</p><p begin=\"00:03:16.030\" end=\"00:03:19.680\">君は逃げてしまうかな</p><p begin=\"00:03:19.680\" end=\"00:03:23.340\">明日は誰になる? やがて君になる</p><p begin=\"00:03:23.340\" end=\"00:03:26.910\">どんなに早く逃げたとして</p><p begin=\"00:03:26.910\" end=\"00:03:30.830\">すれ違っても ずっと君でいて</p><p begin=\"00:03:30.830\" end=\"00:03:47.830\">きっと会いに行くから</p></div></body></tt>";
-        
-        let parser = AppleMusicParser{};
-        match parser.parse(lyrics.to_string()) {
-            Ok(m) => println!("{:?}",m),
-            Err(e) => println!("{:?}",e),
-        }
-        return ;
-        
+    pub fn parse(&self, lyrics: String) -> Result<Vec<LineInfo>, String> {
+        let start = std::time::Instant::now();
+        let r = match lyrics.find("span") {
+            Some(_e) => {
+                self.parse_syllables(lyrics)
+            },
+            None => {
+                self.parse_w(lyrics)
+            }
+        };        
+        println!("parse took: {:?}", start.elapsed());
+        r
     }
 }
+
+
