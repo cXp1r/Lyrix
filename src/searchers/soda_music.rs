@@ -18,9 +18,6 @@ impl Default for SodaMusicSearcher {
     }
 }
 
-//挨千刀的汽水只给两个arg
-//还好给了时长...不像隔壁酷狗
-//为了提高爆率,含泪加上时长匹配
 #[async_trait]
 impl ISearcher for SodaMusicSearcher {
     fn name(&self) -> &str { "SodaMusic" }
