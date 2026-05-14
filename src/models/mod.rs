@@ -4,7 +4,6 @@ mod lyrics_data;
 mod lyrics_types;
 mod track_metadata;
 mod file_info;
-mod additional_file_info;
 
 
 
@@ -14,4 +13,3 @@ pub use lyrics_data::*;
 pub use lyrics_types::*;
 pub use track_metadata::*;
 pub use file_info::*;
-pub use additional_file_info::*;
