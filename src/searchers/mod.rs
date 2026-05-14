@@ -230,7 +230,7 @@ pub trait ISearcher: Send + Sync {
             }
         };
         
-        //println!("{} {}\n",result.duration_ms().unwrap_or_default(),score);
+        //println!("{:?} {}\n",result.trial().unwrap_or_default(),score);
         (score, is_trial)
     }
 

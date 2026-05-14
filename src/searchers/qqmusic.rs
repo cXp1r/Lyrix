@@ -47,9 +47,10 @@ impl ISearcher for QQMusicSearcher {
                                     let id  = song.id.unwrap_or_default();
                                     let trial = if let Some(file) = song.file {
                                         if let (Some(b), Some(e)) = (file.b_30s, file.e_30s) {
-                                            Some([b, e - b]);
+                                            Some([b, e - b])
+                                        } else {
+                                            None
                                         }
-                                        None
                                     } else {
                                         None
                                     };
