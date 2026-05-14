@@ -184,6 +184,7 @@ async fn fetch_netease_lyrics(
                 album: Some(best.album.clone()),
                 duration_ms: best.duration_ms,
                 is_trial: best.is_trial,
+                trial: best.trial,
                 ..Default::default()
             }),
     };
@@ -231,6 +232,7 @@ async fn fetch_qqmusic_lyrics(
                 album: Some(best.album.clone()),
                 duration_ms: best.duration_ms,
                 is_trial: best.is_trial,
+                trial: best.trial,
                 ..Default::default()
             }),
     };
@@ -300,6 +302,7 @@ async fn fetch_kugou_lyrics(
                 album: Some(best.album.clone()),
                 duration_ms: best.duration_ms,
                 is_trial: best.is_trial,
+                trial: best.trial,
                 ..Default::default()
             }),
     };
@@ -350,6 +353,7 @@ async fn fetch_soda_music_lyrics(
                             album: Some(best.album.clone()),
                             duration_ms: best.duration_ms,
                             is_trial: best.is_trial,
+                            trial: best.trial,
                             ..Default::default()
                         }),
                 };
@@ -405,6 +409,7 @@ async fn fetch_apple_music_lyrics(
                                 album: Some(best.album.clone()),
                                 duration_ms: best.duration_ms,
                                 is_trial: false,
+                                trial: None,
                                 ..Default::default()
                             }),
                     };
