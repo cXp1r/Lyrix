@@ -556,7 +556,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_soda_music(){
-        let track = etrack(",");
+        let track = jtrack(",");
         #[allow(unused_variables)]
         let result = fetch_soda_music_lyrics(&track).await;
         println!("{:?}",result)
