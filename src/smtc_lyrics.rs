@@ -474,7 +474,7 @@ mod tests {
             artist: Some(format!("The Weeknd")),
             album: Some("".to_string()),
             album_artist: Some("".to_string()),
-            duration_ms: Some(60000u32),
+            duration_ms: Some(60055u32),
             ..Default::default()
         }
     }
