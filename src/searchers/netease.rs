@@ -1,7 +1,6 @@
 use async_trait::async_trait;
 use crate::providers::netease::NeteaseApi;
 use super::{ISearcher, ISearchResult, SearcherType};
-
 pub struct NeteaseSearcher {
     api: NeteaseApi,
 }
@@ -44,7 +43,31 @@ impl ISearcher for NeteaseSearcher {
                         Some(serde_json::Value::String(s)) => s.clone(),
                         _ => String::new(),
                     };
-
+                    let trial = {
+                        if let Some(trial) = self.api.get_detail(&id).await? {
+                            
+                            if let Some(data) = trial.data {
+                                if let Some(data) = data.get(0) {
+                                    if let Some(info) = &data.freetrialinfo {
+                                        if let (Some(s), Some(e)) = (info.start, info.end) {
+                                            Some([s as u32 * 1000, (e - s) as u32 * 1000])
+                                        } else {
+                                            None
+                                        }
+                                    } else {
+                                        None
+                                    }
+                                } else {
+                                    None
+                                }
+                            } else {
+                                None
+                            }
+                        } else {
+                            None
+                        }
+                    };
+                    
                     results.push(Box::new(NeteaseSearchResult {
                         id,
                         title,
@@ -52,6 +75,8 @@ impl ISearcher for NeteaseSearcher {
                         album,
                         duration_ms: duration,
                         match_score: 0,
+                        trial,
+                        is_trial: false,
                     }));
                 }
             }
@@ -73,6 +98,8 @@ pub struct NeteaseSearchResult {
     pub album: String,
     pub duration_ms: Option<u32>,
     pub match_score: i8,
+    pub trial: Option<[u32; 2]>,
+    pub is_trial: bool,
 }
 
 impl ISearchResult for NeteaseSearchResult {
@@ -83,6 +110,8 @@ impl ISearchResult for NeteaseSearchResult {
     fn match_score(&self) -> i8 { self.match_score }
     fn set_match_score(&mut self, score: i8) { self.match_score = score; }
     fn as_any(&self) -> &dyn std::any::Any { self }
+    fn trial(&self) -> Option<[u32; 2]> { self.trial }
+    fn set_trial(&mut self, i: bool) { self.is_trial = i; }
 }
 
 #[cfg(test)]

@@ -78,7 +78,7 @@ impl ISearcher for ApplemusicSearcher {
             Some(combined)
         }
     }
-    fn compare_track(&self, track: &dyn ITrackMetadata, result: &dyn ISearchResult) -> i8 {
+    fn compare_track(&self, track: &dyn ITrackMetadata, result: &dyn ISearchResult) -> (i8, bool) {
         let mut score = 0i8;
 
         // 第一步没必要覆写,强制留着了
@@ -153,7 +153,7 @@ impl ISearcher for ApplemusicSearcher {
             }
         }
         //println!("{} {}\n",result.duration_ms().unwrap_or_default(),score);
-        score
+        (score, false)//苹果不开会员听棍母呢
     }
 }
 
@@ -175,4 +175,6 @@ impl ISearchResult for ApplemusicSearchResult {
     fn match_score(&self) -> i8 { self.match_score }
     fn set_match_score(&mut self, score: i8) { self.match_score = score; }
     fn as_any(&self) -> &dyn std::any::Any { self }
+    fn trial(&self) -> Option<[u32; 2]> { None }
+    fn set_trial(&mut self, _i: bool) {}
 }

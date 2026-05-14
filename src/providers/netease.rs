@@ -70,20 +70,21 @@ impl NeteaseApi {
     }
 
     /// 获取歌曲详情
-    pub async fn get_detail(&self, ids: &[&str]) -> Result<DetailResult, reqwest::Error> {
-        let c: Vec<serde_json::Value> = ids.iter().map(|id| {
-            serde_json::json!({ "id": id })
-        }).collect();
-
+    pub async fn get_detail(&self, id: &str) -> Result<Option<DetailResult>, reqwest::Error> {
+        let url = "api/song/enhance/player/url/v1";
+        let body = format!(
+            r#"{{"ids":"[\"{id}\"]","level":"exhigh","encodeType":"aac","csrf_token":""}}"#
+        );
+        let p = crate::parsers::decrypt::netease::eapi_encrypt(url, &body).unwrap_or(String::new());
+        println!("{:?}", p);
         let mut params = HashMap::new();
-        params.insert("c".to_string(), serde_json::to_string(&c).unwrap_or_default());
-
+        params.insert("param".to_string(), serde_json::to_string(&p).unwrap_or_default());
         let resp = self.api.post_form_async(
-            "https://music.163.com/api/v3/song/detail",
+            "https://interface3.music.163.com/eapi/api/song/enhance/player/url/v1",
             &params,
         ).await?;
 
-        Ok(serde_json::from_str(&resp).unwrap_or(DetailResult { songs: vec![], code: -1 }))
+        Ok(serde_json::from_str(&resp).ok())
     }
 }
 
@@ -131,9 +132,22 @@ pub struct Lyrics {
 
 #[derive(Debug, Deserialize)]
 pub struct DetailResult {
-    pub songs: Vec<Song>,
-    pub code: i64,
+    pub data: Option<Vec<Detail>>,
+    pub code: Option<i64>,
 }
+
+#[derive(Debug, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct Detail {
+    pub freetrialinfo: Option<Trial>,
+}
+
+#[derive(Debug, Deserialize, Default)]
+pub struct Trial  {
+    pub start: Option<u8>,
+    pub end: Option<u8>,
+}
+
 
 #[derive(Debug, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]

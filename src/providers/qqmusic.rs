@@ -172,8 +172,14 @@ pub struct Song {
     pub subtitle: Option<String>,
     pub singer: Option<Vec<Singer>>,
     pub time_public: Option<String>,
+    pub file: Option<Preview>
 }
 
+#[derive(Debug, Deserialize, Default)]
+pub struct Preview {
+    pub b_30s: Option<u32>,//试听开始ms
+    pub e_30s: Option<u32>,
+}
 #[derive(Debug, Deserialize, Default)]
 pub struct Singer {
     pub id: Option<i64>,

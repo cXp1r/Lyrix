@@ -2,7 +2,7 @@ use reqwest::{Client, header};
 use std::collections::HashMap;
 
 pub const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
-pub const COOKIE: &str = "os=pc;osver=Microsoft-Windows-10-Professional-build-19045-64bit;appver=3.0.2.230891;channel=netease;__remember_me=true";
+pub const COOKIE: &str = "os=pc;osver=Microsoft-Windows-10-Professional-build-19045-64bit;appver=3.1.32.205206;channel=netease;__remember_me=true";
 
 /// Base API client wrapping reqwest::Client
 #[derive(Clone)]

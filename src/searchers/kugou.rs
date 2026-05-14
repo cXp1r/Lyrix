@@ -49,6 +49,8 @@ impl ISearcher for KugouSearcher {
                             album,
                             duration_ms: duration,
                             match_score: 0,
+                            trial: None,//没有适配的义务
+                            is_trial: false,
                         }));
                     }
                 }
@@ -70,6 +72,8 @@ pub struct KugouSearchResult {
     pub album: String,
     pub duration_ms: Option<u32>,
     pub match_score: i8,
+    pub trial: Option<[u32; 2]>,
+    pub is_trial: bool,
 }
 
 impl ISearchResult for KugouSearchResult {
@@ -80,4 +84,6 @@ impl ISearchResult for KugouSearchResult {
     fn match_score(&self) -> i8 { self.match_score }
     fn set_match_score(&mut self, score: i8) { self.match_score = score; }
     fn as_any(&self) -> &dyn std::any::Any { self }
+    fn trial(&self) -> Option<[u32; 2]> { self.trial }
+    fn set_trial(&mut self, i: bool) { self.is_trial = i; }
 }

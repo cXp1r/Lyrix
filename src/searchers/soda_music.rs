@@ -47,6 +47,17 @@ impl ISearcher for SodaMusicSearcher {
                                     let album = track.album.as_ref().and_then(|a| a.name.clone()).unwrap_or_default();
                                     let duration = track.duration.map(|d| d as u32);
                                     let id = track.id.unwrap_or_default();
+                                    let trial = {
+                                        if let Some(preview) = track.preview {
+                                            if let (Some(s), Some(d)) = (preview.start, preview.duration) {
+                                                Some([s as u32 * 1000, d as u32 * 1000])
+                                            } else {
+                                                None
+                                            }
+                                        } else {
+                                            None
+                                        }
+                                    };
                                     results.push(Box::new(SodaMusicSearchResult {
                                         id,
                                         title,
@@ -54,6 +65,8 @@ impl ISearcher for SodaMusicSearcher {
                                         album,
                                         duration_ms: duration,
                                         match_score: 0,
+                                        trial,
+                                        is_trial: false,
                                     }));
                                 }
                             }
@@ -88,6 +101,8 @@ pub struct SodaMusicSearchResult {
     pub album: String,
     pub duration_ms: Option<u32>,
     pub match_score: i8,
+    pub trial: Option<[u32; 2]>,
+    pub is_trial: bool,
 }
 
 impl ISearchResult for SodaMusicSearchResult {
@@ -98,5 +113,7 @@ impl ISearchResult for SodaMusicSearchResult {
     fn match_score(&self) -> i8 { self.match_score }
     fn set_match_score(&mut self, score: i8) { self.match_score = score; }
     fn as_any(&self) -> &dyn std::any::Any { self }
+    fn trial(&self) -> Option<[u32; 2]> { self.trial }
+    fn set_trial(&mut self, i: bool) { self.is_trial = i; }
 }
 

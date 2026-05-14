@@ -11,7 +11,7 @@
 - [ ] 试听音乐区间捕获
 - [ ] Spotify totp逆向(已完成, 待接入)
 - [ ] 洛雪音乐
-
+- [ ] AppleMusic 实装测试
 ## 已完成
 - [x] AppleMusic 逐字解析
 - [x] AppleMusic 防碰撞

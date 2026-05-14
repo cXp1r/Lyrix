@@ -27,6 +27,8 @@ pub trait ISearchResult: Send + Sync {
     fn match_score(&self) -> i8;
     fn set_match_score(&mut self, mt: i8);
     fn as_any(&self) -> &dyn std::any::Any;
+    fn trial(&self) -> Option<[u32; 2]>;
+    fn set_trial(&mut self, i: bool);
 }
 
 /// 搜索提供者 trait
@@ -101,8 +103,9 @@ pub trait ISearcher: Send + Sync {
 
         // Set match types
         for result in search_results.iter_mut() {
-            let mt = self.compare_track(track, result.as_ref());
+            let (mt, is_trial) = self.compare_track(track, result.as_ref());
             result.set_match_score(mt);
+            result.set_trial(is_trial);
         }
 
         // Sort by match type (descending)
@@ -138,7 +141,7 @@ pub trait ISearcher: Send + Sync {
         ' '
     }
     /// 比较曲目与搜索结果的匹配程度（默认通用实现，各 searcher 可 override）
-    fn compare_track(&self, track: &dyn ITrackMetadata, result: &dyn ISearchResult) -> i8 {
+    fn compare_track(&self, track: &dyn ITrackMetadata, result: &dyn ISearchResult) -> (i8, bool) {
         let mut score = 0i8;
 
         // 第一步没必要覆写,强制留着了
@@ -199,7 +202,6 @@ pub trait ISearcher: Send + Sync {
             if let Some(result_duration_ms) = result.duration_ms() {
                 let diff = duration_ms as i64 - result_duration_ms as i64;
                 if diff == 0 { // 完全匹配
-                    
                     score += 2;
                 }else if diff <= 1000 { // 1秒内认为时长匹配
                     score += 1;
@@ -207,8 +209,29 @@ pub trait ISearcher: Send + Sync {
                 
             }
         }
+        let is_trial = {
+            if let Some(duration_ms) = track.duration_ms() {
+                if let Some(result_duration_ms) = result.trial() {
+                    let diff = duration_ms as i64 - result_duration_ms[1] as i64;
+                    if diff == 0 { // 完全匹配
+                        score += 2;
+                        true
+                    } else if diff <= 1000 { // 1秒内认为时长匹配
+                        score += 1;
+                        true
+                    } else {
+                        false
+                    }
+                } else {
+                    false
+                }
+            } else {
+                false
+            }
+        };
+        
         //println!("{} {}\n",result.duration_ms().unwrap_or_default(),score);
-        score
+        (score, is_trial)
     }
 
     /// 清理标题中的常见符号（供 compare_track 使用，可 override）

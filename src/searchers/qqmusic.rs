@@ -45,7 +45,14 @@ impl ISearcher for QQMusicSearcher {
                                     let duration = song.interval.map(|i| (i * 1000) as u32);
                                     let mid = song.mid.unwrap_or_default();
                                     let id  = song.id.unwrap_or_default();
-
+                                    let trial = if let Some(file) = song.file {
+                                        if let (Some(b), Some(e)) = (file.b_30s, file.e_30s) {
+                                            Some([b, e - b]);
+                                        }
+                                        None
+                                    } else {
+                                        None
+                                    };
                                     results.push(Box::new(QQMusicSearchResult {
                                         id,
                                         mid,
@@ -54,6 +61,8 @@ impl ISearcher for QQMusicSearcher {
                                         album,
                                         duration_ms: duration,
                                         match_score: 0,
+                                        trial,
+                                        is_trial: false,
                                     }));
                                 }
                                 return Ok(results);
@@ -82,6 +91,8 @@ pub struct QQMusicSearchResult {
     pub album: String,
     pub duration_ms: Option<u32>,
     pub match_score: i8,
+    pub trial: Option<[u32; 2]>,
+    pub is_trial: bool,
 }
 
 impl ISearchResult for QQMusicSearchResult {
@@ -92,5 +103,7 @@ impl ISearchResult for QQMusicSearchResult {
     fn match_score(&self) -> i8 { self.match_score }
     fn set_match_score(&mut self, score: i8) { self.match_score = score; }
     fn as_any(&self) -> &dyn std::any::Any { self }
+    fn trial(&self) -> Option<[u32; 2]> { self.trial }
+    fn set_trial(&mut self, i: bool) { self.is_trial = i; }
 }
 

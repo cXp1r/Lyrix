@@ -183,6 +183,7 @@ async fn fetch_netease_lyrics(
                 artist: Some(best.artists.join(", ")),
                 album: Some(best.album.clone()),
                 duration_ms: best.duration_ms,
+                is_trial: best.is_trial,
                 ..Default::default()
             }),
     };
@@ -229,6 +230,7 @@ async fn fetch_qqmusic_lyrics(
                 artist: Some(best.artists.join(", ")),
                 album: Some(best.album.clone()),
                 duration_ms: best.duration_ms,
+                is_trial: best.is_trial,
                 ..Default::default()
             }),
     };
@@ -297,6 +299,7 @@ async fn fetch_kugou_lyrics(
                 artist: Some(best.artists.join(", ")),
                 album: Some(best.album.clone()),
                 duration_ms: best.duration_ms,
+                is_trial: best.is_trial,
                 ..Default::default()
             }),
     };
@@ -346,6 +349,7 @@ async fn fetch_soda_music_lyrics(
                             artist: Some(best.artists.join(", ")),
                             album: Some(best.album.clone()),
                             duration_ms: best.duration_ms,
+                            is_trial: best.is_trial,
                             ..Default::default()
                         }),
                 };
@@ -400,6 +404,7 @@ async fn fetch_apple_music_lyrics(
                                 artist: Some(best.artists.join(", ")),
                                 album: Some(best.album.clone()),
                                 duration_ms: best.duration_ms,
+                                is_trial: false,
                                 ..Default::default()
                             }),
                     };
@@ -438,7 +443,7 @@ mod tests {
             artist: Some(format!("The Weeknd")),
             album: Some("".to_string()),
             album_artist: Some("".to_string()),
-            duration_ms: None,
+            duration_ms: Some(30000u32),
             ..Default::default()
         }
     }
@@ -453,38 +458,6 @@ mod tests {
             duration_ms: None,
             ..Default::default()
         }
-    }
-
-    #[tokio::test]
-    async fn test_netease(){
-        let track = etrack("/");
-        #[allow(unused_variables)]
-        let result = fetch_netease_lyrics(&track).await;
-        println!("{:?}",result)
-    }
-
-    #[tokio::test]
-    async fn test_qqmusic(){
-        let track = jtrack("/");
-        #[allow(unused_variables)]
-        let result = fetch_qqmusic_lyrics(&track).await;
-        println!("{:?}",result)        
-    }
-
-    #[tokio::test]
-    async fn test_kugou_music(){
-        let track = jtrack("、");
-        #[allow(unused_variables)]
-        let result = fetch_kugou_lyrics(&track).await;
-        println!("{:?}",result)
-    }
-
-    #[tokio::test]
-    async fn test_soda_music(){
-        let track = jtrack(",");
-        #[allow(unused_variables)]
-        let result = fetch_soda_music_lyrics(&track).await;
-        println!("{:?}",result)
     }
 
     #[tokio::test]
@@ -518,6 +491,38 @@ mod tests {
         };
         #[allow(unused_variables)]
         let result = fetch_apple_music_lyrics(&track).await;
+        println!("{:?}",result)
+    }
+    
+    #[tokio::test]
+    async fn test_netease(){
+        let track = etrack("/");
+        #[allow(unused_variables)]
+        let result = fetch_netease_lyrics(&track).await;
+        println!("{:?}",result)
+    }
+
+    #[tokio::test]
+    async fn test_qqmusic(){
+        let track = jtrack("/");
+        #[allow(unused_variables)]
+        let result = fetch_qqmusic_lyrics(&track).await;
+        println!("{:?}",result)        
+    }
+
+    #[tokio::test]
+    async fn test_kugou_music(){
+        let track = jtrack("、");
+        #[allow(unused_variables)]
+        let result = fetch_kugou_lyrics(&track).await;
+        println!("{:?}",result)
+    }
+
+    #[tokio::test]
+    async fn test_soda_music(){
+        let track = etrack(",");
+        #[allow(unused_variables)]
+        let result = fetch_soda_music_lyrics(&track).await;
         println!("{:?}",result)
     }
 }

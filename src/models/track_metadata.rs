@@ -28,6 +28,7 @@ pub struct TrackMetadata {
     pub isrc: Option<String>,
     pub language: Option<Vec<String>>,
     pub note: Option<String>,
+    pub is_trial: bool,
 }
 
 /// 多艺术家曲目元数据

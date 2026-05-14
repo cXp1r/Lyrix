@@ -113,6 +113,13 @@ pub struct TrackContainer {
     pub artists: Option<Vec<SodaArtist>>,
     pub duration: Option<i64>,
     pub name: Option<String>,
+    pub preview: Option<Trial>
+}
+
+#[derive(Debug, Deserialize, Default)]
+pub struct Trial {
+    pub start: Option<u32>,
+    pub duration: Option<u32>,
 }
 
 #[derive(Debug, Deserialize, Default)]
