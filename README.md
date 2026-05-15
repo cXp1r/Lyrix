@@ -1,7 +1,7 @@
 ﻿# Lyrix
 ## 声明
-- 虽然部分源码由ai移植[Lyricify-Lyrics-Helper](https://github.com/WXRIW/Lyricify-Lyrics-Helper)而来，但是每一行代码已经本人审计
-- 本人新手，该项目同时用于熟悉rust基础语法
+- 部分源码由ai移植[Lyricify-Lyrics-Helper](https://github.com/WXRIW/Lyricify-Lyrics-Helper)而来，每一行代码已经本人审计
+- **如果有歌曲无法命中,请在issue里面提出**
 
 ## 优点
 - 封装了统一函数可以直接接收smtc信息进行歌词解析

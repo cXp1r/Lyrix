@@ -1,0 +1,63 @@
+name: 音乐曲目提交
+description: 提交一首曲目的相关信息
+title: "[Music] "
+labels: ["music"]
+body:
+  - type: input
+    id: track-name
+    attributes:
+      label: 曲目 (Track)
+      description: 歌曲或曲目的名称
+      placeholder: e.g. Blinding Lights
+    validations:
+      required: true
+
+  - type: input
+    id: artist
+    attributes:
+      label: 艺术家 / 作者 (Artist / Author)
+      description: 演唱者、作曲人或制作人
+      placeholder: e.g. The Weeknd
+    validations:
+      required: true
+
+  - type: input
+    id: album
+    attributes:
+      label: 专辑名 (Album)
+      description: 所属专辑的名称
+      placeholder: e.g. After Hours
+    validations:
+      required: true
+
+  - type: input
+    id: album-artist
+    attributes:
+      label: 专辑作家 (Album Artist)
+      description: 专辑的主要署名艺术家
+      placeholder: e.g. The Weeknd
+    validations:
+      required: true
+
+  - type: input
+    id: duration
+    attributes:
+      label: 时长 (Duration)
+      description: 曲目播放时长
+      placeholder: e.g. 3:20
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: 音乐平台 (Music Platform)
+      description: 该曲目所在的音乐平台
+      options:
+        - Spotify
+        - Apple Music
+        - 网易云音乐(NeteaseMusic)
+        - QQ 音乐(QQMusic)
+        - 汽水音乐(SodaMusic)
+    validations:
+      required: true
