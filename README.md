@@ -32,7 +32,7 @@ cargo add lyrix
 在 `Cargo.toml` 中添加：
 ```toml
 [dependencies]
-lyrix = { version = "26.4.4" }
+lyrix = { version = "26.4.5" }
 tokio = { version = "1", features = ["full"] }
 ```
 
