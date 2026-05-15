@@ -209,6 +209,7 @@ async fn fetch_netease_lyrics(
                 artist: Some(best.artists.join(", ")),
                 album: Some(best.album.clone()),
                 duration_ms: best.duration_ms,
+                score: best.match_score,
                 is_trial: best.is_trial,
                 trial: best.trial,
                 ..Default::default()
@@ -257,6 +258,7 @@ async fn fetch_qqmusic_lyrics(
                 artist: Some(best.artists.join(", ")),
                 album: Some(best.album.clone()),
                 duration_ms: best.duration_ms,
+                score: best.match_score,
                 is_trial: best.is_trial,
                 trial: best.trial,
                 ..Default::default()
@@ -327,6 +329,7 @@ async fn fetch_kugou_lyrics(
                 artist: Some(best.artists.join(", ")),
                 album: Some(best.album.clone()),
                 duration_ms: best.duration_ms,
+                score: best.match_score,
                 is_trial: best.is_trial,
                 trial: best.trial,
                 ..Default::default()
@@ -378,6 +381,7 @@ async fn fetch_soda_music_lyrics(
                             artist: Some(best.artists.join(", ")),
                             album: Some(best.album.clone()),
                             duration_ms: best.duration_ms,
+                            score: best.match_score,
                             is_trial: best.is_trial,
                             trial: best.trial,
                             ..Default::default()
@@ -434,6 +438,7 @@ async fn fetch_apple_music_lyrics(
                                 artist: Some(best.artists.join(", ")),
                                 album: Some(best.album.clone()),
                                 duration_ms: best.duration_ms,
+                                score: best.match_score,
                                 is_trial: false,
                                 trial: None,
                                 ..Default::default()
@@ -557,11 +562,11 @@ mod tests {
     #[tokio::test]
     async fn test_soda_music(){
         let track = TrackMetadata {
-            title: Some("Moth To A Flame".to_string()),
-            artist: Some(format!("The Weeknd")),
+            title: Some("Destiny".to_string()),
+            artist: Some(format!("AG710X")),
             album: Some("".to_string()),
             album_artist: Some("".to_string()),
-            duration_ms: Some(29001u32),
+            duration_ms: Some(126199u32),
             ..Default::default()
         };
         #[allow(unused_variables)]

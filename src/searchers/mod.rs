@@ -119,7 +119,7 @@ pub trait ISearcher: Send + Sync {
     }
 
     /// 最低匹配分数线，低于此分数的结果将被丢弃（可 override）
-    fn min_score(&self) -> i8 { 4 }
+    fn min_score(&self) -> i8 { 5 }
 
     //smtc统一接口调用了这个
     async fn search_for_result(&self, track: &dyn ITrackMetadata) -> Result<Option<Box<dyn ISearchResult>>, Box<dyn std::error::Error + Send + Sync>> {
@@ -162,7 +162,7 @@ pub trait ISearcher: Send + Sync {
                 }
             }
         }
-        //println!("{}:{}",result_title,score);
+        println!("{}:{}",result_title,score);
 
         // Artist match
         let artists: Vec<String> = track
@@ -181,7 +181,7 @@ pub trait ISearcher: Send + Sync {
             }
         }
 
-        //println!("{} {}",result.artists().join("||"),score);
+        println!("{} {}",result.artists().join("||"),score);
         // Album match
         let track_album = track.album().unwrap_or_default().to_lowercase();
         let result_album = result.album().to_lowercase();
@@ -189,7 +189,7 @@ pub trait ISearcher: Send + Sync {
             score += 1;
         }
 
-        //println!("{} {}",result_album,score);
+        println!("{} {}",result_album,score);
         // Album artist match
         let track_album_artist = self.clean_title(&track.album_artist().unwrap_or_default().to_lowercase());
         let result_album_artist = result.album_artists().unwrap_or_default().to_vec();
@@ -200,23 +200,26 @@ pub trait ISearcher: Send + Sync {
         //println!("(kugou) score:{}",score);
         if let Some(duration_ms) = track.duration_ms() {
             if let Some(result_duration_ms) = result.duration_ms() {
-                let diff = duration_ms as i64 - result_duration_ms as i64;
+                let diff = (duration_ms as i64 - result_duration_ms as i64).abs();
                 if diff == 0 { // 完全匹配
                     score += 2;
                 }else if diff <= 1000 { // 1秒内认为时长匹配
                     score += 1;
                 }
+                println!("track:{:?} result:{:?} diff:{} score:{}", track.duration_ms(), result.duration_ms(), diff, score);
                 
             }
         }
+        
         let is_trial = {
             if let Some(duration_ms) = track.duration_ms() {
                 if let Some(result_duration_ms) = result.trial() {
-                    let diff = duration_ms as i64 - result_duration_ms[1] as i64;
+                    let diff = (duration_ms as i64 - result_duration_ms[1] as i64).abs();
+                    println!("{}", diff);
                     if diff <= 100 { // 完全匹配
                         score += 2;
                         true
-                    } else if diff <= 1000 { // 完全匹配
+                    } else if diff <= 1000 { // 近似匹配
                         score += 1;
                         true
                     } else {
@@ -230,7 +233,7 @@ pub trait ISearcher: Send + Sync {
             }
         };
         
-        //println!("{:?} {}\n",result.trial().unwrap_or_default(),score);
+        println!("{:?} {}\n",result.trial().unwrap_or_default(),score);
         (score, is_trial)
     }
 
