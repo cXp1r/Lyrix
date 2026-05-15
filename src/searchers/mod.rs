@@ -213,13 +213,10 @@ pub trait ISearcher: Send + Sync {
             if let Some(duration_ms) = track.duration_ms() {
                 if let Some(result_duration_ms) = result.trial() {
                     let diff = duration_ms as i64 - result_duration_ms[1] as i64;
-                    if diff == 0 { // 完全匹配
+                    if diff <= 100 { // 完全匹配
                         score += 2;
                         true
-                    } else if diff == 55 { // qqmusic特判
-                        score += 2;
-                        true
-                    } else if diff <= 1000 { // 1秒内认为时长匹配
+                    } else if diff <= 1000 { // 完全匹配
                         score += 1;
                         true
                     } else {
