@@ -162,7 +162,7 @@ impl AppleMusicParser {
     pub fn parse(&self, lyrics: String) -> Result<Vec<LineInfo>, String> {
         let start = std::time::Instant::now();
         let r = self.parse_without_st(lyrics);
-        println!("parse took: {:?}", start.elapsed());
+        eprintln!("parse took: {:?}", start.elapsed());
         r
     }
     //本质分发

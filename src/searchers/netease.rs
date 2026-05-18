@@ -113,28 +113,4 @@ impl ISearchResult for NeteaseSearchResult {
     fn set_trial(&mut self, i: bool) { self.is_trial = i; }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[tokio::test]
-    #[ignore = "Calls external NetEase API"]
-    async fn search_for_results_by_string_remeber_prints_every_result() {
-        let searcher = NeteaseSearcher::new();
-        let results = searcher
-            .search_for_results_by_string("Remeber yuigot / 早見沙織")
-            .await
-            .expect("Netease search should succeed");
-
-        println!("results count: {}", results.len());
-        for result in results {
-            let netease_result = result
-                .as_any()
-                .downcast_ref::<NeteaseSearchResult>()
-                .expect("Expected NeteaseSearchResult");
-            println!("{:?}",netease_result);
-        }
-    }
-}
-
 

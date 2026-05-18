@@ -27,7 +27,7 @@ use crate::parsers::{
     applemusic::AppleMusicParser,
 };
 
-static TOKEN: Mutex<String> = Mutex::new(String::new());
+pub static TOKEN: Mutex<String> = Mutex::new(String::new());
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum MusicPlayer {
     /// 酷狗音乐
@@ -184,7 +184,7 @@ async fn fetch_lyrics_from_player(
 
 // ===== 各播放器歌词获取实现 =====
 
-async fn fetch_netease_lyrics(
+pub async fn fetch_netease_lyrics(
     track: &TrackMetadata,
 ) -> Result<LyricsData, Box<dyn std::error::Error + Send + Sync>> {
     use crate::searchers::netease::NeteaseSearcher;
@@ -217,14 +217,14 @@ async fn fetch_netease_lyrics(
     };
     if let Some(yrc) = lyric_result.yrc.and_then(|y| y.lyric) {
         if !yrc.is_empty() {
-            println!("get yrc");
+            //println!("get yrc");
             let parser = NeteaseParser {};
             data.lines = parser.parse(yrc)?;
             return Ok(data);
         }
     }
     let lrc = lyric_result.lrc.ok_or("网易云: LRC也没有哟")?;
-    println!("get lrc");
+    //println!("get lrc");
     let parser = NeteaseLrcParser { 
         version: lrc.version.unwrap_or(3) as u8,
     };
@@ -236,7 +236,7 @@ async fn fetch_netease_lyrics(
 }
 
 
-async fn fetch_qqmusic_lyrics(
+pub async fn fetch_qqmusic_lyrics(
     track: &TrackMetadata,
 ) -> Result<LyricsData, Box<dyn std::error::Error + Send + Sync>> {
     use crate::searchers::qqmusic::QQMusicSearcher;
@@ -283,7 +283,7 @@ async fn fetch_qqmusic_lyrics(
 }
 
 
-async fn fetch_kugou_lyrics(
+pub async fn fetch_kugou_lyrics(
     track: &TrackMetadata,
 ) -> Result<LyricsData, Box<dyn std::error::Error + Send + Sync>> {
     use crate::searchers::kugou::KugouSearcher;
@@ -343,7 +343,7 @@ async fn fetch_kugou_lyrics(
 }
 
 
-async fn fetch_soda_music_lyrics(
+pub async fn fetch_soda_music_lyrics(
     track: &TrackMetadata,
 ) -> Result<LyricsData, Box<dyn std::error::Error + Send + Sync>> {
     use crate::searchers::soda_music::SodaMusicSearcher;
@@ -398,7 +398,7 @@ async fn fetch_soda_music_lyrics(
 }
 
 
-async fn fetch_apple_music_lyrics(
+pub async fn fetch_apple_music_lyrics(
     track: &TrackMetadata,
 ) -> Result<LyricsData, Box<dyn std::error::Error + Send + Sync>> {
     use crate::searchers::applemusic::ApplemusicSearcher;
@@ -454,123 +454,4 @@ async fn fetch_apple_music_lyrics(
     }
     Err("applemusic: 歌曲没有歌词".into())
 
-}
-//bro 懂我的歌品
-#[cfg(test)]
-mod tests {
-
-    use super::*;
-    #[allow(unused_variables)]
-    fn jtrack(s: &str) -> TrackMetadata {
-        TrackMetadata {
-            title: Some("メルト (Melt) (CPK! Remix|かぐや ver.)".to_string()),
-            artist: Some(format!("ryo {} 夏吉ゆうこ", s)),
-            album: Some("超かぐや姫！".to_string()),
-            album_artist: Some("超かぐや姫！".to_string()),
-            duration_ms: Some(271627),
-            ..Default::default()
-        }
-    }
-
-    #[allow(unused_variables)]
-    fn etrack(s: &str) -> TrackMetadata {
-        TrackMetadata {
-            title: Some("Is There Someone Else?".to_string()),
-            artist: Some(format!("The Weeknd")),
-            album: Some("".to_string()),
-            album_artist: Some("".to_string()),
-            duration_ms: Some(60055u32),
-            ..Default::default()
-        }
-    }
-
-    #[allow(unused)]
-    fn ttrack(s: &str) -> TrackMetadata {
-        TrackMetadata {
-            title: Some("Extraordinary".to_string()),
-            artist: Some(format!("Connor Price")),
-            album: Some("".to_string()),
-            album_artist: Some("".to_string()),
-            duration_ms: None,
-            ..Default::default()
-        }
-    }
-
-    #[tokio::test]
-    async fn test_apple_music_normal(){
-        *TOKEN.lock().unwrap() = "自己填自己的".to_string();
-        let a = "小糸 侑(CV:高田憂希)、七海燈子(CV:寿 美菜子) — TVアニメ「やがて君になる」エンディングテーマ「hectopascal」 - EP".to_string();
-        let track = TrackMetadata {
-            title: Some("hectopascal".to_string()),
-            artist: Some(a.clone()),
-            album: Some(a.clone()),
-            album_artist: Some(a),
-            duration_ms: Some(237507),
-            ..Default::default()
-        };
-        #[allow(unused_variables)]
-        let result = fetch_apple_music_lyrics(&track).await;
-        println!("{:?}",result)
-    }
-
-    #[tokio::test]
-    async fn test_apple_music(){
-        *TOKEN.lock().unwrap() = "自己填自己的".to_string();
-        let a = "Meg Myers — Running Up That Hill - Single".to_string();
-        let track = TrackMetadata {
-            title: Some("Running Up That Hill".to_string()),
-            artist: Some(a.clone()),
-            album: Some(a.clone()),
-            album_artist: Some(a),
-            duration_ms: Some(263717),
-            ..Default::default()
-        };
-        #[allow(unused_variables)]
-        let result = fetch_apple_music_lyrics(&track).await;
-        println!("{:?}",result)
-    }
-    
-    #[tokio::test]
-    async fn test_netease(){
-        let track = etrack("/");
-        #[allow(unused_variables)]
-        let result = fetch_netease_lyrics(&track).await;
-        println!("{:?}",&result);
-        let n = get_trial_part(result.unwrap());
-        println!("{:?}",n);
-    }
-
-    #[tokio::test]
-    async fn test_qqmusic(){
-        let track = etrack("/");
-        #[allow(unused_variables)]
-        let result = fetch_qqmusic_lyrics(&track).await;
-        println!("{:?}",result);
-        let n = get_trial_part(result.unwrap());
-        println!("{:?}",n);
-             
-    }
-
-    #[tokio::test]
-    async fn test_kugou_music(){
-        let track = jtrack("、");
-        #[allow(unused_variables)]
-        let result = fetch_kugou_lyrics(&track).await;
-        println!("{:?}",result)
-    }
-
-    #[tokio::test]
-    async fn test_soda_music(){
-        let track = TrackMetadata {
-            title: Some("Destiny".to_string()),
-            artist: Some(format!("AG710X")),
-            album: Some("".to_string()),
-            album_artist: Some("".to_string()),
-            duration_ms: Some(126199u32),
-            ..Default::default()
-        };
-        #[allow(unused_variables)]
-        let result = fetch_soda_music_lyrics(&track).await;
-        println!("{:?}",result)
-    }
 }

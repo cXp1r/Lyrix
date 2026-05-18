@@ -195,13 +195,3 @@ pub struct Artist {
     pub name: Option<String>,
     pub id: Option<i64>,
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[tokio::test]
-    async fn test() {
-        let n = NeteaseApi::new();
-        let _x = n.get_detail("1939760528").await;
-    }
-}

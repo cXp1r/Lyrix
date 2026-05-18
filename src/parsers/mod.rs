@@ -22,7 +22,7 @@ pub trait IParsers {
         let start = std::time::Instant::now();
         let result = self.parse_without_st(lyrics);
         let t = start.elapsed();
-        println!("parse took: {:?}", t);
+        eprintln!("parse took: {:?}", t);
         result
     }
     fn parse_syllables(&self, s: u32, content: &str) -> Result<Vec<TextInfo>, String> {
