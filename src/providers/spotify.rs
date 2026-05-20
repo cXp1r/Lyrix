@@ -51,7 +51,7 @@ impl SpotifyApi {
     ///抓取歌词
     pub async fn get_lyrics(&self, id: &str) -> Result<Option<String>, Box<dyn std::error::Error + Send + Sync>> {
         let url = format!(
-            "https://spclient.wg.spotify.com/color-lyrics/v2/track/{}/image/https%3A%2F%2Fi.scdn.co%2Fimage%2Fab67616d0000b2735394046ce20273924a4092b0?format=json&market=from_token",
+            "https://spclient.wg.spotify.com/color-lyrics/v2/track/{}?format=json&market=from_token",
             urlencoding::encode(id)
         );
         match self.api.get_async(&url).await {
