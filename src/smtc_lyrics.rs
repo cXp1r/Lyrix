@@ -1,11 +1,12 @@
-use std::sync::Mutex;
 use async_trait::async_trait;
 
 use crate::models::{LineInfo, LyricsData, TrackMetadata, ITrackMetadata};
 use crate::searchers::{ISearcher, ISearchResult};
 
-pub static TOKEN: Mutex<String> = Mutex::new(String::new());
-
+pub struct Session {
+    pub applemusic_token: Option<String>,
+    pub spotify_cookie: Option<String>,
+}
 // ===== MusicPlayer =====
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -59,6 +60,7 @@ pub async fn get_lyrics_with_player(
     album: Option<&str>,
     album_artist: Option<&str>,
     duration_ms: u32,
+    session: &Session,
 ) -> Result<LyricsData, Box<dyn std::error::Error + Send + Sync>> {
     let metadata = TrackMetadata {
         title: Some(title.to_string()),
@@ -68,7 +70,7 @@ pub async fn get_lyrics_with_player(
         duration_ms: Some(duration_ms),
         ..Default::default()
     };
-    fetch_lyrics_from_player(player, &metadata).await
+    fetch_lyrics_from_player(player, &metadata, session).await
 }
 
 pub async fn get_lyrics_with_appid(
@@ -78,6 +80,7 @@ pub async fn get_lyrics_with_appid(
     album: Option<&str>,
     album_artist: Option<&str>,
     duration_ms: u32,
+    session: &Session,
 ) -> Result<LyricsData, Box<dyn std::error::Error + Send + Sync>> {
     let player = id2player(app_id)?;
     let metadata = TrackMetadata {
@@ -88,7 +91,7 @@ pub async fn get_lyrics_with_appid(
         duration_ms: Some(duration_ms),
         ..Default::default()
     };
-    fetch_lyrics_from_player(&player, &metadata).await
+    fetch_lyrics_from_player(&player, &metadata, session).await
 }
 
 pub fn get_trial_part(raw: LyricsData) -> Result<LyricsData, String> {
@@ -113,8 +116,7 @@ pub fn get_trial_part(raw: LyricsData) -> Result<LyricsData, String> {
     Ok(LyricsData { lines: new_lines, ..raw })
 }
 
-// ===== LyricsProvider trait =====
-
+///严肃采用trait
 #[async_trait]
 trait LyricsProvider {
     type Searcher: ISearcher;
@@ -130,8 +132,7 @@ trait LyricsProvider {
     ) -> Result<Vec<LineInfo>, Box<dyn std::error::Error + Send + Sync>>;
 }
 
-// ===== 通用 fetch_lyrics =====
-
+///通用函数
 async fn fetch_lyrics<P: LyricsProvider>(
     provider: &P,
     track: &dyn ITrackMetadata,
@@ -170,11 +171,11 @@ async fn fetch_lyrics<P: LyricsProvider>(
     })
 }
 
-// ===== 分发 =====
-
+//本质分发
 async fn fetch_lyrics_from_player(
     player: &MusicPlayer,
     track: &dyn ITrackMetadata,
+    session: &Session,
 ) -> Result<LyricsData, Box<dyn std::error::Error + Send + Sync>> {
     match player {
         MusicPlayer::Netease => fetch_lyrics(&NeteaseProvider, track).await,
@@ -182,13 +183,17 @@ async fn fetch_lyrics_from_player(
         MusicPlayer::Kugou => fetch_lyrics(&KugouProvider, track).await,
         MusicPlayer::SodaMusic => fetch_lyrics(&SodaMusicProvider, track).await,
         MusicPlayer::AppleMusic => {
-            let token = TOKEN.lock().unwrap().clone();
+            let token = session
+                .applemusic_token
+                .as_ref()
+                .ok_or("Apple Music token not set")?
+                .clone();
             fetch_lyrics(&AppleMusicProvider { token }, track).await
         }
     }
 }
 
-// ===== Provider 实现 =====
+
 
 struct NeteaseProvider;
 struct QQMusicProvider;
