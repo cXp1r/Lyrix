@@ -7,14 +7,14 @@ pub struct SpotifySearcher {
 }
 
 impl SpotifySearcher {
-    pub fn new(cookie: String) -> Self {
-        Self { api: SpotifyApi::new(cookie) }
+    pub async fn new(cookie: String) -> Self {
+        Self { api: SpotifyApi::new(cookie).await }
     }
 }
 
 impl Default for SpotifySearcher {
     fn default() -> Self {
-        Self::new("".to_string())
+        panic!("SpotifySearcher does not support Default — use new(cookie).await")
     }
 }
 
@@ -31,44 +31,45 @@ impl ISearcher for SpotifySearcher {
         if let Some(resp) = result{
             if let Some(data) = resp.data {
                 if let Some(search_v2) = data.search_v2 {
-                    
-                        if let Some(items) = search_v2.items {
+                    if let Some(top) = search_v2.top_results_v2{
+                        if let Some(items) = top.items_v2 {
                             for song in items {
-                                if let Some(w) = song.item {
-                                    if let Some(t) = w.data {
-                                        let id = t.id.unwrap();
-                                        let title = t.name.unwrap();
-                                        let album = t.album_of_track.unwrap();
-                                        let album_name = album.name.unwrap();
-                                        let artist = t.artists.unwrap();
-                                        let artists: Vec<String> = artist.items.unwrap()
-                                            .iter()
-                                            .filter_map(|s| s.profile.as_ref().unwrap().name.clone())
-                                            .collect();
-                                        let duration_ms = t.duration.unwrap().total_milliseconds;
-                                        results.push(Box::new(SpotifySearchResult{
-                                            id,
-                                            title,
-                                            artists,
-                                            album: album_name,
-                                            duration_ms,
-                                            trial: None,
-                                            is_trial: false,
-                                            match_score: 0,
-                                        }));
-                                        
-                                    }
-                                }
+                                let Some(i) = song.item else { continue };
+                                let Some(t) = i.data else { continue };
+                                // 跳过非曲目条目（如播放列表），它们缺少 id
+                                let Some(id) = t.id else { continue };
+                                let Some(title) = t.name else { continue };
+                                let Some(album) = t.album_of_track else { continue };
+                                let Some(album_name) = album.name else { continue };
+                                let Some(artist) = t.artists else { continue };
+                                let Some(artist_items) = artist.items else { continue };
+                                let artists: Vec<String> = artist_items
+                                    .iter()
+                                    .filter_map(|s| s.profile.as_ref()?.name.clone())
+                                    .collect();
+                                let duration_ms = t.duration.and_then(|d| d.total_milliseconds);
+                                results.push(Box::new(SpotifySearchResult{
+                                    id,
+                                    title,
+                                    artists,
+                                    album: album_name,
+                                    duration_ms,
+                                    trial: None,
+                                    is_trial: false,
+                                    match_score: 0,
+                                }));
                             }
                         }
-                        return Err("QQMusicApi: No song".into());
-                    
+                        if !results.is_empty() {
+                            return Ok(results);
+                        }
+                    }
                 }
-                return Err("QQMusicApi: No data".into());
+                return Err("Spotify: No data".into());
             }
-            return Err("QQMusicApi: No req_1".into());      
+            return Err("Spotify: No req_1".into());
         }
-        return Err("QQMusicApi: No resp".into());
+        return Err("Spotify: No resp".into());
     }
     fn get_split_char(&self) -> char {
         '/'

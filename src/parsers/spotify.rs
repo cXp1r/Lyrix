@@ -1,58 +1,83 @@
-//先用serde凑合着,太慢了就手搓一个memchr
 use serde::Deserialize;
-use serde_json::from_str;
 use crate::models::{LineInfo};
 
-#[derive(Debug, Deserialize, Default)]
+/// Spotify color-lyrics API 返回的顶层结构
+#[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct LyricResult {
-    pub sync_type: Option<String>,
-    pub lines: Option<Vec<Line>>,
-}
-#[derive(Debug, Deserialize, Default)]
-#[serde(rename_all = "camelCase")]
-pub struct Line {
-    pub start_time_ms: Option<u32>,
-    pub words: Option<String>,
-    //目前没遇到过,不知道具体格式pub syllables: Vec<>,
-    pub end_time_ms: Option<u32>,
+struct LyricsResponse {
+    lyrics: LyricData,
 }
 
-pub struct SpotifyParser {
-    
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct LyricData {
+    sync_type: Option<String>,
+    lines: Option<Vec<RawLine>>,
 }
+
+/// JSON 中 startTimeMs/endTimeMs 是字符串，留到解析时手工转
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RawLine {
+    start_time_ms: Option<String>,
+    words: Option<String>,
+    end_time_ms: Option<String>,
+}
+
+pub struct SpotifyParser;
 
 impl SpotifyParser {
     pub fn parse(&self, lyrics: String) -> Result<Vec<LineInfo>, String> {
-        let mut lineinfo = Vec::new();
-        let result: LyricResult =
-            from_str(&lyrics).map_err(|e| e.to_string())?;
-        if let Some(sync_type) = result.sync_type{
-            match sync_type.as_str() {
-                "LINE_SYNCED" => {
-                    if let Some(lines) = result.lines{
-                        for line in lines {
-                            let Some(st) = line.start_time_ms else {
-                                return Err("SpotifyParser: Failed to find start_time".into());
-                            };
-                            let Some(et) = line.end_time_ms else {
-                                return Err("SpotifyParser: Failed to find end_time".into());
-                            };
-                            let et = if et > st { (et - st) as u16} else { et as u16 };
-                            let Some(words) = line.words else {
-                                return Err("SpotifyParser: Failed to find words".into());
-                            };
-                            lineinfo.push(
-                                LineInfo { start_time: st, duration: et, text: words, syllables: vec![] }
-                            );
-                        }
-                    }
-                }
-                _ => {
-                    return Err("SpotifyParser: unknown sync_type".into());
-                }
-            }
+        let start = std::time::Instant::now();
+        let result = self.parse_without_st(lyrics);
+        let t = start.elapsed();
+        eprintln!("parse took: {:?}", t);
+        result
+    }
+    pub fn parse_without_st(&self, lyrics: String) -> Result<Vec<LineInfo>, String> {
+        let resp: LyricsResponse =
+            serde_json::from_str(&lyrics).map_err(|e| e.to_string())?;
+
+        let data = resp.lyrics;
+        let sync_type = data.sync_type.as_deref().unwrap_or("");
+        if sync_type != "LINE_SYNCED" {
+            return Err(format!("SpotifyParser: unknown sync_type: {sync_type}"));
         }
+
+        let lines = data.lines.ok_or("SpotifyParser: missing lines")?;
+        let mut lineinfo = Vec::with_capacity(lines.len());
+
+        for raw in lines {
+            let words = raw.words.unwrap_or_default();
+            // 跳过空行
+            if words.is_empty() {
+                continue;
+            }
+
+            let st: u32 = raw
+                .start_time_ms
+                .as_deref()
+                .unwrap_or("0")
+                .parse()
+                .map_err(|_| "SpotifyParser: invalid startTimeMs")?;
+
+            let et_raw: u32 = raw
+                .end_time_ms
+                .as_deref()
+                .unwrap_or("0")
+                .parse()
+                .map_err(|_| "SpotifyParser: invalid endTimeMs")?;
+
+            let duration = if et_raw > st { (et_raw - st) as u16 } else { 0 };
+
+            lineinfo.push(LineInfo {
+                start_time: st,
+                duration,
+                text: words,
+                syllables: vec![],
+            });
+        }
+
         Ok(lineinfo)
     }
 }

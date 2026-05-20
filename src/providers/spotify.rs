@@ -8,12 +8,12 @@ pub struct SpotifyApi {
 }
 
 impl SpotifyApi {
-    pub fn new(cookie: String) -> Self {
-        init_spotify(&cookie, None)
+    pub async fn new(cookie: String) -> Self {
+        init_spotify(&cookie, None).await
     }
 
-    pub fn with_client(client: reqwest::Client, cookie: String) -> Self {
-        init_spotify(&cookie, Some(client))
+    pub async fn with_client(client: reqwest::Client, cookie: String) -> Self {
+        init_spotify(&cookie, Some(client)).await
     }
 
     /// 搜索歌曲
@@ -44,30 +44,24 @@ impl SpotifyApi {
             )
             .await?;
 
-        println!("{}", resp);
         Ok(serde_json::from_str(&resp).ok())
     }
 
     ///抓取歌词
-    pub async fn get_lyrics(&self, id: &str) -> Result<Option<String>, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_lyrics(&self, id: &str) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
         let url = format!(
             "https://spclient.wg.spotify.com/color-lyrics/v2/track/{}?format=json&market=from_token",
             urlencoding::encode(id)
         );
-        match self.api.get_async(&url).await {
-            Ok(resp) => Ok(serde_json::from_str(&resp).ok()),
-            Err(_) => Ok(None),
-        }
+        let resp = self.api.get_async(&url).await?;
+        Ok(resp)
     }
 }
 
-impl Default for SpotifyApi {
-    fn default() -> Self {
-        Self::new(String::new())
-    }
-}
+// SpotifyApi no longer implements Default since new() is async.
+// Use SpotifyApi::new(cookie).await instead.
 
-fn init_spotify(cookie: &str, async_client: Option<reqwest::Client>) -> SpotifyApi {
+async fn init_spotify(cookie: &str, async_client: Option<reqwest::Client>) -> SpotifyApi {
     let ts = build_totp(0);
     let totp = ts.generate_now();
 
@@ -76,7 +70,7 @@ fn init_spotify(cookie: &str, async_client: Option<reqwest::Client>) -> SpotifyA
         totp, totp, ts.version
     );
 
-    let http = reqwest::blocking::Client::new();
+    let http = reqwest::Client::new();
 
     let token_resp = http
         .get(&token_url)
@@ -84,12 +78,13 @@ fn init_spotify(cookie: &str, async_client: Option<reqwest::Client>) -> SpotifyA
         .header("User-Agent", super::base_api::USER_AGENT)
         .header("Cookie", cookie)
         .send()
+        .await
         .expect("Failed to fetch Spotify token")
         .error_for_status()
         .expect("Spotify token request returned error")
         .text()
+        .await
         .expect("Failed to read Spotify token response body");
-
     let token_result: TokenResult =
         serde_json::from_str(&token_resp).expect("Failed to parse TokenResult");
 
@@ -108,19 +103,36 @@ fn init_spotify(cookie: &str, async_client: Option<reqwest::Client>) -> SpotifyA
         },
     };
 
+    //不知道是不是没有options
+    http
+        .request(
+            reqwest::Method::OPTIONS,
+            "https://clienttoken.spotify.com/v1/clienttoken",
+        )
+        .header("Origin", "https://open.spotify.com")
+        .header("Access-Control-Request-Method", "POST")
+        .header("Access-Control-Request-Headers", "content-type")
+        .send()
+        .await
+        .expect("OPTIONS preflight failed");
+
     let ct_resp = http
         .post("https://clienttoken.spotify.com/v1/clienttoken")
+        .header("Accept", "application/json")
+        .header("Origin", "https://open.spotify.com")
         .header("Referer", "https://open.spotify.com/")
         .header("User-Agent", super::base_api::USER_AGENT)
+        .header("Content-Type", "application/json")
         .header("Cookie", cookie)
         .json(&ct_body)
         .send()
+        .await
         .expect("Failed to fetch Spotify client token")
         .error_for_status()
         .expect("Spotify client token request returned error")
         .text()
+        .await
         .expect("Failed to read Spotify client token response body");
-
     let client_token_result: ClientTokenResult =
         serde_json::from_str(&ct_resp).expect("Failed to parse ClientTokenResult");
     //初始化baseapi的头
@@ -133,6 +145,7 @@ fn init_spotify(cookie: &str, async_client: Option<reqwest::Client>) -> SpotifyA
         "Client-Token".to_string(),
         client_token_result.granted_token.token.clone(),
     );
+    extra_headers.insert("Origin".to_string(), "https://open.spotify.com".to_string());
     extra_headers.insert("Referer".to_string(), "https://open.spotify.com/".to_string());
     extra_headers.insert("User-Agent".to_string(), super::base_api::USER_AGENT.to_string());
     extra_headers.insert("App-platform".to_string(), "WebPlayer".to_string());
@@ -191,13 +204,11 @@ pub struct TokenResult {
 }
 
 #[derive(Debug, Default, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct ClientTokenResult {
     pub granted_token: GrantedToken,
 }
 
 #[derive(Debug, Default, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct GrantedToken {
     pub token: String,
     pub expires_after_seconds: u32,
@@ -217,10 +228,15 @@ pub struct SearchData {
 }
 
 #[derive(Debug, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
 pub struct SearchV2 {
-    pub items: Option<Vec<SearchItem>>,
+    pub top_results_v2: Option<Top>,
 }
-
+#[derive(Debug, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct Top {
+    pub items_v2: Option<Vec<SearchItem>>,
+}
 #[derive(Debug, Deserialize, Default)]
 pub struct SearchItem {
     pub item: Option<ItemWrapper>,
