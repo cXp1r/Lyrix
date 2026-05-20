@@ -86,8 +86,8 @@ impl AppleMusicParser {
             pos += lt + 1;
 
             textinfo.push(TextInfo {
-                start_time: self.get_offset_time(st, lst)?,
-                duration: self.get_offset_time(et, st)?,
+                start_time: self.get_offset_time(lst, st)?,
+                duration: self.get_offset_time(st, et)?,
                 text,
             });
         }
