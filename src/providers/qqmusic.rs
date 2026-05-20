@@ -79,7 +79,7 @@ impl QQMusicApi {
         Ok(Some(result))
     }
 
-    /// 通过 ID 获取解密后的歌词 (QRC)
+    /// 获取QRC歌词,需要解密
     pub async fn get_lyrics_qrc(&self, id: &str) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
         let mut params = HashMap::new();
         params.insert("version".to_string(), "15".to_string());

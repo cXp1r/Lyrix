@@ -2,7 +2,6 @@ use super::base_api::BaseApi;
 use serde::Deserialize;
 use std::collections::HashMap;
 
-/// 某些嵌套对象的 id 字段在不同接口返回时为整数而非字符串，统一转为 String
 mod string_or_int {
     use serde::{Deserialize, Deserializer};
     pub fn deserialize<'de, D>(d: D) -> Result<Option<String>, D::Error>

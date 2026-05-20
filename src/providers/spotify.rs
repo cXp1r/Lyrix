@@ -67,8 +67,6 @@ impl Default for SpotifyApi {
     }
 }
 
-// ===== Init helpers =====
-
 fn init_spotify(cookie: &str, async_client: Option<reqwest::Client>) -> SpotifyApi {
     let ts = build_totp(0);
     let totp = ts.generate_now();
@@ -95,7 +93,6 @@ fn init_spotify(cookie: &str, async_client: Option<reqwest::Client>) -> SpotifyA
     let token_result: TokenResult =
         serde_json::from_str(&token_resp).expect("Failed to parse TokenResult");
 
-    // Step 2: POST to get client token
     let ct_body = ClientTokenRequest {
         client_data: ClientData {
             client_version: "1.2.91.72.g5337566e".to_string(),

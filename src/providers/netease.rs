@@ -1,7 +1,7 @@
 use super::base_api::BaseApi;
 use serde::Deserialize;
 use std::collections::HashMap;
-
+pub const COOKIE: &str = "os=pc;osver=Microsoft-Windows-10-Professional-build-19045-64bit;appver=3.1.32.205206;channel=netease;__remember_me=true";
 pub struct NeteaseApi {
     api: BaseApi,
 }
@@ -9,7 +9,7 @@ pub struct NeteaseApi {
 impl NeteaseApi {
     fn netease_headers() -> HashMap<String, String> {
         let mut h = HashMap::new();
-        h.insert("cookie".to_string(), super::base_api::COOKIE.to_string());
+        h.insert("cookie".to_string(), COOKIE.to_string());
         h
     }
 

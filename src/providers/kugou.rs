@@ -28,7 +28,7 @@ impl KugouApi {
         Ok(serde_json::from_str(&resp).ok())
     }
 
-    /// 下载 KRC 歌词（返回加密 base64 内容）
+    /// 下载 KRC 歌词 需要解密
     pub async fn get_download_krc(
         &self,
         id: &str,
@@ -42,7 +42,7 @@ impl KugouApi {
         Ok(serde_json::from_str(&resp).ok())
     }
 
-    /// 搜索歌词
+    /// 获取歌词
     pub async fn get_search_lyrics(
         &self,
         keywords: Option<&str>,
