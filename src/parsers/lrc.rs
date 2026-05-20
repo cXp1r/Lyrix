@@ -22,8 +22,15 @@ pub trait LrcParser {
 
         Ok(minutes * 60_000 + seconds * 1_000 + centis * 10)
     }
-
+    
     fn parse(&self, lyrics: String) -> Result<Vec<LineInfo>, String> {
+        let start = std::time::Instant::now();
+        let result = self.parse_without_st(lyrics);
+        let t = start.elapsed();
+        eprintln!("parse took: {:?}", t);
+        result
+    }
+    fn parse_without_st(&self, lyrics: String) -> Result<Vec<LineInfo>, String> {
         let mut lineinfo: Vec<LineInfo> = Vec::new();
         let len = lyrics.len();
         let cbytes = lyrics.as_bytes();
