@@ -28,7 +28,6 @@ impl ISearcher for ApplemusicSearcher {
 
     async fn search_for_results_by_string(&self, search_string: &str) -> Result<Vec<Box<dyn ISearchResult>>, Box<dyn std::error::Error + Send + Sync>> {
         let result = self.api.search(search_string).await?;
-        println!("{result:?}");
         let mut results: Vec<Box<dyn ISearchResult>> = Vec::new();
         let resp = result
             .ok_or_else(|| "AppleMusic: result is None".to_string())?;
