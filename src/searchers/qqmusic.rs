@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use crate::providers::qqmusic::QQMusicApi;
-use super::{ISearcher, ISearchResult, SearcherType};
+use super::{ISearcher, ISearchResult};
 
 pub struct QQMusicSearcher {
     api: QQMusicApi,
@@ -20,10 +20,6 @@ impl Default for QQMusicSearcher {
 
 #[async_trait]
 impl ISearcher for QQMusicSearcher {
-    fn name(&self) -> &str { "QQMusic" }
-    fn display_name(&self) -> &str { "QQ Music" }
-    fn searcher_type(&self) -> SearcherType { SearcherType::QQMusic }
-
     async fn search_for_results_by_string(&self, search_string: &str) -> Result<Vec<Box<dyn ISearchResult>>, Box<dyn std::error::Error + Send + Sync>> {
         let result = self.api.search(search_string).await?;
         let mut results: Vec<Box<dyn ISearchResult>> = Vec::new();
@@ -36,13 +32,13 @@ impl ISearcher for QQMusicSearcher {
         let songs = song_list.list.ok_or_else(|| "QQMusic: list is None")?;
 
         for song in songs {
-            let title = song.name.or(song.title).unwrap_or_default();
+            let title = song.title.or(song.name).unwrap_or_default();
             let artists: Vec<String> = song.singer
                 .unwrap_or_default()
                 .iter()
-                .filter_map(|s| s.name.clone())
+                .filter_map(|s| s.title.clone())
                 .collect();
-            let album = song.album.as_ref().and_then(|a| a.name.clone()).unwrap_or_default();
+            let album = song.album.as_ref().and_then(|a| a.title.clone()).unwrap_or_default();
             let duration = song.interval.map(|i| (i * 1000) as u32);
             let mid = song.mid.unwrap_or_default();
             let id  = song.id.unwrap_or_default();
