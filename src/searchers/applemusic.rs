@@ -46,7 +46,7 @@ impl ISearcher for ApplemusicSearcher {
                 .collect();
             let album = info.album_name.clone().unwrap_or_default();
             let duration =
-                info.duration_in_millis.map(|d| (d * 1000) as u32);
+                info.duration_in_millis.map(|d| d as u32);
             let has_lyrics =
                 info.has_lyrics.unwrap_or(false);
             results.push(Box::new(ApplemusicSearchResult {
@@ -83,7 +83,7 @@ impl ISearcher for ApplemusicSearcher {
                 }
             }
         }
-        //println!("{}:{}",result_title,score);
+        println!("{}:{}",result_title,score);
 
         // Artist match
         let d: Vec<String> = track
@@ -107,7 +107,7 @@ impl ISearcher for ApplemusicSearcher {
             }
         }
 
-        //println!("{} {}",result.artists().join("||"),score);
+        println!("{} {}",result.artists().join("||"),score);
         // Album match
         let track_album = d.get(1).unwrap_or(&String::new()).clone();
         let result_album = result.album().to_lowercase();
@@ -115,7 +115,7 @@ impl ISearcher for ApplemusicSearcher {
             score += 1;
         }
 
-        //println!("{} {}",result_album,score);
+        println!("{} {}",result_album,score);
         // Album artist match
         let track_album_artist = self.clean_title(&track.album_artist().unwrap_or_default().to_lowercase());
         let result_album_artist = result.album_artists().unwrap_or_default().to_vec();
@@ -123,20 +123,20 @@ impl ISearcher for ApplemusicSearcher {
         if result_album_artist.iter().any(|s:&String| s.contains(&track_album_artist)) {
             score += 1;
         }
-        //println!("(kugou) score:{}",score);
         if let Some(duration_ms) = track.duration_ms() {
             if let Some(result_duration_ms) = result.duration_ms() {
                 let diff = duration_ms as i64 - result_duration_ms as i64;
                 if diff == 0 { // 完全匹配
-                    
+                    score += 3;
+                } else if diff <= 500 { 
                     score += 2;
-                }else if diff <= 1000 { // 1秒内认为时长匹配
+                } else if diff <= 1000 {
                     score += 1;
                 }
                 
             }
         }
-        //println!("{} {}\n",result.duration_ms().unwrap_or_default(),score);
+        println!("{} {}\n",result.duration_ms().unwrap_or_default(),score);
         (score, false)//苹果不开会员听棍母呢
     }
 }
