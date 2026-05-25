@@ -1,5 +1,4 @@
 use dialoguer::{theme::ColorfulTheme, Input, Select};
-use lyrix::models::TrackMetadata;
 use lyrix::smtc_lyrics::{Session, MusicPlayer, get_lyrics_with_player, get_trial_part};
 
 const APP_IDS: &[(&str, MusicPlayer)] = &[
@@ -22,49 +21,6 @@ fn player_json_key(player: MusicPlayer) -> &'static str {
     }
 }
 
-fn split_char(player: MusicPlayer) -> &'static str {
-    match player {
-        MusicPlayer::Kugou => "、",
-        MusicPlayer::Netease | MusicPlayer::QQMusic => "/",
-        MusicPlayer::SodaMusic => ",",
-        MusicPlayer::AppleMusic => " ",
-        MusicPlayer::Spotify => " ",
-    }
-}
-
-fn jtrack(player: MusicPlayer) -> TrackMetadata {
-    TrackMetadata {
-        title: Some("メルト (Melt) (CPK! Remix|かぐや ver.)".to_string()),
-        artist: Some(format!("ryo {} 夏吉ゆうこ", split_char(player))),
-        album: Some("超かぐや姫！".to_string()),
-        album_artist: Some("超かぐや姫！".to_string()),
-        duration_ms: Some(271627),
-        ..Default::default()
-    }
-}
-
-fn etrack() -> TrackMetadata {
-    TrackMetadata {
-        title: Some("Is There Someone Else?".to_string()),
-        artist: Some("The Weeknd".to_string()),
-        album: Some("".to_string()),
-        album_artist: Some("".to_string()),
-        duration_ms: Some(60055u32),
-        ..Default::default()
-    }
-}
-
-fn ctrack() -> TrackMetadata {
-    TrackMetadata {
-        title: Some("弱水三千".to_string()),
-        artist: Some("石头/张晓棠".to_string()),
-        album: Some("念".to_string()),
-        album_artist: Some("".to_string()),
-        duration_ms: None,
-        ..Default::default()
-    }
-}
-
 #[tokio::test]
 async fn test_interactive() {
     // 加载 track.json
@@ -73,31 +29,7 @@ async fn test_interactive() {
             .ok()
             .and_then(|s| serde_json::from_str(&s).ok());
 
-    // 1. 选试听模式
-    let trial_labels = &["非试听 (ntrial)", "试听 (trial)"];
-    let trial_sel = Select::with_theme(&ColorfulTheme::default())
-        .with_prompt("选择模式")
-        .items(trial_labels)
-        .default(0)
-        .interact()
-        .unwrap();
-    let trial_key = if trial_sel == 0 { "ntrial" } else { "trial" };
-
-    // 2. 选曲目 (j/e/c)
-    let track_labels = &[
-        "jtrack (メルト / rise)",
-        "etrack (Is There Someone Else? / After Hours)",
-        "ctrack (弱水三千 / 告白气球)",
-        "手动输入",
-    ];
-    let track_sel = Select::with_theme(&ColorfulTheme::default())
-        .with_prompt("选择曲目")
-        .items(track_labels)
-        .default(0)
-        .interact()
-        .unwrap();
-
-    // 3. 选播放器
+    // 1. 选播放器
     let labels: Vec<&str> = APP_IDS.iter().map(|(_, p)| p.display_name()).collect();
     let sel = Select::with_theme(&ColorfulTheme::default())
         .with_prompt("选择播放器")
@@ -107,20 +39,51 @@ async fn test_interactive() {
         .unwrap();
     let (_app_id, player) = APP_IDS[sel];
 
-    // 4. 获取曲目元数据：优先从 track.json 查找，其次用硬编码回退
-    let (title, artist, album, album_artist, duration_ms) = if track_sel < 3 {
-        let track_key = match track_sel {
-            0 => "jtrack",
-            1 => "etrack",
-            2 => "ctrack",
-            _ => unreachable!(),
-        };
+    // 2. 选试听模式
+    let trial_labels = &["非试听 (ntrial)", "试听 (trial)"];
+    let trial_sel = Select::with_theme(&ColorfulTheme::default())
+        .with_prompt("选择模式")
+        .items(trial_labels)
+        .default(0)
+        .interact()
+        .unwrap();
+    let trial_key = if trial_sel == 0 { "ntrial" } else { "trial" };
 
-        // 尝试从 track.json 读取
+    // 3. 从 track.json 读取当前播放器+模式下的曲目列表
+    let mut track_keys: Vec<String> = Vec::new();
+    let mut track_labels: Vec<String> = Vec::new();
+    if let Some(ref db) = track_db {
+        if let Some(tracks) = db.get(player_json_key(player))
+            .and_then(|p| p.get(trial_key))
+        {
+            if let Some(obj) = tracks.as_object() {
+                for (key, val) in obj {
+                    let title = val.get("title").and_then(|v| v.as_str()).unwrap_or(key);
+                    track_labels.push(format!("{} ({})", key, title));
+                    track_keys.push(key.clone());
+                }
+            }
+        }
+    }
+    // 追加手动输入选项
+    track_labels.push("手动输入".to_string());
+
+    let track_sel = Select::with_theme(&ColorfulTheme::default())
+        .with_prompt("选择曲目")
+        .items(&track_labels)
+        .default(0)
+        .interact()
+        .unwrap();
+
+    // 4. 获取曲目元数据
+    let (title, artist, album, album_artist, duration_ms) = if track_sel < track_keys.len() {
+        let track_key = &track_keys[track_sel];
+
+        // 从 track.json 读取（此时一定能读到，因为 track_keys 就是从 JSON 构建的）
         if let Some(ref db) = track_db {
-            if let Some(track_data) = db.get(trial_key)
+            if let Some(track_data) = db.get(player_json_key(player))
+                .and_then(|t| t.get(trial_key))
                 .and_then(|t| t.get(track_key))
-                .and_then(|t| t.get(player_json_key(player)))
             {
                 let t = track_data;
                 (
@@ -131,36 +94,10 @@ async fn test_interactive() {
                     t.get("duration_ms").and_then(|v| v.as_u64()).unwrap_or(0) as u32,
                 )
             } else {
-                // track.json 无此条目，用硬编码回退
-                let track = match track_sel {
-                    0 => jtrack(player),
-                    1 => etrack(),
-                    2 => ctrack(),
-                    _ => unreachable!(),
-                };
-                (
-                    track.title.unwrap(),
-                    track.artist.unwrap(),
-                    track.album.unwrap(),
-                    track.album_artist.unwrap(),
-                    track.duration_ms.unwrap_or(0),
-                )
+                unreachable!()
             }
         } else {
-            // track.json 不存在，用硬编码回退
-            let track = match track_sel {
-                0 => jtrack(player),
-                1 => etrack(),
-                2 => ctrack(),
-                _ => unreachable!(),
-            };
-            (
-                track.title.unwrap(),
-                track.artist.unwrap(),
-                track.album.unwrap(),
-                track.album_artist.unwrap(),
-                track.duration_ms.unwrap_or(0),
-            )
+            unreachable!()
         }
     } else {
         // 手动输入
