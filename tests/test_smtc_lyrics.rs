@@ -161,8 +161,9 @@ async fn test_interactive() {
 
     match &result {
         Ok(data) => {
+            println!("track_metadata: {:?}", &data.track_metadata);
             println!("\n=== {} lines ===", data.lines.len());
-            for line in &data.lines {
+            for (_i, line) in data.lines.iter().enumerate().take(1) {
                 if line.syllables.is_empty() {
                     println!("[{}ms] {}", line.start_time, line.text);
                 } else {
@@ -173,19 +174,5 @@ async fn test_interactive() {
             }
         }
         Err(e) => println!("\nError: {}", e),
-    }
-
-    if let Ok(data) = result {
-        if let Ok(trial) = get_trial_part(data) {
-            println!("\n--- trial ({} lines) ---", trial.lines.len());
-            for line in &trial.lines {
-                let text: String = if line.syllables.is_empty() {
-                    line.text.clone()
-                } else {
-                    line.syllables.iter().map(|s| s.text.as_str()).collect::<Vec<_>>().join("")
-                };
-                println!("[{}ms] {}", line.start_time, text);
-            }
-        }
     }
 }
