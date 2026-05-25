@@ -176,7 +176,8 @@ pub trait ISearcher: Send + Sync {
                 }
             }
         }
-        println!("{}:{}",result_title,score);
+        #[cfg(debug_assertions)]
+        println!("{}: {}",result_title,score);
 
         // Artist match
         let artists: Vec<String> = track
@@ -194,8 +195,8 @@ pub trait ISearcher: Send + Sync {
                 score += 1;
             }
         }
-
-        println!("{} {}",result.artists().join("||"),score);
+        #[cfg(debug_assertions)]
+        println!("{}: {}",result.artists().join("||"),score);
         // Album match
         let track_album = track.album().unwrap_or_default().to_lowercase();
         let result_album = result.album().to_lowercase();
@@ -206,8 +207,8 @@ pub trait ISearcher: Send + Sync {
                 score += 1;
             }
         }
-
-        println!("{} {}",result_album,score);
+        #[cfg(debug_assertions)]
+        println!("{}: {}",result_album,score);
         // Album artist match
         let track_album_artist = self.clean_title(&track.album_artist().unwrap_or_default().to_lowercase());
         let result_album_artist = result.album_artists().unwrap_or_default().to_vec();
@@ -226,7 +227,8 @@ pub trait ISearcher: Send + Sync {
                 } else if diff <= 1000 {
                     score += 1;
                 }
-                //println!("track:{:?} result:{:?} diff:{} score:{}", track.duration_ms(), result.duration_ms(), diff, score);
+                #[cfg(debug_assertions)]
+                println!("track:{:?} result:{:?} diff:{} score:{}", track.duration_ms(), result.duration_ms(), diff, score);
             }
         }
         
@@ -251,7 +253,8 @@ pub trait ISearcher: Send + Sync {
                 false
             }
         };
-        println!("{:?} {}\n",result.trial().unwrap_or_default(),score);
+        #[cfg(debug_assertions)]
+        println!("{:?}: {}\n",result.trial().unwrap_or_default(),score);
         (score, is_trial)
     }
 

@@ -83,7 +83,8 @@ impl ISearcher for ApplemusicSearcher {
                 }
             }
         }
-        println!("{}:{}",result_title,score);
+        #[cfg(debug_assertions)]
+        println!("{}: {}",result_title,score);
 
         // Artist match
         let d: Vec<String> = track
@@ -106,16 +107,16 @@ impl ISearcher for ApplemusicSearcher {
                 score += 1;
             }
         }
-
-        println!("{} {}",result.artists().join("||"),score);
+        #[cfg(debug_assertions)]
+        println!("{}: {}",result.artists().join("||"),score);
         // Album match
         let track_album = d.get(1).unwrap_or(&String::new()).clone();
         let result_album = result.album().to_lowercase();
         if !track_album.is_empty() && !result_album.is_empty() && track_album == result_album {
             score += 1;
         }
-
-        println!("{} {}",result_album,score);
+        #[cfg(debug_assertions)]
+        println!("{}: {}",result_album,score);
         // Album artist match
         let track_album_artist = self.clean_title(&track.album_artist().unwrap_or_default().to_lowercase());
         let result_album_artist = result.album_artists().unwrap_or_default().to_vec();
@@ -136,7 +137,8 @@ impl ISearcher for ApplemusicSearcher {
                 
             }
         }
-        println!("{} {}\n",result.duration_ms().unwrap_or_default(),score);
+        #[cfg(debug_assertions)]
+        println!("{}: {}\n",result.duration_ms().unwrap_or_default(),score);
         (score, false)//苹果不开会员听棍母呢
     }
 }
