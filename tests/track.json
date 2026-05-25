@@ -1,54 +1,92 @@
 {
-    "ntrial": {
-        "jtrack": {
-            "qqmusic": {
+    "applemusic": {
+        "ntrial": {
+            "jtrack": {
+                "title": "Remember",
+                "artist": "yuigot & Yachiyo Runami(cv.Saori Hayami) — Cosmic Princess Kaguya!",
+                "album": "超かぐや姫！",
+                "album_artist": "yuigot & Yachiyo Runami(cv.Saori Hayami) — Cosmic Princess Kaguya!",
+                "duration_ms": 232000
+            },
+            "etrack": {
+                "title": "After Hours",
+                "artist": "The Weeknd — After Hours",
+                "album": "",
+                "album_artist": "The Weeknd — After Hours",
+                "duration_ms": 360000
+            },
+            "ctrack": {
+                "title": "花海",
+                "artist": "周杰伦 — 魔杰座",
+                "album": "",
+                "album_artist": "周杰伦 — 魔杰座",
+                "duration_ms": 264000
+            }
+        },
+        "trial": {
+            "jtrack": {
+                "title": "hectopascal",
+                "artist": "小糸 侑(CV:高田憂希)、七海燈子(CV:寿 美菜子) — TVアニメ「やがて君になる」エンディングテーマ「hectopascal」 - E",
+                "album": "",
+                "album_artist": "小糸 侑(CV:高田憂希)、七海燈子(CV:寿 美菜子) — TVアニメ「やがて君になる」エンディングテーマ「hectopascal」 - E",
+                "duration_ms": 237000
+            },
+            "etrack": {
+                "title": "After Hours",
+                "artist": "The Weeknd — After Hours",
+                "album": "",
+                "album_artist": "The Weeknd — After Hours",
+                "duration_ms": 360000
+            },
+            "ctrack": {
+                "title": "花海",
+                "artist": "周杰伦 — 魔杰座",
+                "album": "",
+                "album_artist": "周杰伦 — 魔杰座",
+                "duration_ms": 264000
+            }
+        }
+    },
+    "qqmusic": {
+        "ntrial": {
+            "jtrack": {
                 "title": "Remember",
                 "artist": "yuigot/早見沙織 (はやみ さおり)",
                 "album": "超かぐや姫！",
                 "album_artist": "",
                 "duration_ms": 253441
-            }
-        },
-        "etrack": {
-            "qqmusic": {
+            },
+            "etrack": {
                 "title": "After Hours",
                 "artist": "The Weeknd",
                 "album": "After Hours (Explicit)",
                 "album_artist": "",
                 "duration_ms": 199000
-            }
-        },
-        "ctrack": {
-            "qqmusic": {
+            },
+            "ctrack": {
                 "title": "弱水三千",
                 "artist": "石头/张晓棠",
                 "album": "念",
                 "album_artist": "",
                 "duration_ms": 232616
             }
-        }
-    },
-    "trial": {
-        "jtrack": {
-            "qqmusic": {
+        },
+        "trial": {
+            "jtrack": {
                 "title": "rise",
                 "artist": "安月名莉子 (Azuna Riko)",
                 "album": "TVアニメ「やがて君になる」オープニングテーマ「君にふれて」 (触摸你)",
                 "album_artist": "",
                 "duration_ms": 30066
-            }
-        },
-        "etrack": {
-            "qqmusic":{
+            },
+            "etrack": {
                 "title": "After Hours",
                 "artist": "The Weeknd",
                 "album": "After Hours (Explicit)",
                 "album_artist": "",
                 "duration_ms": 60055
-            }
-        },
-        "ctrack": {
-            "qqmusic":{
+            },
+            "ctrack": {
                 "title": "告白气球",
                 "artist": "周杰伦",
                 "album": "周杰伦的床边故事",
@@ -56,6 +94,5 @@
                 "duration_ms": 60055
             }
         }
-        
     }
 }
