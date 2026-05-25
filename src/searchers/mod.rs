@@ -104,7 +104,13 @@ pub trait ISearcher: Send + Sync {
                 continue;
             }
 
-            let results = self.search_for_results_by_string(s).await?;
+            let results = match self.search_for_results_by_string(s).await {
+                Ok(r) => r,
+                Err(e) => {
+                    eprintln!("search '{}' error: {}", s, e);
+                    continue;
+                }
+            };
             let mut group_best: Option<Box<dyn ISearchResult>> = None;
 
             for mut r in results {
@@ -214,8 +220,10 @@ pub trait ISearcher: Send + Sync {
             if let Some(result_duration_ms) = result.duration_ms() {
                 let diff = (duration_ms as i64 - result_duration_ms as i64).abs();
                 if diff == 0 { // 完全匹配
+                    score += 3;
+                } else if diff <= 500 { 
                     score += 2;
-                }else if diff <= 1000 { // 1秒内认为时长匹配
+                } else if diff <= 1000 {
                     score += 1;
                 }
                 //println!("track:{:?} result:{:?} diff:{} score:{}", track.duration_ms(), result.duration_ms(), diff, score);
