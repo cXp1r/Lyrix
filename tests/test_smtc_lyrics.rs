@@ -1,5 +1,5 @@
 use dialoguer::{theme::ColorfulTheme, Input, Select};
-use lyrix::smtc_lyrics::{Session, MusicPlayer, get_lyrics_with_player, get_trial_part};
+use lyrix::smtc_lyrics::{Session, MusicPlayer, get_lyrics_with_player};
 
 const APP_IDS: &[(&str, MusicPlayer)] = &[
     ("cloudmusic.exe",                                MusicPlayer::Netease),
