@@ -45,43 +45,32 @@ pub trait ISearcher: Send + Sync {
         let artist = track.artist().unwrap_or_default().trim();
         let album = track.album().unwrap_or_default().trim();
 
+        let ct = self.clean_title(&self.remove_feat(title));
+        let ca = self.clean_title(artist);
+        let cal = self.clean_title(album);
+
         let join = |parts: &[&str]| {
             parts.iter().filter(|s| !s.is_empty()).copied().collect::<Vec<_>>().join(" ")
         };
 
-        let mut strings = Vec::with_capacity(5);
+        let mut strings: Vec<String> = Vec::with_capacity(8);
+        let mut push = |s: String| {
+            if !s.is_empty() && strings.last().map_or(true, |last| last != &s) {
+                strings.push(s);
+            }
+        };
 
-        // 全量
-        let full = join(&[title, artist, album]);
-        if !full.is_empty() {
-            strings.push(full);
-        }
-        // 普通搜索法,qq音乐的艺人有的无法命中
-        if !title.is_empty() && !artist.is_empty() {
-            let s = join(&[title, artist]);
-            if s != strings.first().map(|s| s.as_str()).unwrap_or("") {
-                strings.push(s);
-            }
-        }
-        // 有的歌曲标题一堆雷霆(),直接搜索反而效果更好
-        if !title.is_empty() && title != strings.first().map(|s| s.as_str()).unwrap_or("") {
-            strings.push(title.to_string());
-        }
-        // title + album
-        if !title.is_empty() && !album.is_empty() {
-            let s = join(&[title, album]);
-            if s != strings.first().map(|s| s.as_str()).unwrap_or("") {
-                strings.push(s);
-            }
-        }
-        // 清洗之后的(感觉没啥效果,)
-        let ct = self.clean_title(&self.remove_feat(title));
-        let ca = self.clean_title(artist);
-        let cal = self.clean_title(album);
-        let cleaned = join(&[&ct, &ca, &cal]);
-        if !cleaned.is_empty() && cleaned != strings.first().map(|s| s.as_str()).unwrap_or("") {
-            strings.push(cleaned);
-        }
+        push(join(&[title, artist]));
+        push(join(&[&ct, &ca]));
+
+        push(join(&[title, artist, album]));
+        push(join(&[&ct, &ca, &cal]));
+        
+        push(title.to_string());
+        push(ct.to_string());
+        
+        push(join(&[title, album]));
+        push(join(&[&ct, &cal]));
 
         strings
     }
