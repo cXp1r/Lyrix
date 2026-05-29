@@ -1,4 +1,6 @@
 ﻿# Lyrix
+![Rust](https://img.shields.io/badge/Rust-1.70+-red)
+![Version](https://img.shields.io/badge/version-26.6.1-green)
 ## 声明
 - 部分源码由ai移植[Lyricify-Lyrics-Helper](https://github.com/WXRIW/Lyricify-Lyrics-Helper)而来，每一行代码已经本人审计
 - **如果有歌曲无法命中,请在issue里面提出**
@@ -37,7 +39,7 @@ cargo add lyrix
 在 `Cargo.toml` 中添加：
 ```toml
 [dependencies]
-lyrix = { version = "26.6.0" }
+lyrix = { version = "26.6.1" }
 tokio = { version = "1", features = ["full"] }
 ```
 
