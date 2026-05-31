@@ -2,7 +2,6 @@ use async_trait::async_trait;
 
 use crate::models::{LineInfo, LyricsData, TrackMetadata, ITrackMetadata};
 use crate::searchers::{ISearcher, ISearchResult};
-use crate::smtc_lyrics::MusicPlayer::LXMusic;
 
 pub struct Session {
     pub applemusic_token: Option<String>,

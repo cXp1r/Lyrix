@@ -9,7 +9,7 @@ pub struct TextInfo {
 ///歌词行信息,text和syllables二选一
 #[derive(Debug, Clone, Default)]
 pub struct LineInfo {
-    ///溢出了来这里改够你吃一壶了
+    ///溢出了来这里改
     pub start_time: u32,
     pub duration: u16,
     pub text: String,

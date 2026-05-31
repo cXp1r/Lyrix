@@ -84,11 +84,15 @@ src/
 │   ├── netease.rs
 │   ├── qqmusic.rs
 │   ├── soda_music.rs
-│   └── decrypt/
+│   ├── spotify.rs
+│   ├── decrypt/
+│   │   ├── mod.rs
+│   │   ├── krc.rs
+│   │   ├── netease.rs
+│   │   └── qrc.rs
+│   └── generate/
 │       ├── mod.rs
-│       ├── krc.rs
-│       ├── netease.rs
-│       └── qrc.rs
+│       └── spotify.rs
 ├── providers/
 │   ├── mod.rs
 │   ├── applemusic.rs
@@ -97,14 +101,16 @@ src/
 │   ├── netease.rs
 │   ├── proxy.rs
 │   ├── qqmusic.rs
-│   └── soda_music.rs
+│   ├── soda_music.rs
+│   └── spotify.rs
 └── searchers/
     ├── mod.rs
     ├── applemusic.rs
     ├── kugou.rs
     ├── netease.rs
     ├── qqmusic.rs
-    └── soda_music.rs
+    ├── soda_music.rs
+    └── spotify.rs
 ```
 
 ## 代理设置
