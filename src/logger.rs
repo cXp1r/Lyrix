@@ -14,6 +14,7 @@ static LOG_FILE_PATH: OnceLock<PathBuf> = OnceLock::new();
 static LOG_LEVEL: AtomicU8 = AtomicU8::new(1);
 static LOG_FILTER_TAGS: OnceLock<RwLock<Vec<String>>> = OnceLock::new();
 static LOG_FILTER_INVERT: AtomicU8 = AtomicU8::new(0);
+static LOG_CONSOLE_OUTPUT: AtomicU8 = AtomicU8::new(1);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LogLevel {
@@ -101,6 +102,10 @@ pub fn get_filter_invert() -> bool {
     LOG_FILTER_INVERT.load(Ordering::Relaxed) != 0
 }
 
+pub fn set_console_output(enabled: bool) {
+    LOG_CONSOLE_OUTPUT.store(if enabled { 1 } else { 0 }, Ordering::Relaxed);
+}
+
 pub fn log_file_path() -> Option<&'static PathBuf> {
     LOG_FILE_PATH.get()
 }
@@ -137,7 +142,9 @@ fn get_sender() -> &'static Sender<LogMsg> {
 
                 for msg in rx {
                     let LogMsg::Line(line) = msg;
-                    println!("{}", line);
+                    if LOG_CONSOLE_OUTPUT.load(Ordering::Relaxed) != 0 {
+                        println!("{}", line);
+                    }
                     if let Some(ref mut f) = file {
                         let _ = writeln!(f, "{}", line);
                         let _ = f.flush();
