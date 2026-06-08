@@ -176,7 +176,7 @@ where
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
         .as_secs();
-    let line = format!("[{}][{}][{}] {}", tag, level, now, message);
+    let line = format!("[{}][{}][{}] {}", level, tag, now, message);
     let _ = get_sender().send(LogMsg::Line(line));
 }
 
