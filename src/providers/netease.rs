@@ -1,3 +1,4 @@
+use crate::logger;
 use super::base_api::BaseApi;
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -77,18 +78,44 @@ impl NeteaseApi {
         );
         let p = crate::parsers::decrypt::netease::eapi_encrypt(url, &body).unwrap_or(String::new());
         
-        let client = reqwest::Client::builder()
-            .user_agent("Mozilla/5.0")
-            .build()?;
+        let endpoint = "https://music.163.com/eapi/song/enhance/player/url/v1";
+        let start = std::time::Instant::now();
+        let result = async {
+            let client = reqwest::Client::builder()
+                .user_agent("Mozilla/5.0")
+                .build()?;
 
-        let res = client
-            .post(format!("https://music.163.com/eapi/song/enhance/player/url/v1"))
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .header("Cookie", "WEVNSM=1.0.0; os=pc; osver=Microsoft-Windows-11-Professional-build-114514-64bit; channel=netease; mode=System Product Name;appver=3.1.32.205206")
-            .form(&[("params", p.as_str())])
-            .send()
-            .await?;
-        let resp = res.text().await?;
+            let res = client
+                .post(endpoint)
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .header("Cookie", "WEVNSM=1.0.0; os=pc; osver=Microsoft-Windows-11-Professional-build-114514-64bit; channel=netease; mode=System Product Name;appver=3.1.32.205206")
+                .form(&[("params", p.as_str())])
+                .send()
+                .await?;
+            res.text().await
+        }
+        .await;
+        match &result {
+            Ok(resp) => logger::debug(
+                "provider::netease",
+                format_args!(
+                    "request completed | method=POST_FORM | url={} | elapsed={:?} | bytes={}",
+                    endpoint,
+                    start.elapsed(),
+                    resp.len()
+                ),
+            ),
+            Err(err) => logger::warn(
+                "provider::netease",
+                format_args!(
+                    "request failed | method=POST_FORM | url={} | elapsed={:?} | error={}",
+                    endpoint,
+                    start.elapsed(),
+                    err
+                ),
+            ),
+        }
+        let resp = result?;
         Ok(serde_json::from_str(&resp).ok())
     }
 }

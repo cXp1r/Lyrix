@@ -1,7 +1,8 @@
+use crate::logger;
+use crate::parsers::generate::spotify::build_totp;
 use super::base_api::BaseApi;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use crate::parsers::generate::spotify::build_totp;
 
 pub struct SpotifyApi {
     api: BaseApi,
@@ -62,6 +63,9 @@ impl SpotifyApi {
 // Use SpotifyApi::new(cookie).await instead.
 
 async fn init_spotify(cookie: &str, async_client: Option<reqwest::Client>) -> SpotifyApi {
+    let start = std::time::Instant::now();
+    logger::debug("provider::spotify", "initializing client tokens");
+
     let ts = build_totp(0);
     let totp = ts.generate_now();
 
@@ -155,6 +159,11 @@ async fn init_spotify(cookie: &str, async_client: Option<reqwest::Client>) -> Sp
     } else {
         BaseApi::new(Some("https://open.spotify.com/"), Some(extra_headers))
     };
+
+    logger::debug(
+        "provider::spotify",
+        format_args!("client tokens initialized | elapsed={:?}", start.elapsed()),
+    );
 
     SpotifyApi {
         /*authorization: format!("Bearer {}", token_result.access_token),
@@ -286,4 +295,3 @@ pub struct AlbumOfTrack {
     pub name: Option<String>,
     pub uri: Option<String>,
 }
-
