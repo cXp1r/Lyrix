@@ -1,5 +1,6 @@
-use serde::Deserialize;
+use crate::logger;
 use crate::models::{LineInfo};
+use serde::Deserialize;
 
 /// Spotify color-lyrics API 返回的顶层结构
 #[derive(Debug, Deserialize)]
@@ -31,7 +32,16 @@ impl SpotifyParser {
         let start = std::time::Instant::now();
         let result = self.parse_without_st(lyrics);
         let t = start.elapsed();
-        eprintln!("parse took: {:?}", t);
+        match &result {
+            Ok(lines) => logger::debug(
+                "parser::spotify",
+                format_args!("parse completed | elapsed={:?} | lines={}", t, lines.len()),
+            ),
+            Err(err) => logger::warn(
+                "parser::spotify",
+                format_args!("parse failed | elapsed={:?} | error={}", t, err),
+            ),
+        }
         result
     }
     pub fn parse_without_st(&self, lyrics: String) -> Result<Vec<LineInfo>, String> {

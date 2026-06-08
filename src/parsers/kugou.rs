@@ -8,7 +8,6 @@ impl KugouParser {
     }
     pub fn decrypt_and_parse(&self, lyrics: String) -> Result<Vec<LineInfo>, String>  {
         let lyrics = self.decrypt(&lyrics)?;
-        //println!("{}",lyrics);
         self.parse(lyrics)
     }
 }

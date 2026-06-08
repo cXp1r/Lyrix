@@ -1,3 +1,4 @@
+use crate::logger;
 use crate::models::{LineInfo, TextInfo};
 use once_cell::sync::Lazy;
 use memchr::{memmem::Finder, memchr};
@@ -162,7 +163,17 @@ impl AppleMusicParser {
     pub fn parse(&self, lyrics: String) -> Result<Vec<LineInfo>, String> {
         let start = std::time::Instant::now();
         let r = self.parse_without_st(lyrics);
-        eprintln!("parse took: {:?}", start.elapsed());
+        let elapsed = start.elapsed();
+        match &r {
+            Ok(lines) => logger::debug(
+                "parser::applemusic",
+                format_args!("parse completed | elapsed={:?} | lines={}", elapsed, lines.len()),
+            ),
+            Err(err) => logger::warn(
+                "parser::applemusic",
+                format_args!("parse failed | elapsed={:?} | error={}", elapsed, err),
+            ),
+        }
         r
     }
     //本质分发

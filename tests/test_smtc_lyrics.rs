@@ -22,8 +22,14 @@ fn player_json_key(player: MusicPlayer) -> &'static str {
     }
 }
 
+#[test]
+fn test_logger() {
+    lyrix::logger::set_level("debug");
+    lyrix::logger::debug("test", "hello logger");
+}
 #[tokio::test]
 async fn test_interactive() {
+    lyrix::logger::set_level("debug");
     let track_db: Option<serde_json::Value> =
         std::fs::read_to_string("tests/track.json")
             .ok()

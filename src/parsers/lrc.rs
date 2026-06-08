@@ -1,3 +1,4 @@
+use crate::logger;
 use crate::models::LineInfo;
 use memchr::memchr;
 ///LRC歌词解析器
@@ -27,7 +28,16 @@ pub trait LrcParser {
         let start = std::time::Instant::now();
         let result = self.parse_without_st(lyrics);
         let t = start.elapsed();
-        eprintln!("parse took: {:?}", t);
+        match &result {
+            Ok(lines) => logger::debug(
+                "parser::lrc",
+                format_args!("parse completed | elapsed={:?} | lines={}", t, lines.len()),
+            ),
+            Err(err) => logger::warn(
+                "parser::lrc",
+                format_args!("parse failed | elapsed={:?} | error={}", t, err),
+            ),
+        }
         result
     }
     fn parse_without_st(&self, lyrics: String) -> Result<Vec<LineInfo>, String> {

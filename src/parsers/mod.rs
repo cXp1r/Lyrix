@@ -7,6 +7,7 @@ pub mod kugou;
 pub mod lrc;
 pub mod decrypt;
 pub mod generate;
+use crate::logger;
 use memchr::memchr;
 use crate::models::*;
 ///逐字歌词解析器
@@ -24,7 +25,16 @@ pub trait IParsers {
         let start = std::time::Instant::now();
         let result = self.parse_without_st(lyrics);
         let t = start.elapsed();
-        eprintln!("parse took: {:?}", t);
+        match &result {
+            Ok(lines) => logger::debug(
+                "parser::generic",
+                format_args!("parse completed | elapsed={:?} | lines={}", t, lines.len()),
+            ),
+            Err(err) => logger::warn(
+                "parser::generic",
+                format_args!("parse failed | elapsed={:?} | error={}", t, err),
+            ),
+        }
         result
     }
     fn parse_syllables(&self, s: u32, content: &str) -> Result<Vec<TextInfo>, String> {
