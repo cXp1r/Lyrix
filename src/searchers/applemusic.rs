@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use crate::providers::applemusic::ApplemusicApi;
-use super::{ISearcher, ISearchResult};
+use super::{log_score_gain, log_score_warn, log_score_total, ISearcher, ISearchResult};
 use crate::models::ITrackMetadata;
 
 pub struct ApplemusicSearcher {
@@ -71,20 +71,50 @@ impl ISearcher for ApplemusicSearcher {
         if !track_title.is_empty() && !result_title.is_empty() {
             if track_title == result_title {
                 score += 4;
+                log_score_gain(
+                    "searcher::applemusic::score",
+                    format_args!("track : {}\nresult: {}", track_title, result_title),
+                    4,
+                );
             } else if result_title.contains(&track_title) || track_title.contains(&result_title) {
                 score += 2;
+                log_score_gain(
+                    "searcher::applemusic::score",
+                    format_args!("track : {}\nresult: {}", track_title, result_title),
+                    2,
+                );
             } else {
                 let clean_track = self.clean_title(&track_title);
                 let clean_result = self.clean_title(&result_title);
                 if clean_track == clean_result {
                     score += 3;
+                    log_score_gain(
+                        "searcher::applemusic::score",
+                        format_args!("track : {}\nresult: {}", clean_track, clean_result),
+                        3,
+                    );
                 } else if clean_result.contains(&clean_track) || clean_track.contains(&clean_result) {
                     score += 1;
+                    log_score_gain(
+                        "searcher::applemusic::score",
+                        format_args!("track : {}\nresult: {}", clean_track, clean_result),
+                        1,
+                    );
+                } else {
+                    log_score_warn(
+                        "searcher::applemusic::score",
+                        result,
+                        format_args!("track : {}\nresult: {}", clean_track, clean_result),
+                    );
                 }
             }
+        } else {
+            log_score_warn(
+                "searcher::applemusic::score",
+                result,
+                format_args!("track : {}\nresult: {}", track_title, result_title),
+            );
         }
-        #[cfg(debug_assertions)]
-        println!("{}: {}",result_title,score);
 
         // Artist match
         let d: Vec<String> = track
@@ -105,40 +135,123 @@ impl ISearcher for ApplemusicSearcher {
                 a == &b || a.contains(&b) || b.contains(a)
             }) {
                 score += 1;
+                log_score_gain(
+                    "searcher::applemusic::score",
+                    format_args!("artist: {}\nresult: {}", a, result.artists().join(" / ")),
+                    1,
+                );
+            } else {
+                log_score_warn(
+                    "searcher::applemusic::score",
+                    result,
+                    format_args!("artist: {}\nresult: {}", a, result.artists().join(" / ")),
+                );
             }
         }
-        #[cfg(debug_assertions)]
-        println!("{}: {}",result.artists().join("||"),score);
+        if artists.is_empty() {
+            log_score_warn(
+                "searcher::applemusic::score",
+                result,
+                format_args!("artist: {}\nresult: {}", "(empty)", result.artists().join(" / ")),
+            );
+        }
         // Album match
         let track_album = d.get(1).unwrap_or(&String::new()).clone();
         let result_album = result.album().to_lowercase();
         if !track_album.is_empty() && !result_album.is_empty() && track_album == result_album {
             score += 1;
+            log_score_gain(
+                "searcher::applemusic::score",
+                format_args!("album : {}\nresult: {}", track_album, result_album),
+                1,
+            );
+        } else {
+            log_score_warn(
+                "searcher::applemusic::score",
+                result,
+                format_args!("album : {}\nresult: {}", track_album, result_album),
+            );
         }
-        #[cfg(debug_assertions)]
-        println!("{}: {}",result_album,score);
         // Album artist match
         let track_album_artist = self.clean_title(&track.album_artist().unwrap_or_default().to_lowercase());
         let result_album_artist = result.album_artists().unwrap_or_default().to_vec();
 
         if result_album_artist.iter().any(|s:&String| s.contains(&track_album_artist)) {
             score += 1;
+            log_score_gain(
+                "searcher::applemusic::score",
+                format_args!(
+                    "ab_art: {}\nresult: {}",
+                    track_album_artist,
+                    result_album_artist.join(" / ")
+                ),
+                1,
+            );
+        } else {
+            log_score_warn(
+                "searcher::applemusic::score",
+                result,
+                format_args!(
+                    "ab_art: {}\nresult: {}",
+                    track_album_artist,
+                    result_album_artist.join(" / ")
+                ),
+            );
         }
         if let Some(duration_ms) = track.duration_ms() {
             if let Some(result_duration_ms) = result.duration_ms() {
-                let diff = duration_ms as i64 - result_duration_ms as i64;
+                let diff = (duration_ms as i64 - result_duration_ms as i64).abs();
                 if diff == 0 { // 完全匹配
                     score += 3;
-                } else if diff <= 500 { 
+                    log_score_gain(
+                        "searcher::applemusic::score",
+                        format_args!("dur   : {}ms\nresult: {}ms", duration_ms, result_duration_ms),
+                        3,
+                    );
+                } else if diff <= 500 {
                     score += 2;
+                    log_score_gain(
+                        "searcher::applemusic::score",
+                        format_args!(
+                            "dur   : {}ms\nresult: {}ms",
+                            duration_ms, result_duration_ms
+                        ),
+                        2,
+                    );
                 } else if diff <= 1000 {
                     score += 1;
+                    log_score_gain(
+                        "searcher::applemusic::score",
+                        format_args!(
+                            "dur   : {}ms\nresult: {}ms",
+                            duration_ms, result_duration_ms
+                        ),
+                        1,
+                    );
+                } else {
+                    log_score_warn(
+                        "searcher::applemusic::score",
+                        result,
+                        format_args!("dur   : {}ms\nresult: {}ms", duration_ms, result_duration_ms),
+                    );
                 }
-                
+
             }
+            else {
+                log_score_warn(
+                    "searcher::applemusic::score",
+                    result,
+                    format_args!("dur   : {}ms\nresult: {}", duration_ms, "N/A"),
+                );
+            }
+        } else {
+            log_score_warn(
+                "searcher::applemusic::score",
+                result,
+                format_args!("dur   : {}\nresult: {}ms", "N/A", result.duration_ms().unwrap_or(0)),
+            );
         }
-        #[cfg(debug_assertions)]
-        println!("{}: {}\n",result.duration_ms().unwrap_or_default(),score);
+        log_score_total("searcher::applemusic::score", result, score, false);
         (score, false)//苹果不开会员听棍母呢
     }
 }
