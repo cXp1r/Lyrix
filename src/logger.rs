@@ -128,7 +128,7 @@ fn get_sender() -> &'static Sender<LogMsg> {
             .duration_since(UNIX_EPOCH)
             .unwrap_or_default()
             .as_millis();
-        let file_path = log_dir.join(format!("island_{}.log", ts));
+        let file_path = log_dir.join(format!("Lyrix_{}.log", ts));
         let _ = LOG_FILE_PATH.set(file_path.clone());
 
         thread::Builder::new()
