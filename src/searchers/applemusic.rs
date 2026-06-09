@@ -18,8 +18,7 @@ impl Default for ApplemusicSearcher {
         Self::new(String::new())
     }
 }
-//酷狗音乐SMTC只提供title artist albumArtist? 
-//duration只能api拿了
+
 #[async_trait]
 impl ISearcher for ApplemusicSearcher {
     async fn search_for_results_by_string(&self, search_string: &str) -> Result<Vec<Box<dyn ISearchResult>>, Box<dyn std::error::Error + Send + Sync>> {
