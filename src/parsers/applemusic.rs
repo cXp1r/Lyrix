@@ -1,14 +1,14 @@
 use crate::logger;
 use crate::models::{LineInfo, TextInfo};
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 use memchr::{memmem::Finder, memchr};
 
-static FINDER_IN: Lazy<Finder<'static>> = Lazy::new(|| Finder::new(b"in=\""));
-static FINDER_ND: Lazy<Finder<'static>> = Lazy::new(|| Finder::new(b"nd=\""));
-static FINDER_P:  Lazy<Finder<'static>> = Lazy::new(|| Finder::new(b"<p"));
-static FINDER_EP: Lazy<Finder<'static>> = Lazy::new(|| Finder::new(b"</p"));
-static FINDER_EQ: Lazy<Finder<'static>> = Lazy::new(|| Finder::new(b"=\""));
-static FINDER_DIV:Lazy<Finder<'static>> = Lazy::new(|| Finder::new(b"div"));
+static FINDER_IN: LazyLock<Finder<'static>> = LazyLock::new(|| Finder::new(b"in=\""));
+static FINDER_ND: LazyLock<Finder<'static>> = LazyLock::new(|| Finder::new(b"nd=\""));
+static FINDER_P:  LazyLock<Finder<'static>> = LazyLock::new(|| Finder::new(b"<p"));
+static FINDER_EP: LazyLock<Finder<'static>> = LazyLock::new(|| Finder::new(b"</p"));
+static FINDER_EQ: LazyLock<Finder<'static>> = LazyLock::new(|| Finder::new(b"=\""));
+static FINDER_DIV:LazyLock<Finder<'static>> = LazyLock::new(|| Finder::new(b"div"));
 
 pub struct AppleMusicParser {}
 
