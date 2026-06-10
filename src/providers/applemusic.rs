@@ -104,10 +104,10 @@ pub struct SongAttributes {
 #[derive(Debug, Deserialize, Default)]
 
 pub struct LyricResult {
-    pub data: Option<Vec<LyricData>>,
+    pub data: Option<Vec<Data>>,
 }
 #[derive(Debug, Deserialize, Default)]
-pub struct LyricData {
+pub struct Data {
     #[serde(rename = "type")]
     pub lyrics_type: Option<String>,
     pub attributes: Option<LyricAttributes>,
