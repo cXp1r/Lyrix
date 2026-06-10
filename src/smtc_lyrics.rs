@@ -134,8 +134,8 @@ trait LyricsProvider {
     type Api: Send + Sync;
     type SearchResult: ISearchResult + 'static;
 
-    async fn create_searcher(&self) -> Self::Searcher;
-    async fn create_api(&self) -> Self::Api;
+    async fn create_searcher(&self) -> Result<Self::Searcher, Box<dyn std::error::Error + Send + Sync>>;
+    async fn create_api(&self) -> Result<Self::Api, Box<dyn std::error::Error + Send + Sync>>;
     fn label() -> &'static str;
     async fn fetch_and_parse(
         api: &Self::Api,
@@ -150,7 +150,7 @@ async fn fetch_lyrics<P: LyricsProvider>(
 ) -> Result<LyricsData, Box<dyn std::error::Error + Send + Sync>> {
     let label = P::label();
 
-    let searcher = provider.create_searcher().await;
+    let searcher = provider.create_searcher().await?;
     let result = searcher
         .search_for_result(track)
         .await?
@@ -161,7 +161,7 @@ async fn fetch_lyrics<P: LyricsProvider>(
         .downcast_ref::<P::SearchResult>()
         .ok_or_else(|| format!("{}: 搜索结果类型不匹配", label))?;
 
-    let api = provider.create_api().await;
+    let api = provider.create_api().await?;
     let lines = P::fetch_and_parse(&api, best).await?;
 
     if lines.is_empty() {
@@ -250,11 +250,11 @@ impl LyricsProvider for NeteaseProvider {
     type Api = crate::providers::netease::NeteaseApi;
     type SearchResult = crate::searchers::netease::NeteaseSearchResult;
 
-    async fn create_searcher(&self) -> Self::Searcher {
-        crate::searchers::netease::NeteaseSearcher::with_client(self.client.clone())
+    async fn create_searcher(&self) -> Result<Self::Searcher, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(crate::searchers::netease::NeteaseSearcher::with_client(self.client.clone()))
     }
-    async fn create_api(&self) -> Self::Api {
-        crate::providers::netease::NeteaseApi::with_client(self.client.clone())
+    async fn create_api(&self) -> Result<Self::Api, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(crate::providers::netease::NeteaseApi::with_client(self.client.clone()))
     }
     fn label() -> &'static str {
         "网易云"
@@ -285,11 +285,11 @@ impl LyricsProvider for QQMusicProvider {
     type Api = crate::providers::qqmusic::QQMusicApi;
     type SearchResult = crate::searchers::qqmusic::QQMusicSearchResult;
 
-    async fn create_searcher(&self) -> Self::Searcher {
-        crate::searchers::qqmusic::QQMusicSearcher::with_client(self.client.clone())
+    async fn create_searcher(&self) -> Result<Self::Searcher, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(crate::searchers::qqmusic::QQMusicSearcher::with_client(self.client.clone()))
     }
-    async fn create_api(&self) -> Self::Api {
-        crate::providers::qqmusic::QQMusicApi::with_client(self.client.clone())
+    async fn create_api(&self) -> Result<Self::Api, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(crate::providers::qqmusic::QQMusicApi::with_client(self.client.clone()))
     }
     fn label() -> &'static str {
         "QQ音乐"
@@ -323,11 +323,11 @@ impl LyricsProvider for KugouProvider {
     type Api = crate::providers::kugou::KugouApi;
     type SearchResult = crate::searchers::kugou::KugouSearchResult;
 
-    async fn create_searcher(&self) -> Self::Searcher {
-        crate::searchers::kugou::KugouSearcher::with_client(self.client.clone())
+    async fn create_searcher(&self) -> Result<Self::Searcher, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(crate::searchers::kugou::KugouSearcher::with_client(self.client.clone()))
     }
-    async fn create_api(&self) -> Self::Api {
-        crate::providers::kugou::KugouApi::with_client(self.client.clone())
+    async fn create_api(&self) -> Result<Self::Api, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(crate::providers::kugou::KugouApi::with_client(self.client.clone()))
     }
     fn label() -> &'static str {
         "酷狗"
@@ -365,11 +365,11 @@ impl LyricsProvider for SpotifyProvider {
     type Api = crate::providers::spotify::SpotifyApi;
     type SearchResult = crate::searchers::spotify::SpotifySearchResult;
 
-    async fn create_searcher(&self) -> Self::Searcher {
-        crate::searchers::spotify::SpotifySearcher::with_client(self.client.clone(), self.cookie.clone()).await
+    async fn create_searcher(&self) -> Result<Self::Searcher, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(crate::searchers::spotify::SpotifySearcher::with_client(self.client.clone(), self.cookie.clone()).await?)
     }
-    async fn create_api(&self) -> Self::Api {
-        crate::providers::spotify::SpotifyApi::with_client(self.client.clone(), self.cookie.clone()).await
+    async fn create_api(&self) -> Result<Self::Api, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(crate::providers::spotify::SpotifyApi::with_client(self.client.clone(), self.cookie.clone()).await?)
     }
     fn label() -> &'static str {
         "Spotify"
@@ -395,11 +395,11 @@ impl LyricsProvider for SodaMusicProvider {
     type Api = crate::providers::soda_music::SodaMusicApi;
     type SearchResult = crate::searchers::soda_music::SodaMusicSearchResult;
 
-    async fn create_searcher(&self) -> Self::Searcher {
-        crate::searchers::soda_music::SodaMusicSearcher::with_client(self.client.clone())
+    async fn create_searcher(&self) -> Result<Self::Searcher, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(crate::searchers::soda_music::SodaMusicSearcher::with_client(self.client.clone()))
     }
-    async fn create_api(&self) -> Self::Api {
-        crate::providers::soda_music::SodaMusicApi::with_client(self.client.clone())
+    async fn create_api(&self) -> Result<Self::Api, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(crate::providers::soda_music::SodaMusicApi::with_client(self.client.clone()))
     }
     fn label() -> &'static str {
         "汽水音乐"
@@ -430,11 +430,11 @@ impl LyricsProvider for AppleMusicProvider {
     type Api = crate::providers::applemusic::ApplemusicApi;
     type SearchResult = crate::searchers::applemusic::ApplemusicSearchResult;
 
-    async fn create_searcher(&self) -> Self::Searcher {
-        crate::searchers::applemusic::ApplemusicSearcher::with_client(self.client.clone(), self.token.clone())
+    async fn create_searcher(&self) -> Result<Self::Searcher, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(crate::searchers::applemusic::ApplemusicSearcher::with_client(self.client.clone(), self.token.clone()))
     }
-    async fn create_api(&self) -> Self::Api {
-        crate::providers::applemusic::ApplemusicApi::with_client(self.client.clone(), self.token.clone())
+    async fn create_api(&self) -> Result<Self::Api, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(crate::providers::applemusic::ApplemusicApi::with_client(self.client.clone(), self.token.clone()))
     }
     fn label() -> &'static str {
         "applemusic"

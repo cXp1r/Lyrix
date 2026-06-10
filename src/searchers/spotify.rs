@@ -7,12 +7,12 @@ pub struct SpotifySearcher {
 }
 
 impl SpotifySearcher {
-    pub async fn new(cookie: String) -> Self {
-        Self { api: SpotifyApi::new(cookie).await }
+    pub async fn new(cookie: String) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(Self { api: SpotifyApi::new(cookie).await? })
     }
 
-    pub async fn with_client(client: reqwest::Client, cookie: String) -> Self {
-        Self { api: SpotifyApi::with_client(client, cookie).await }
+    pub async fn with_client(client: reqwest::Client, cookie: String) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(Self { api: SpotifyApi::with_client(client, cookie).await? })
     }
 }
 

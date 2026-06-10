@@ -9,11 +9,11 @@ pub struct SpotifyApi {
 }
 
 impl SpotifyApi {
-    pub async fn new(cookie: String) -> Self {
+    pub async fn new(cookie: String) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
         init_spotify(&cookie, None).await
     }
 
-    pub async fn with_client(client: reqwest::Client, cookie: String) -> Self {
+    pub async fn with_client(client: reqwest::Client, cookie: String) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
         init_spotify(&cookie, Some(client)).await
     }
 
@@ -62,7 +62,7 @@ impl SpotifyApi {
 // SpotifyApi no longer implements Default since new() is async.
 // Use SpotifyApi::new(cookie).await instead.
 
-async fn init_spotify(cookie: &str, async_client: Option<reqwest::Client>) -> SpotifyApi {
+async fn init_spotify(cookie: &str, async_client: Option<reqwest::Client>) -> Result<SpotifyApi, Box<dyn std::error::Error + Send + Sync>> {
     let start = std::time::Instant::now();
     logger::debug("provider::spotify", "initializing client tokens");
 
@@ -83,14 +83,15 @@ async fn init_spotify(cookie: &str, async_client: Option<reqwest::Client>) -> Sp
         .header("Cookie", cookie)
         .send()
         .await
-        .expect("Failed to fetch Spotify token")
+        .map_err(|e| spotify_err(format!("Failed to fetch Spotify token: {e}")))?
         .error_for_status()
-        .expect("Spotify token request returned error")
+        .map_err(|e| spotify_err(format!("Spotify token request returned error: {e}")))?
         .text()
         .await
-        .expect("Failed to read Spotify token response body");
+        .map_err(|e| spotify_err(format!("Failed to read Spotify token response body: {e}")))?;
     let token_result: TokenResult =
-        serde_json::from_str(&token_resp).expect("Failed to parse TokenResult");
+        serde_json::from_str(&token_resp)
+            .map_err(|e| spotify_err(format!("Failed to parse TokenResult: {e}; body={token_resp}")))?;
 
     let ct_body = ClientTokenRequest {
         client_data: ClientData {
@@ -118,7 +119,9 @@ async fn init_spotify(cookie: &str, async_client: Option<reqwest::Client>) -> Sp
         .header("Access-Control-Request-Headers", "content-type")
         .send()
         .await
-        .expect("OPTIONS preflight failed");
+        .map_err(|e| spotify_err(format!("OPTIONS preflight failed: {e}")))?
+        .error_for_status()
+        .map_err(|e| spotify_err(format!("OPTIONS preflight returned error: {e}")))?;
 
     let ct_resp = http
         .post("https://clienttoken.spotify.com/v1/clienttoken")
@@ -131,14 +134,15 @@ async fn init_spotify(cookie: &str, async_client: Option<reqwest::Client>) -> Sp
         .json(&ct_body)
         .send()
         .await
-        .expect("Failed to fetch Spotify client token")
+        .map_err(|e| spotify_err(format!("Failed to fetch Spotify client token: {e}")))?
         .error_for_status()
-        .expect("Spotify client token request returned error")
+        .map_err(|e| spotify_err(format!("Spotify client token request returned error: {e}")))?
         .text()
         .await
-        .expect("Failed to read Spotify client token response body");
+        .map_err(|e| spotify_err(format!("Failed to read Spotify client token response body: {e}")))?;
     let client_token_result: ClientTokenResult =
-        serde_json::from_str(&ct_resp).expect("Failed to parse ClientTokenResult");
+        serde_json::from_str(&ct_resp)
+            .map_err(|e| spotify_err(format!("Failed to parse ClientTokenResult: {e}; body={ct_resp}")))?;
     //初始化baseapi的头
     let mut extra_headers = HashMap::new();
     extra_headers.insert(
@@ -165,13 +169,17 @@ async fn init_spotify(cookie: &str, async_client: Option<reqwest::Client>) -> Sp
         format_args!("client tokens initialized | elapsed={:?}", start.elapsed()),
     );
 
-    SpotifyApi {
+    Ok(SpotifyApi {
         /*authorization: format!("Bearer {}", token_result.access_token),
         client_token: client_token_result.granted_token.token,
         access_token_expires_at: token_result.access_token_expiration_timestamp_ms,
         client_token_ttl: client_token_result.granted_token.expires_after_seconds,Z*/
         api,
-    }
+    })
+}
+
+fn spotify_err(msg: impl Into<String>) -> std::io::Error {
+    std::io::Error::other(msg.into())
 }
 
 // ===== Request Models =====
