@@ -114,13 +114,30 @@ enum LogMsg {
     Line(String),
 }
 
+fn config_dir() -> Result<PathBuf, std::env::VarError> {
+    #[cfg(target_os = "windows")]
+    { std::env::var("APPDATA").map(PathBuf::from) }
+
+    #[cfg(target_os = "macos")]
+    { std::env::var("HOME").map(|h| PathBuf::from(h).join("Library").join("Application Support")) }
+
+    #[cfg(target_os = "linux")]
+    {
+        std::env::var("XDG_CONFIG_HOME").map(PathBuf::from)
+            .or_else(|_| std::env::var("HOME").map(|h| PathBuf::from(h).join(".config")))
+    }
+
+    #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
+    { Err(std::env::VarError::NotPresent) }
+}
+
 fn get_sender() -> &'static Sender<LogMsg> {
     static SENDER: OnceLock<Sender<LogMsg>> = OnceLock::new();
     SENDER.get_or_init(|| {
         let (tx, rx) = mpsc::channel::<LogMsg>();
 
-        let log_dir: PathBuf = dirs::config_dir()
-            .unwrap_or_else(|| std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")))
+        let log_dir: PathBuf = config_dir()
+            .unwrap_or_else(|_| std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")))
             .join("lyrix");
         let _ = std::fs::create_dir_all(&log_dir);
 
