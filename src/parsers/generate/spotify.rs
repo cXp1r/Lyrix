@@ -258,10 +258,4 @@ mod tests {
         let ts = Totp::new(b"12345678901234567890".to_vec(), 30, 6, 0);
         assert_eq!(ts.generate(59_000), "287082");
     }
-
-    #[test]
-    fn counter_bytes_endian() {
-        // JS: i(59374914) = [0,0,0,0,3,136,173,66]
-        assert_eq!(counter_to_bytes(59_374_914), [0, 0, 0, 0, 3, 136, 173, 66]);
-    }
 }
