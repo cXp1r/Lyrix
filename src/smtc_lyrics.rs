@@ -449,8 +449,9 @@ impl LyricsProvider for AppleMusicProvider {
             .get_lyric(&best.id)
             .await?
             .ok_or("applemusic: 获取歌曲详情失败")?;
+        //虽然是vec 但是实际上只有一项(目前来看是的)
         let lyric_data = detail.data.ok_or("applemusic: 歌曲没有歌词")?;
-        let u = lyric_data.get(0).unwrap();
+        let u = lyric_data.get(0).ok_or("applemusic: 歌曲没有歌词")?;
         let att = u.attributes.as_ref().ok_or("applemusic: 无歌曲详细信息")?;
         let lyrics = att
             .ttml_localizations
