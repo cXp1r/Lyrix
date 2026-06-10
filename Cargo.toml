@@ -21,7 +21,7 @@ base64 = "0.22"
 flate2 = "1"
 
 memchr = "2"
-dirs = "6.0.0"
+
 
 aes = "0.8"
 ecb = { version = "0.1", features = ["alloc"] }
