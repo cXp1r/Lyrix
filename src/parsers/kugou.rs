@@ -12,6 +12,7 @@ impl KugouParser {
     }
 }
 impl IParsers for KugouParser {
+    //不要问为什么不用t1,问就是这里本来就是offset
     #[allow(unused_variables)]
     fn get_offset_time(&self, t1: u32, t2: u32) -> Result<u16, String> {
         u16::try_from(t2)
