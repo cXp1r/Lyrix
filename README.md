@@ -1,6 +1,6 @@
 ﻿# Lyrix
 ![Rust](https://img.shields.io/badge/Rust-1.70+-red)
-![Version](https://img.shields.io/badge/version-26.7.2-green)
+![Version](https://img.shields.io/badge/version-26.8.0-green)
 ## 优点
 - 封装了统一函数可以直接接收smtc信息进行歌词解析
 - memchr予以的超高性能，无需预热或优化即可实现<1ms解析
