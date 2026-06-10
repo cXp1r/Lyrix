@@ -10,7 +10,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 static LOG_FILE_PATH: OnceLock<PathBuf> = OnceLock::new();
 
-// 0=DEBUG, 1=INFO, 2=WARN, 3=ERROR
+// 0=DEBUG, 1=INFO, 2=WARN, 3=ERROR, 4=NONE
 static LOG_LEVEL: AtomicU8 = AtomicU8::new(1);
 static LOG_FILTER_TAGS: OnceLock<RwLock<Vec<String>>> = OnceLock::new();
 static LOG_FILTER_INVERT: AtomicU8 = AtomicU8::new(0);
@@ -22,6 +22,7 @@ pub enum LogLevel {
     Info = 1,
     Warn = 2,
     Error = 3,
+    None = 4,
 }
 
 impl fmt::Display for LogLevel {
@@ -31,6 +32,7 @@ impl fmt::Display for LogLevel {
             LogLevel::Info => write!(f, "INFO"),
             LogLevel::Warn => write!(f, "WARN"),
             LogLevel::Error => write!(f, "ERROR"),
+            LogLevel::None => write!(f, "NONE"),
         }
     }
 }
@@ -42,6 +44,7 @@ impl LogLevel {
             LogLevel::Info => "info",
             LogLevel::Warn => "warn",
             LogLevel::Error => "error",
+            LogLevel::None => "none",
         }
     }
 
@@ -51,6 +54,7 @@ impl LogLevel {
             1 => LogLevel::Info,
             2 => LogLevel::Warn,
             3 => LogLevel::Error,
+            4 => LogLevel::None,
             _ => LogLevel::Info,
         }
     }
@@ -61,6 +65,7 @@ impl LogLevel {
             "INFO" => LogLevel::Info,
             "WARN" => LogLevel::Warn,
             "ERROR" => LogLevel::Error,
+            "NONE" => LogLevel::None,
             _ => LogLevel::Info,
         }
     }
