@@ -152,7 +152,7 @@ impl AppleMusicParser {
             };
             lineinfo.push(LineInfo {
                 start_time: st,
-                duration: (et - st) as u16,
+                duration: self.get_offset_time(st, et)?,
                 text: ulyrics[pos..pos + s].to_string(),
                 syllables: vec![],
             });
