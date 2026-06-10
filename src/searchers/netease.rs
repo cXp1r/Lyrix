@@ -45,7 +45,8 @@ impl ISearcher for NeteaseSearcher {
                 _ => String::new(),
             };
             let trial = {
-                if let Some(trial) = self.api.get_detail(&id).await? {
+                Some([0, 30000])
+                /*if let Some(trial) = self.api.get_detail(&id).await? {
                     if let Some(data) = trial.data {
                         if let Some(data) = data.get(0) {
                             if let Some(info) = &data.free_trial_info {
@@ -65,7 +66,7 @@ impl ISearcher for NeteaseSearcher {
                     }
                 } else {
                     None
-                }
+                }*/
             };
 
             results.push(Box::new(NeteaseSearchResult {
