@@ -39,7 +39,7 @@ cargo add lyrix
 在 `Cargo.toml` 中添加：
 ```toml
 [dependencies]
-lyrix = { version = "26.7.2" }
+lyrix = { version = "26.8.0" }
 tokio = { version = "1", features = ["full"] }
 ```
 
@@ -48,7 +48,7 @@ tokio = { version = "1", features = ["full"] }
 
 ```rust
 use lyrix::logger;
-use lyrix::smtc_lyrics::{self, MusicPlayer, Session};
+use lyrix::smtc_lyrics::{Lyrix, MusicPlayer, Session};
 
 // 鉴权结构（AppleMusic / Spotify 需要 token 才能实行下一步操作）
 let session = Session {
@@ -56,32 +56,48 @@ let session = Session {
     spotify_cookie: None,
 };
 
+// 初始化 Lyrix（session 可选，也可先传 None 后续在调用时传入）
+let lyrix = Lyrix::new(None);
+
 // 启用 debug 级别日志（默认 Info 级别，debug 消息会被过滤）
 logger::set_level("debug");
 
-// app_id 从 SMTC 获取，也可自行指定Player,见下方表格
-let result = smtc_lyrics::get_lyrics_with_appid(
+// 方式一：通过 app_id 获取歌词（app_id 从 SMTC 获取）
+let result = lyrix.get_lyrics_with_appid(
     app_id,
     title,
     artist_opt,
     album_opt,
     album_artist_opt,
     duration_ms_u32,
+    &session,
 )
 .await;
+
+// 方式二：通过 MusicPlayer 枚举获取歌词
+// let result = lyrix.get_lyrics_with_player(
+//     &MusicPlayer::Netease,
+//     title,
+//     artist_opt,
+//     album_opt,
+//     album_artist_opt,
+//     duration_ms_u32,
+//     &session,
+// )
+// .await;
 
 match result {
     Ok(data) => {
         // 试用区间裁剪：试听歌曲只保留可播放部分
         let data = match data.track_metadata.as_ref().map(|m| m.is_trial) {
-            Some(true) => smtc_lyrics::get_trial_part(data).unwrap_or(data),
+            Some(true) => Lyrix::get_trial_part(data).unwrap_or(data),
             _ => data,
         };
         // 使用 data.lines 获取歌词行列表
         println!("共 {} 行歌词", data.lines.len());
     }
     Err(e) => {
-        eprintln!("获取歌词失败 [{}]: {}", player.display_name(), e);
+        eprintln!("获取歌词失败: {}", e);
     }
 }
 ```
