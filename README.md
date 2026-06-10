@@ -6,7 +6,7 @@
 - memchr予以的超高性能，无需预热或优化即可实现<1ms解析
 
 ## 计划(按优先级排序)
-
+- [ ] 改用初始化时返回一个结构体,所有的操作使用impl避免重复初始化
 - [ ] Spotify实装测试
 - [ ] Spotify逐字同步部分
 - [ ] 洛雪音乐
@@ -40,7 +40,7 @@ tokio = { version = "1", features = ["full"] }
 ```
 
 
-### 使用
+## 使用
 
 ```rust
 use lyrix::logger;
