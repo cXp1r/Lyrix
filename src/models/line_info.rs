@@ -15,9 +15,3 @@ pub struct LineInfo {
     pub text: String,
     pub syllables: Vec<TextInfo>,
 }
-
-impl LineInfo {
-    pub fn is_empty(&self) -> bool {
-        self.start_time == 0 || self.syllables.is_empty()
-    }
-}
