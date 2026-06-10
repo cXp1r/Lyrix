@@ -9,6 +9,10 @@ impl NeteaseSearcher {
     pub fn new() -> Self {
         Self { api: NeteaseApi::new() }
     }
+
+    pub fn with_client(client: reqwest::Client) -> Self {
+        Self { api: NeteaseApi::with_client(client) }
+    }
 }
 
 impl Default for NeteaseSearcher {

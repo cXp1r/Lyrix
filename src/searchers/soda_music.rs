@@ -9,6 +9,10 @@ impl SodaMusicSearcher {
     pub fn new() -> Self {
         Self { api: SodaMusicApi::new() }
     }
+
+    pub fn with_client(client: reqwest::Client) -> Self {
+        Self { api: SodaMusicApi::with_client(client) }
+    }
 }
 
 impl Default for SodaMusicSearcher {

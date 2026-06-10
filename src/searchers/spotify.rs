@@ -10,6 +10,10 @@ impl SpotifySearcher {
     pub async fn new(cookie: String) -> Self {
         Self { api: SpotifyApi::new(cookie).await }
     }
+
+    pub async fn with_client(client: reqwest::Client, cookie: String) -> Self {
+        Self { api: SpotifyApi::with_client(client, cookie).await }
+    }
 }
 
 impl Default for SpotifySearcher {

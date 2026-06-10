@@ -10,6 +10,10 @@ impl QQMusicSearcher {
     pub fn new() -> Self {
         Self { api: QQMusicApi::new() }
     }
+
+    pub fn with_client(client: reqwest::Client) -> Self {
+        Self { api: QQMusicApi::with_client(client) }
+    }
 }
 
 impl Default for QQMusicSearcher {

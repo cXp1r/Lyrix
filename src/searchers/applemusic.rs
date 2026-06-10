@@ -11,6 +11,10 @@ impl ApplemusicSearcher {
     pub fn new(token: String) -> Self {
         Self { api: ApplemusicApi::new(token) }
     }
+
+    pub fn with_client(client: reqwest::Client, token: String) -> Self {
+        Self { api: ApplemusicApi::with_client(client, token) }
+    }
 }
 
 impl Default for ApplemusicSearcher {

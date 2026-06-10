@@ -9,6 +9,10 @@ impl KugouSearcher {
     pub fn new() -> Self {
         Self { api: KugouApi::new() }
     }
+
+    pub fn with_client(client: reqwest::Client) -> Self {
+        Self { api: KugouApi::with_client(client) }
+    }
 }
 
 impl Default for KugouSearcher {

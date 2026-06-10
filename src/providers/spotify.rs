@@ -74,7 +74,7 @@ async fn init_spotify(cookie: &str, async_client: Option<reqwest::Client>) -> Sp
         totp, totp, ts.version
     );
 
-    let http = reqwest::Client::new();
+    let http = async_client.clone().unwrap_or_else(reqwest::Client::new);
 
     let token_resp = http
         .get(&token_url)
