@@ -1,7 +1,7 @@
 use crate::logger;
 use crate::models::{LineInfo, TextInfo};
+use memchr::{memchr, memmem::Finder};
 use std::sync::LazyLock;
-use memchr::{memmem::Finder, memchr};
 
 static FINDER_IN: LazyLock<Finder<'static>> = LazyLock::new(|| Finder::new(b"in=\""));
 static FINDER_ND: LazyLock<Finder<'static>> = LazyLock::new(|| Finder::new(b"nd=\""));
@@ -16,66 +16,89 @@ impl AppleMusicParser {
     fn get_offset_time(&self, t1: u32, t2: u32) -> Result<u16, String> {
         let diff = t2
             .checked_sub(t1)
-            .ok_or(format!("AppleMusic Parsers: overflow ({} {})", t1, t2))?;
-        //u16够你offset用了
-        u16::try_from(diff)
-            .map_err(|_| format!("AppleMusic Parsers: offset overflow({})",diff))
-    }
-    // mm:ss.ccc
-    pub fn parse_syllables_time(&self, tag: &str) -> Result<u32, String> {
-        let bytes = tag.as_bytes();
-        let mut time: u32;
-        let cpos: usize;
-        if let Some(m) = memchr(b':', bytes) {
-            time = 60_000 * tag[..m].parse::<u32>()
-                .map_err(|_| "AppleMusic Parser: failed to parse minutes")?;
-            cpos = m + 1;
-        } else {
-            time = 0;
-            cpos = 0;
-        }
-        let s = memchr(b'.', bytes)
-            .ok_or("AppleMusic Parser: seconds not found")?;
-        time += 1_000 * tag[cpos..s].parse::<u32>()
-            .map_err(|_| "AppleMusic Parser: failed to parse seconds")?;
-        time += tag[s + 1..].parse::<u32>()
-            .map_err(|_| "AppleMusic Parser: failed to parse centis")?;
-        Ok(time)
+            .ok_or_else(|| format!("AppleMusic Parsers: overflow ({} {})", t1, t2))?;
+        u16::try_from(diff).map_err(|_| format!("AppleMusic Parsers: offset overflow({})", diff))
     }
 
-    // hh:mm:ss.xx  喜欢哥哥的雷霆定位吗
+    fn parse_u32_field(field: &str, name: &str) -> Result<u32, String> {
+        if field.is_empty() {
+            return Err(format!("AppleMusic Parser: missing {name}"));
+        }
+        field
+            .parse::<u32>()
+            .map_err(|e| format!("AppleMusic Parser: failed to parse {name}: {:?} raw={:?}", e, field))
+    }
+
+    pub fn parse_syllables_time(&self, tag: &str) -> Result<u32, String> {
+        let tag = tag.trim();
+        let (minutes, rest) = if let Some((m, rest)) = tag.split_once(':') {
+            (Self::parse_u32_field(m, "minutes")? * 60_000, rest)
+        } else {
+            (0, tag)
+        };
+        let (seconds_str, centis_str) = rest
+            .split_once('.')
+            .ok_or_else(|| format!("AppleMusic Parser: seconds not found in {:?}", tag))?;
+        let seconds = Self::parse_u32_field(seconds_str, "seconds")? * 1_000;
+        let centis = Self::parse_u32_field(centis_str, "centis")?;
+        Ok(minutes + seconds + centis)
+    }
+
     pub fn parse_time(&self, tag: &str) -> Result<u32, String> {
-        let hours   = tag[0..2].parse::<u32>().map_err(|_| "AppleMusic Parser: failed to parse hours")?;
-        let minutes = tag[3..5].parse::<u32>().map_err(|_| "AppleMusic Parser: failed to parse minutes")?;
-        let seconds = tag[6..8].parse::<u32>().map_err(|_| "AppleMusic Parser: failed to parse seconds")?;
-        let centis  = tag[9..11].parse::<u32>().map_err(|_| "AppleMusic Parser: failed to parse centis")?;
-        Ok(hours * 3_600_000 + minutes * 60_000 + seconds * 1_000 + centis * 10)
+        let tag = tag.trim();
+        let (hours_str, rest) = tag
+            .split_once(':')
+            .ok_or_else(|| format!("AppleMusic Parser: hours not found in {:?}", tag))?;
+        let (minutes_str, rest) = rest
+            .split_once(':')
+            .ok_or_else(|| format!("AppleMusic Parser: minutes not found in {:?}", tag))?;
+        let (seconds_str, centis_str) = rest
+            .split_once('.')
+            .ok_or_else(|| format!("AppleMusic Parser: centis not found in {:?}", tag))?;
+
+        let hours = Self::parse_u32_field(hours_str, "hours")? * 3_600_000;
+        let minutes = Self::parse_u32_field(minutes_str, "minutes")? * 60_000;
+        let seconds = Self::parse_u32_field(seconds_str, "seconds")? * 1_000;
+        let centis = Self::parse_u32_field(centis_str, "centis")? * 10;
+        Ok(hours + minutes + seconds + centis)
     }
 
     pub fn parse_syllables_line(&self, line: &str) -> Result<LineInfo, String> {
         let bytes = line.as_bytes();
         let mut pos = 0usize;
 
-        pos += FINDER_IN.find(&bytes[pos..]).ok_or("AppleMusic Parser: line start_time not found")? + 4;
+        pos += FINDER_IN
+            .find(&bytes[pos..])
+            .ok_or("AppleMusic Parser: line start_time not found")?
+            + 4;
         let w = memchr(b'"', &bytes[pos..]).ok_or("AppleMusic Parser: line start_time not found")?;
         let lst = self.parse_syllables_time(&line[pos..pos + w])?;
         pos += w + 1;
 
-        pos += FINDER_ND.find(&bytes[pos..]).ok_or("AppleMusic Parser: line end_time not found")? + 4;
+        pos += FINDER_ND
+            .find(&bytes[pos..])
+            .ok_or("AppleMusic Parser: line end_time not found")?
+            + 4;
         let w = memchr(b'"', &bytes[pos..]).ok_or("AppleMusic Parser: line end_time not found")?;
-        let ld = self.parse_syllables_time(&line[pos..pos + w])? - lst;
+        let end_time = self.parse_syllables_time(&line[pos..pos + w])?;
+        let ld = end_time
+            .checked_sub(lst)
+            .ok_or_else(|| format!("AppleMusic Parser: line end_time before start_time: {} < {}", end_time, lst))?;
         pos += w + 1;
 
         let mut textinfo: Vec<TextInfo> = Vec::with_capacity(8);
 
         loop {
             let Some(off) = FINDER_IN.find(&bytes[pos..]) else { break };
-            pos += off + 4;//避免一个雷霆定位定位到符号上面
+            pos += off + 4;
             let w = memchr(b'"', &bytes[pos..]).ok_or("AppleMusic Parser: word start_time not found")?;
             let st = self.parse_syllables_time(&line[pos..pos + w])?;
             pos += w + 1;
 
-            pos += FINDER_ND.find(&bytes[pos..]).ok_or("AppleMusic Parser: word end_time not found")? + 4;
+            pos += FINDER_ND
+                .find(&bytes[pos..])
+                .ok_or("AppleMusic Parser: word end_time not found")?
+                + 4;
             let w = memchr(b'"', &bytes[pos..]).ok_or("AppleMusic Parser: word end_time not found")?;
             let et = self.parse_syllables_time(&line[pos..pos + w])?;
             pos += w + 1;
@@ -96,7 +119,7 @@ impl AppleMusicParser {
         Ok(LineInfo {
             start_time: lst,
             duration: u16::try_from(ld)
-                .map_err(|_| format!("AppleMusic Parsers: offset overflow({})",ld))?,
+                .map_err(|_| format!("AppleMusic Parsers: offset overflow({})", ld))?,
             text: String::new(),
             syllables: textinfo,
         })
@@ -119,7 +142,8 @@ impl AppleMusicParser {
     }
 
     pub fn parse_w(&self, lyrics: String) -> Result<Vec<LineInfo>, String> {
-        let cpos = FINDER_DIV.find(lyrics.as_bytes())
+        let cpos = FINDER_DIV
+            .find(lyrics.as_bytes())
             .ok_or("AppleMusic Parser: lyrics body not found")?;
         let ulyrics = &lyrics[cpos..];
         let bytes = ulyrics.as_bytes();
@@ -134,7 +158,7 @@ impl AppleMusicParser {
                 return Err("AppleMusic Parser: start_time not found".into());
             };
             let st = self.parse_time(&ulyrics[pos..pos + c])?;
-            
+
             let Some(u) = it.next() else { break };
             pos = u + 2;
             let Some(c) = memchr(b'"', &bytes[pos..]) else {
@@ -159,7 +183,7 @@ impl AppleMusicParser {
         }
         Ok(lineinfo)
     }
-    //本质测速
+
     pub fn parse(&self, lyrics: String) -> Result<Vec<LineInfo>, String> {
         let start = std::time::Instant::now();
         let r = self.parse_without_st(lyrics);
@@ -176,7 +200,7 @@ impl AppleMusicParser {
         }
         r
     }
-    //本质分发
+
     pub fn parse_without_st(&self, lyrics: String) -> Result<Vec<LineInfo>, String> {
         let has_span = lyrics.find("span").is_some();
         if has_span {
@@ -187,3 +211,23 @@ impl AppleMusicParser {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::AppleMusicParser;
+
+    #[test]
+    fn parse_time_rejects_bad_input() {
+        let parser = AppleMusicParser {};
+        assert!(parser.parse_time("bad").is_err());
+        assert!(parser.parse_time("01:02").is_err());
+        assert!(parser.parse_time("01:02:03").is_err());
+        assert!(parser.parse_time("01:xx:03.10").is_err());
+    }
+
+    #[test]
+    fn parse_time_accepts_valid_input() {
+        let parser = AppleMusicParser {};
+        assert_eq!(parser.parse_time("01:02:03.04").unwrap(), 3_723_040);
+        assert_eq!(parser.parse_syllables_time("01:02.03").unwrap(), 62_003);
+    }
+}

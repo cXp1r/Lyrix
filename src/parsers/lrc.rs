@@ -1,29 +1,34 @@
 use crate::logger;
 use crate::models::LineInfo;
 use memchr::memchr;
-///LRC歌词解析器
+
 pub trait LrcParser {
     fn parse_lrc_time(&self, tag: &str) -> Result<u32, String> {
-        let tbytes = tag.as_bytes();
-        // 找 ':'
-        let Some(col) = memchr(b':', tbytes) else {
-            return Err(format!("no ':' in time tag: {:?}", tag));
-        };
-        // 找 '.'
-        let Some(dot) = memchr(b'.', tbytes) else {
-            return Err(format!("no '.' in time tag: {:?}", tag));
-        };
+        let tag = tag.trim();
+        let (minutes_str, rest) = tag
+            .split_once(':')
+            .ok_or_else(|| format!("no ':' in time tag: {:?}", tag))?;
+        let (seconds_str, centis_str) = rest
+            .split_once('.')
+            .ok_or_else(|| format!("no '.' in time tag: {:?}", tag))?;
 
-        let minutes = tag[..col].parse::<u32>()
-            .map_err(|e| format!("minutes: {:?} raw={:?}", e, &tag[..col]))?;
-        let seconds = tag[col + 1..dot].parse::<u32>()
-            .map_err(|e| format!("seconds: {:?} raw={:?}", e, &tag[col+1..dot]))?;
-        let centis = tag[dot + 1..].parse::<u32>()
-            .map_err(|e| format!("centis: {:?} raw={:?}", e, &tag[dot+1..]))?;
+        if minutes_str.is_empty() || seconds_str.is_empty() || centis_str.is_empty() {
+            return Err(format!("invalid time tag: {:?}", tag));
+        }
+
+        let minutes = minutes_str
+            .parse::<u32>()
+            .map_err(|e| format!("minutes: {:?} raw={:?}", e, minutes_str))?;
+        let seconds = seconds_str
+            .parse::<u32>()
+            .map_err(|e| format!("seconds: {:?} raw={:?}", e, seconds_str))?;
+        let centis = centis_str
+            .parse::<u32>()
+            .map_err(|e| format!("centis: {:?} raw={:?}", e, centis_str))?;
 
         Ok(minutes * 60_000 + seconds * 1_000 + centis * 10)
     }
-    
+
     fn parse(&self, lyrics: String) -> Result<Vec<LineInfo>, String> {
         let start = std::time::Instant::now();
         let result = self.parse_without_st(lyrics);
@@ -40,6 +45,7 @@ pub trait LrcParser {
         }
         result
     }
+
     fn parse_without_st(&self, lyrics: String) -> Result<Vec<LineInfo>, String> {
         let mut lineinfo: Vec<LineInfo> = Vec::new();
         let len = lyrics.len();
@@ -51,7 +57,6 @@ pub trait LrcParser {
             c += lb + 1;
 
             if c >= len || !cbytes[c].is_ascii_digit() {
-                // 跳过整个 [...] 块
                 if let Some(rb) = memchr(b']', &cbytes[c..]) {
                     c += rb + 1;
                 } else {
@@ -60,13 +65,11 @@ pub trait LrcParser {
                 continue;
             }
 
-            // 解析 mm:ss.xx 格式时间戳 → 毫秒
             let Some(rb) = memchr(b']', &cbytes[c..]) else { break };
             let tag = &lyrics[c..c + rb];
             let s = self.parse_lrc_time(tag)?;
             c += rb + 1;
 
-            // content 到下一个 '[' 或末尾，trim 换行
             let content_end = memchr(b'[', &cbytes[c..])
                 .map(|x| c + x)
                 .unwrap_or(len);
@@ -77,7 +80,7 @@ pub trait LrcParser {
 
             lineinfo.push(LineInfo {
                 start_time: s,
-                duration: 0, // LRC 格式没有 duration，后面可以用下一行的 start_time 补
+                duration: 0,
                 text,
                 syllables: vec![],
             });
@@ -85,6 +88,27 @@ pub trait LrcParser {
 
         Ok(lineinfo)
     }
+}
 
-    
+#[cfg(test)]
+mod tests {
+    use super::LrcParser;
+
+    struct Dummy;
+    impl LrcParser for Dummy {}
+
+    #[test]
+    fn parse_lrc_time_rejects_bad_input() {
+        let parser = Dummy;
+        assert!(parser.parse_lrc_time("not-a-time").is_err());
+        assert!(parser.parse_lrc_time("00:01").is_err());
+        assert!(parser.parse_lrc_time("00:01.").is_err());
+        assert!(parser.parse_lrc_time("00:xx.10").is_err());
+    }
+
+    #[test]
+    fn parse_lrc_time_accepts_valid_input() {
+        let parser = Dummy;
+        assert_eq!(parser.parse_lrc_time("01:02.03").unwrap(), 62_030);
+    }
 }
