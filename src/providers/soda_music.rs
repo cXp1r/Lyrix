@@ -45,7 +45,7 @@ impl SodaMusicApi {
     /// 获取曲目详情 (含歌词)
     pub async fn get_detail(&self, id: &str) -> Result<Option<TrackDetailResult>, Box<dyn std::error::Error + Send + Sync>> {
         let url = format!(
-            "https://api.qishui.com/luna/pc/track_v2?track_id={}&media_type=track&queue_type=",
+            "https://api.qishui.com/luna/pc/track_v2?track_id={}&media_type=track&queue_type=&aid=386088",
             urlencoding::encode(id)
         );
         match self.api.get_async(&url).await {
