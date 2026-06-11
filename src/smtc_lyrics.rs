@@ -19,6 +19,18 @@ impl Lyrix {
         Self { session: Arc::new(Mutex::new(session)), client: Client::new() }
     }
 
+    pub fn set_session(
+        &self,
+        session: Option<Session>,
+    ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let mut guard = self
+            .session
+            .lock()
+            .map_err(|e| std::io::Error::other(format!("failed to set session: {e}")))?;
+        *guard = session;
+        Ok(())
+    }
+
     pub async fn get_lyrics_with_player(
         &self,
         player: &MusicPlayer,
