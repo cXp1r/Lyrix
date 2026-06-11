@@ -1,6 +1,6 @@
 ﻿# Lyrix
 ![Rust](https://img.shields.io/badge/Rust-1.70+-red)
-![Version](https://img.shields.io/badge/version-26.8.1-green)
+![Version](https://img.shields.io/badge/version-26.8.2-green)
 ## 优点
 - 封装了统一函数可以直接接收smtc信息进行歌词解析
 - memchr予以的超高性能，无需预热或优化即可实现<1ms解析
@@ -39,7 +39,7 @@ cargo add lyrix
 在 `Cargo.toml` 中添加：
 ```toml
 [dependencies]
-lyrix = { version = "26.8.1" }
+lyrix = { version = "26.8.2" }
 tokio = { version = "1", features = ["full"] }
 ```
 
