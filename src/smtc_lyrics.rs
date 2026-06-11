@@ -3,7 +3,7 @@ use reqwest::Client;
 use std::sync::{Arc, Mutex};
 use crate::models::{LineInfo, LyricsData, TrackMetadata, ITrackMetadata};
 use crate::searchers::{ISearcher, ISearchResult};
-
+#[derive(Debug, Clone, Default)]
 pub struct Session {
     pub applemusic_token: Option<String>,
     pub spotify_cookie: Option<String>,
@@ -27,9 +27,8 @@ impl Lyrix {
         album: Option<&str>,
         album_artist: Option<&str>,
         duration_ms: u32,
-        session: &Session,
     ) -> Result<LyricsData, Box<dyn std::error::Error + Send + Sync>> {
-        let metadata = TrackMetadata {
+        let track = TrackMetadata {
             title: Some(title.to_string()),
             artist: artist.map(|s| s.to_string()),
             album: album.map(|s| s.to_string()),
@@ -37,9 +36,20 @@ impl Lyrix {
             duration_ms: Some(duration_ms),
             ..Default::default()
         };
-        fetch_lyrics_from_player(player, &metadata, session, &self.client).await
+        let session = self
+            .session
+            .lock()
+            .map_err(|e| std::io::Error::other(format!("failed to get session: {e}")))?
+            .clone()
+            .unwrap_or_default();
+        fetch_lyrics_from_player(
+            player, 
+            &track, 
+            &session, 
+            &self.client
+        ).await
     }
-
+    
     pub async fn get_lyrics_with_appid(
         &self,
         app_id: &str,
@@ -48,7 +58,6 @@ impl Lyrix {
         album: Option<&str>,
         album_artist: Option<&str>,
         duration_ms: u32,
-        session: &Session,
     ) -> Result<LyricsData, Box<dyn std::error::Error + Send + Sync>> {
         let player = id2player(app_id)?;
         let metadata = TrackMetadata {
@@ -59,10 +68,16 @@ impl Lyrix {
             duration_ms: Some(duration_ms),
             ..Default::default()
         };
-        fetch_lyrics_from_player(&player, &metadata, session, &self.client).await
+        let session = self
+            .session
+            .lock()
+            .map_err(|e| std::io::Error::other(format!("failed to get session: {e}")))?
+            .clone()
+            .unwrap_or_default();
+        fetch_lyrics_from_player(&player, &metadata, &session, &self.client).await
     }
 
-    pub fn get_trial_part(raw: LyricsData) -> Result<LyricsData, String> {
+    pub fn get_trial_part(&self, raw: LyricsData) -> Result<LyricsData, String> {
         let (st, du) = match &raw.track_metadata {
             Some(op) => match &op.trial {
                 Some(trial) => (trial[0], trial[1]),

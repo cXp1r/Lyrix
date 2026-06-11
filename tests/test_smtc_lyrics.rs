@@ -30,7 +30,6 @@ fn test_logger() {
 #[tokio::test]
 async fn test_interactive() {
     lyrix::logger::set_level("debug");
-    let lyrix = Lyrix::new(None);
     let track_db: Option<serde_json::Value> =
         std::fs::read_to_string("tests/track.json")
             .ok()
@@ -148,6 +147,7 @@ async fn test_interactive() {
             .unwrap();
         session.applemusic_token = Some(token);
     }
+    let lyrix = Lyrix::new(Some(session.clone()));
 
     let artist_opt = (!artist.is_empty()).then_some(artist.as_str());
     let album_opt = (!album.is_empty()).then_some(album.as_str());
@@ -160,7 +160,6 @@ async fn test_interactive() {
         album_opt,
         album_artist_opt,
         duration_ms,
-        &session,
     )
     .await;
 
@@ -187,7 +186,6 @@ async fn test_benchmark() {
     use std::time::Instant;
 
     lyrix::logger::set_level("none");
-    let lyrix = Lyrix::new(None);
     let track_db: Option<serde_json::Value> =
         std::fs::read_to_string("tests/track.json")
             .ok()
@@ -298,6 +296,7 @@ async fn test_benchmark() {
             .unwrap();
         session.applemusic_token = Some(token);
     }
+    let lyrix = Lyrix::new(Some(session.clone()));
 
     let artist_opt = (!artist.is_empty()).then_some(artist.as_str());
     let album_opt = (!album.is_empty()).then_some(album.as_str());
@@ -318,7 +317,6 @@ async fn test_benchmark() {
             album_opt,
             album_artist_opt,
             duration_ms,
-            &session,
         ).await;
         let dt = t0.elapsed().as_secs_f64() * 1000.0;
         elapsed_ms.push(dt);
