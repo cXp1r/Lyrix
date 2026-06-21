@@ -1,3 +1,4 @@
+use crate::error::{LyrixResult, SearcherError};
 use async_trait::async_trait;
 use crate::providers::applemusic::ApplemusicApi;
 use super::{log_score_gain, log_score_warn, log_score_total, ISearcher, ISearchResult};
@@ -25,21 +26,36 @@ impl Default for ApplemusicSearcher {
 
 #[async_trait]
 impl ISearcher for ApplemusicSearcher {
-    async fn search_for_results_by_string(&self, search_string: &str) -> Result<Vec<Box<dyn ISearchResult>>, Box<dyn std::error::Error + Send + Sync>> {
+    async fn search_for_results_by_string(&self, search_string: &str) -> LyrixResult<Vec<Box<dyn ISearchResult>>> {
         let result = self.api.search(search_string).await?;
         let mut results: Vec<Box<dyn ISearchResult>> = Vec::new();
         let resp = result
-            .ok_or_else(|| "AppleMusic: result is None".to_string())?;
+            .ok_or_else(|| SearcherError::NoResults {
+                label: self.label().to_string(),
+                query: search_string.to_string(),
+            })?;
         let res = resp.results
-            .ok_or_else(|| "AppleMusic: results is None".to_string())?;
+            .ok_or_else(|| SearcherError::NoResults {
+                label: self.label().to_string(),
+                query: search_string.to_string(),
+            })?;
         let songs = res.songs
-            .ok_or_else(|| "AppleMusic: songs is None".to_string())?;
+            .ok_or_else(|| SearcherError::NoResults {
+                label: self.label().to_string(),
+                query: search_string.to_string(),
+            })?;
         let songsv = songs.data
-            .ok_or_else(|| "AppleMusic: songs.data is None".to_string())?;
+            .ok_or_else(|| SearcherError::NoResults {
+                label: self.label().to_string(),
+                query: search_string.to_string(),
+            })?;
         for song in songsv {
             let id = song.id.clone().unwrap_or_default();
             let info = song.attributes
-                .ok_or_else(|| format!("AppleMusic: attributes is None ({})", id))?;
+                .ok_or_else(|| SearcherError::MissingField {
+                    label: self.label().to_string(),
+                    field: format!("attributes for id={}", id),
+                })?;
             let title = info.name.clone().unwrap_or_default();
             let singer = info.artist_name.clone().unwrap_or_default();
             let artists: Vec<String> = singer
@@ -63,8 +79,11 @@ impl ISearcher for ApplemusicSearcher {
             }));
         }
         Ok(results)
-        
+
     }
+
+    fn label(&self) -> &'static str { "applemusic" }
+
     fn compare_track(&self, track: &dyn ITrackMetadata, result: &dyn ISearchResult) -> (i8, bool) {
         let mut score = 0i8;
 
@@ -265,7 +284,7 @@ pub struct ApplemusicSearchResult {
     pub artists: Vec<String>,
     pub album: String,
     pub duration_ms: Option<u32>,  // snake_case
-    pub has_lyrics: bool, 
+    pub has_lyrics: bool,
     pub match_score: i8,
 }
 

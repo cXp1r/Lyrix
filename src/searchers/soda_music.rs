@@ -1,3 +1,4 @@
+use crate::error::{LyrixResult, SearcherError};
 use async_trait::async_trait;
 use crate::providers::soda_music::SodaMusicApi;
 use super::{ISearcher, ISearchResult};
@@ -23,12 +24,18 @@ impl Default for SodaMusicSearcher {
 
 #[async_trait]
 impl ISearcher for SodaMusicSearcher {
-    async fn search_for_results_by_string(&self, search_string: &str) -> Result<Vec<Box<dyn ISearchResult>>, Box<dyn std::error::Error + Send + Sync>> {
+    async fn search_for_results_by_string(&self, search_string: &str) -> LyrixResult<Vec<Box<dyn ISearchResult>>> {
         let result = self.api.search(search_string).await?;
         let mut results: Vec<Box<dyn ISearchResult>> = Vec::new();
 
-        let resp = result.ok_or_else(|| "SodaMusic: resp is None")?;
-        let groups = resp.result_groups.ok_or_else(|| "SodaMusic: result_groups is None")?;
+        let resp = result.ok_or_else(|| SearcherError::NoResults {
+            label: self.label().to_string(),
+            query: search_string.to_string(),
+        })?;
+        let groups = resp.result_groups.ok_or_else(|| SearcherError::NoResults {
+            label: self.label().to_string(),
+            query: search_string.to_string(),
+        })?;
 
         for group in groups {
             let Some(items) = group.data else { continue };
@@ -76,6 +83,8 @@ impl ISearcher for SodaMusicSearcher {
         Ok(results)
     }
 
+    fn label(&self) -> &'static str { "汽水音乐" }
+
     fn min_score(&self) -> i8 { 5 }
     fn get_split_char(&self) -> char {
         ','
@@ -105,4 +114,3 @@ impl ISearchResult for SodaMusicSearchResult {
     fn set_trial(&mut self, i: bool) { self.is_trial = i; }
     fn is_trial(&self) -> bool { self.is_trial }
 }
-

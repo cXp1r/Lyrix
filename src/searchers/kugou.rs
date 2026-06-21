@@ -1,3 +1,4 @@
+use crate::error::{LyrixResult, SearcherError};
 use async_trait::async_trait;
 use crate::providers::kugou::KugouApi;
 use super::{ISearcher, ISearchResult};
@@ -20,17 +21,26 @@ impl Default for KugouSearcher {
         Self::new()
     }
 }
-//酷狗音乐SMTC只提供title artist albumArtist? 
+//酷狗音乐SMTC只提供title artist albumArtist?
 //duration只能api拿了
 #[async_trait]
 impl ISearcher for KugouSearcher {
-    async fn search_for_results_by_string(&self, search_string: &str) -> Result<Vec<Box<dyn ISearchResult>>, Box<dyn std::error::Error + Send + Sync>> {
+    async fn search_for_results_by_string(&self, search_string: &str) -> LyrixResult<Vec<Box<dyn ISearchResult>>> {
         let result = self.api.get_search_song(search_string).await?;
         let mut results: Vec<Box<dyn ISearchResult>> = Vec::new();
 
-        let resp = result.ok_or_else(|| "Kugou: resp is None")?;
-        let data = resp.data.ok_or_else(|| "Kugou: data is None")?;
-        let info_list = data.info.ok_or_else(|| "Kugou: info is None")?;
+        let resp = result.ok_or_else(|| SearcherError::NoResults {
+            label: self.label().to_string(),
+            query: search_string.to_string(),
+        })?;
+        let data = resp.data.ok_or_else(|| SearcherError::NoResults {
+            label: self.label().to_string(),
+            query: search_string.to_string(),
+        })?;
+        let info_list = data.info.ok_or_else(|| SearcherError::NoResults {
+            label: self.label().to_string(),
+            query: search_string.to_string(),
+        })?;
 
         for info in info_list {
             let title = info.song_name.clone().unwrap_or_default();
@@ -57,6 +67,9 @@ impl ISearcher for KugouSearcher {
 
         Ok(results)
     }
+
+    fn label(&self) -> &'static str { "酷狗" }
+
     fn min_score(&self) -> i8 { 5 }
     fn get_split_char(&self) -> char {
         '、'

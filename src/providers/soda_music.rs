@@ -1,3 +1,5 @@
+use crate::error::provider::json::JsonError;
+use crate::error::LyrixResult;
 use super::base_api::BaseApi;
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -33,23 +35,33 @@ impl SodaMusicApi {
     }
 
     /// 搜索歌曲
-    pub async fn search(&self, keyword: &str) -> Result<Option<SearchResult>, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn search(&self, keyword: &str) -> LyrixResult<Option<SearchResult>> {
         let url = format!(
             "https://api.qishui.com/luna/pc/search/track?aid=386088&app_name=&region=&geo_region=&os_region=&sim_region=&device_id=&cdid=&iid=&version_name=&version_code=&channel=&build_mode=&network_carrier=&ac=&tz_name=&resolution=&device_platform=&device_type=&os_version=&fp=&q={}&cursor=&search_id=&search_method=input&debug_params=&from_search_id=&search_scene=",
             urlencoding::encode(keyword)
         );
         let resp = self.api.get_async(&url).await?;
-        Ok(serde_json::from_str(&resp).ok())
+        let result: Option<SearchResult> = serde_json::from_str(&resp).map_err(|e| JsonError {
+            api: "SodaMusicSearch".to_string(),
+            source: e,
+        })?;
+        Ok(result)
     }
 
     /// 获取曲目详情 (含歌词)
-    pub async fn get_detail(&self, id: &str) -> Result<Option<TrackDetailResult>, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_detail(&self, id: &str) -> LyrixResult<Option<TrackDetailResult>> {
         let url = format!(
             "https://api.qishui.com/luna/pc/track_v2?track_id={}&media_type=track&queue_type=&aid=386088",
             urlencoding::encode(id)
         );
         match self.api.get_async(&url).await {
-            Ok(resp) => Ok(serde_json::from_str(&resp).ok()),
+            Ok(resp) => {
+                let result: Option<TrackDetailResult> = serde_json::from_str(&resp).map_err(|e| JsonError {
+                    api: "SodaMusicDetail".to_string(),
+                    source: e,
+                })?;
+                Ok(result)
+            }
             Err(_) => Ok(None),
         }
     }

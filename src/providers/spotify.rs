@@ -1,3 +1,6 @@
+use crate::error::provider::http::HttpError;
+use crate::error::provider::json::JsonError;
+use crate::error::LyrixResult;
 use crate::logger;
 use crate::parsers::generate::spotify::build_totp;
 use super::base_api::BaseApi;
@@ -9,16 +12,16 @@ pub struct SpotifyApi {
 }
 
 impl SpotifyApi {
-    pub async fn new(cookie: String) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn new(cookie: String) -> LyrixResult<Self> {
         init_spotify(&cookie, None).await
     }
 
-    pub async fn with_client(client: reqwest::Client, cookie: String) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn with_client(client: reqwest::Client, cookie: String) -> LyrixResult<Self> {
         init_spotify(&cookie, Some(client)).await
     }
 
     /// 搜索歌曲
-    pub async fn search(&self, keyword: &str) -> Result<Option<SearchResult>, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn search(&self, keyword: &str) -> LyrixResult<Option<SearchResult>> {
         let body = serde_json::json!({
             "variables": {
                 "query": keyword,
@@ -45,11 +48,15 @@ impl SpotifyApi {
             )
             .await?;
 
-        Ok(serde_json::from_str(&resp).ok())
+        let result: Option<SearchResult> = serde_json::from_str(&resp).map_err(|e| JsonError {
+            api: "SpotifySearch".to_string(),
+            source: e,
+        })?;
+        Ok(result)
     }
 
     ///抓取歌词
-    pub async fn get_lyrics(&self, id: &str) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_lyrics(&self, id: &str) -> LyrixResult<String> {
         let url = format!(
             "https://spclient.wg.spotify.com/color-lyrics/v2/track/{}?format=json&market=from_token",
             urlencoding::encode(id)
@@ -59,14 +66,11 @@ impl SpotifyApi {
     }
 }
 
-// SpotifyApi no longer implements Default since new() is async.
-// Use SpotifyApi::new(cookie).await instead.
-
-async fn init_spotify(cookie: &str, async_client: Option<reqwest::Client>) -> Result<SpotifyApi, Box<dyn std::error::Error + Send + Sync>> {
+async fn init_spotify(cookie: &str, async_client: Option<reqwest::Client>) -> LyrixResult<SpotifyApi> {
     let start = std::time::Instant::now();
     logger::debug("provider::spotify", "initializing client tokens");
 
-    let ts = build_totp(0);
+    let ts = build_totp(0)?;
     let totp = ts.generate_now();
 
     let token_url = format!(
@@ -83,15 +87,18 @@ async fn init_spotify(cookie: &str, async_client: Option<reqwest::Client>) -> Re
         .header("Cookie", cookie)
         .send()
         .await
-        .map_err(|e| spotify_err(format!("Failed to fetch Spotify token: {e}")))?
+        .map_err(|e| http_err(&token_url, &e))?
         .error_for_status()
-        .map_err(|e| spotify_err(format!("Spotify token request returned error: {e}")))?
+        .map_err(|e| http_err(&token_url, &e))?
         .text()
         .await
-        .map_err(|e| spotify_err(format!("Failed to read Spotify token response body: {e}")))?;
+        .map_err(|e| http_err(&token_url, &e))?;
     let token_result: TokenResult =
         serde_json::from_str(&token_resp)
-            .map_err(|e| spotify_err(format!("Failed to parse TokenResult: {e}; body={token_resp}")))?;
+            .map_err(|e| JsonError {
+                api: "SpotifyToken".to_string(),
+                source: e,
+            })?;
 
     let ct_body = ClientTokenRequest {
         client_data: ClientData {
@@ -109,19 +116,20 @@ async fn init_spotify(cookie: &str, async_client: Option<reqwest::Client>) -> Re
     };
 
     //不知道是不是没有options
+    let options_url = "https://clienttoken.spotify.com/v1/clienttoken";
     http
         .request(
             reqwest::Method::OPTIONS,
-            "https://clienttoken.spotify.com/v1/clienttoken",
+            options_url,
         )
         .header("Origin", "https://open.spotify.com")
         .header("Access-Control-Request-Method", "POST")
         .header("Access-Control-Request-Headers", "content-type")
         .send()
         .await
-        .map_err(|e| spotify_err(format!("OPTIONS preflight failed: {e}")))?
+        .map_err(|e| http_err(options_url, &e))?
         .error_for_status()
-        .map_err(|e| spotify_err(format!("OPTIONS preflight returned error: {e}")))?;
+        .map_err(|e| http_err(options_url, &e))?;
 
     let ct_resp = http
         .post("https://clienttoken.spotify.com/v1/clienttoken")
@@ -134,15 +142,18 @@ async fn init_spotify(cookie: &str, async_client: Option<reqwest::Client>) -> Re
         .json(&ct_body)
         .send()
         .await
-        .map_err(|e| spotify_err(format!("Failed to fetch Spotify client token: {e}")))?
+        .map_err(|e| http_err(options_url, &e))?
         .error_for_status()
-        .map_err(|e| spotify_err(format!("Spotify client token request returned error: {e}")))?
+        .map_err(|e| http_err(options_url, &e))?
         .text()
         .await
-        .map_err(|e| spotify_err(format!("Failed to read Spotify client token response body: {e}")))?;
+        .map_err(|e| http_err(options_url, &e))?;
     let client_token_result: ClientTokenResult =
         serde_json::from_str(&ct_resp)
-            .map_err(|e| spotify_err(format!("Failed to parse ClientTokenResult: {e}; body={ct_resp}")))?;
+            .map_err(|e| JsonError {
+                api: "SpotifyClientToken".to_string(),
+                source: e,
+            })?;
     //初始化baseapi的头
     let mut extra_headers = HashMap::new();
     extra_headers.insert(
@@ -169,17 +180,17 @@ async fn init_spotify(cookie: &str, async_client: Option<reqwest::Client>) -> Re
         format_args!("client tokens initialized | elapsed={:?}", start.elapsed()),
     );
 
-    Ok(SpotifyApi {
-        /*authorization: format!("Bearer {}", token_result.access_token),
-        client_token: client_token_result.granted_token.token,
-        access_token_expires_at: token_result.access_token_expiration_timestamp_ms,
-        client_token_ttl: client_token_result.granted_token.expires_after_seconds,Z*/
-        api,
-    })
+    Ok(SpotifyApi { api })
 }
 
-fn spotify_err(msg: impl Into<String>) -> std::io::Error {
-    std::io::Error::other(msg.into())
+fn http_err(url: &str, e: &reqwest::Error) -> HttpError {
+    if e.is_timeout() {
+        HttpError::Timeout { url: url.to_string() }
+    } else if e.is_connect() {
+        HttpError::ConnectionFailed { detail: e.to_string(), url: url.to_string() }
+    } else {
+        HttpError::ConnectionFailed { detail: e.to_string(), url: url.to_string() }
+    }
 }
 
 // ===== Request Models =====

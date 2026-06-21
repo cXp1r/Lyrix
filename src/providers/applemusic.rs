@@ -1,3 +1,5 @@
+use crate::error::provider::json::JsonError;
+use crate::error::LyrixResult;
 use super::base_api::BaseApi;
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -32,18 +34,21 @@ impl ApplemusicApi {
         }
     }
 
-    pub async fn search(&self, keyword: &str) -> Result<Option<SearchResult>, reqwest::Error> {
+    pub async fn search(&self, keyword: &str) -> LyrixResult<Option<SearchResult>> {
         let encoded = urlencoding::encode(keyword);
         let url = format!(
             "https://amp-api-edge.music.apple.com/v1/catalog/cn/search?term={}&types=songs&limit=20",
             encoded
         );
         let resp = self.api.get_async(&url).await?;
-        
-        Ok(serde_json::from_str(&resp).ok())
+        let result: Option<SearchResult> = serde_json::from_str(&resp).map_err(|e| JsonError {
+            api: "AppleMusicSearch".to_string(),
+            source: e,
+        })?;
+        Ok(result)
     }
 
-    pub async fn get_lyric(&self, id: &str) -> Result<Option<LyricResult>, reqwest::Error> {
+    pub async fn get_lyric(&self, id: &str) -> LyrixResult<Option<LyricResult>> {
         let url = format!(
             "https://amp-api.music.apple.com/v1/catalog/cn/songs/{}/syllable-lyrics?{}={}&{}={}&extend=ttmlLocalizations",
             id,
@@ -53,7 +58,11 @@ impl ApplemusicApi {
             urlencoding::encode("zh-Hans"),
         );
         let resp = self.api.get_async(&url).await?;
-        Ok(serde_json::from_str(&resp).ok())
+        let result: Option<LyricResult> = serde_json::from_str(&resp).map_err(|e| JsonError {
+            api: "AppleMusicLyric".to_string(),
+            source: e,
+        })?;
+        Ok(result)
     }
 }
 

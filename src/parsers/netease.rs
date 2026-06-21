@@ -1,3 +1,5 @@
+use crate::error::parser::lyrics_parse::LyricsParseError;
+use crate::error::LyrixResult;
 use crate::parsers::{IParsers, lrc::*};
 use memchr::{memchr, memchr2};
 use crate::models::*;
@@ -7,30 +9,45 @@ pub struct NeteaseLrcParser{
     pub version: u8,
 }
 impl LrcParser for NeteaseLrcParser {
-    fn parse_lrc_time(&self, tag: &str) -> Result<u32, String> {
+    fn parse_lrc_time(&self, tag: &str) -> LyrixResult<u32> {
         let tbytes = tag.as_bytes();
 
         // 找第一个 ':'
         let Some(col) = memchr(b':', tbytes) else {
-            return Err(format!("no ':' in time tag: {:?}", tag));
+            return Err(LyricsParseError::InvalidLrcFormat {
+                detail: format!("时间标签缺少 ':' : {:?}", tag),
+            }
+            .into());
         };
 
         let minutes = tag[..col]
             .parse::<u32>()
-            .map_err(|e| format!("minutes: {:?} raw={:?}", e, &tag[..col]))?;
+            .map_err(|_| LyricsParseError::TimestampParse {
+                field: "minutes".to_string(),
+                raw: tag[..col].to_string(),
+            })?;
 
         // col 之后找 ':' 或 '.'，看哪个先出现来盲判格式
         let Some(sep) = memchr2(b':', b'.', &tbytes[col + 1..]) else {
-            return Err(format!("no second separator in time tag: {:?}", tag));
+            return Err(LyricsParseError::InvalidLrcFormat {
+                detail: format!("时间标签缺少第二个分隔符: {:?}", tag),
+            }
+            .into());
         };
         let sep = col + 1 + sep; // 转绝对偏移
 
         let seconds = tag[col + 1..sep]
             .parse::<u32>()
-            .map_err(|e| format!("seconds: {:?} raw={:?}", e, &tag[col+1..sep]))?;
+            .map_err(|_| LyricsParseError::TimestampParse {
+                field: "seconds".to_string(),
+                raw: tag[col + 1..sep].to_string(),
+            })?;
         let centis = tag[sep + 1..]
             .parse::<u32>()
-            .map_err(|e| format!("centis: {:?} raw={:?}", e, &tag[sep+1..]))?;
+            .map_err(|_| LyricsParseError::TimestampParse {
+                field: "centis".to_string(),
+                raw: tag[sep + 1..].to_string(),
+            })?;
 
         // ':' → v3 毫秒直接用，'.' → v4 百分秒 *10
         match tbytes[sep] {
@@ -44,7 +61,7 @@ impl LrcParser for NeteaseLrcParser {
 pub struct NeteaseParser;
 
 impl IParsers for NeteaseParser {
-    fn parse_syllables(&self, s: u32, content: &str) -> Result<Vec<TextInfo>, String> {
+    fn parse_syllables(&self, s: u32, content: &str) -> LyrixResult<Vec<TextInfo>> {
         let cbytes = content.as_bytes();
         let clen = cbytes.len();
         let mut cpos = 0;
@@ -64,7 +81,9 @@ impl IParsers for NeteaseParser {
             let Some(c1) = memchr(b',', &cbytes[cpos..]) else { break };
             let s1 = content[cpos..cpos + c1]
                 .parse::<u32>()
-                .map_err(|e| format!("s1: {:?} raw={:?}", e, &content[cpos..cpos + c1]))?;
+                .map_err(|e| LyricsParseError::SyllableParse {
+                    detail: format!("s1 parse error: {:?} raw={:?}", e, &content[cpos..cpos + c1]),
+                })?;
             cpos += c1 + 1;
 
             // d1，兼容 (s,d,x)
@@ -78,7 +97,9 @@ impl IParsers for NeteaseParser {
             };
             let d1 = content[cpos..d1_end]
                 .parse::<u16>()
-                .map_err(|e| format!("d1: {:?} raw={:?}", e, &content[cpos..d1_end]))?;
+                .map_err(|e| LyricsParseError::SyllableParse {
+                    detail: format!("d1 parse error: {:?} raw={:?}", e, &content[cpos..d1_end]),
+                })?;
 
             // 跳到 ')' 后面
             let Some(rp) = memchr(b')', &cbytes[cpos..]) else { break };

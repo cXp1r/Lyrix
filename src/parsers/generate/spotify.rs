@@ -37,7 +37,8 @@ impl Sha1 {
             }
         }
         while off + 64 <= data.len() {
-            let block: [u8; 64] = data[off..off + 64].try_into().unwrap();
+            let block: [u8; 64] = data[off..off + 64].try_into()
+                .expect("64-byte block split invariant");
             Self::compress(&mut self.state, &block);
             off += 64;
         }
@@ -78,7 +79,8 @@ impl Sha1 {
     fn compress(state: &mut [u32; 5], block: &[u8; 64]) {
         let mut w = [0u32; 80];
         for i in 0..16 {
-            w[i] = u32::from_be_bytes(block[i * 4..i * 4 + 4].try_into().unwrap());
+            w[i] = u32::from_be_bytes(block[i * 4..i * 4 + 4].try_into()
+                .expect("4-byte word split invariant"));
         }
         for i in 16..80 {
             w[i] = (w[i-3] ^ w[i-8] ^ w[i-14] ^ w[i-16]).rotate_left(1);
@@ -180,7 +182,8 @@ impl Totp {
     pub fn generate_now(&self) -> String {
         let ms = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
-            .unwrap().as_millis() as u64;
+            .unwrap_or_default()
+            .as_millis() as u64;
         self.generate(ms)
     }
 }
@@ -211,8 +214,11 @@ pub fn tl(ts: &Totp, reason: &str, product_type: &str, server_ts_s: Option<u64>)
     }
 }
 
+use crate::error::parser::totp_gen::TotpGenError;
+use crate::error::LyrixResult;
+
 //这些是把处理后的数据硬编码好
-pub fn build_totp(index: usize) -> Totp {
+pub fn build_totp(index: usize) -> LyrixResult<Totp> {
     let (bytes, version): (&[u8], u32) = match index {
         // version 61  (60 bytes)
         0 => (&[
@@ -233,9 +239,9 @@ pub fn build_totp(index: usize) -> Totp {
             53,55,49,48,52,52,55,52,51,49,50,53,49,48,56,50,56,49,50,49,
             49,52,50,49,55,56,57,57,57,54,
         ], 59),
-        _ => panic!("index out of range, valid: 0/1/2"),
+        _ => return Err(TotpGenError::InvalidIndex { index }.into()),
     };
-    Totp::new(bytes.to_vec(), 30, 6, version)
+    Ok(Totp::new(bytes.to_vec(), 30, 6, version))
 }
 
 

@@ -1,3 +1,5 @@
+use crate::error::parser::lyrics_parse::LyricsParseError;
+use crate::error::LyrixResult;
 use crate::parsers::lrc::LrcParser;
 use crate::parsers::{IParsers, decrypt::qrc::*};
 use crate::models::*;
@@ -8,16 +10,16 @@ impl LrcParser for QQMusicLrcParser {}
 ///QQ音乐逐字歌词解析器
 pub struct QQMusicParser;
 impl QQMusicParser {
-    fn decrypt(&self, lyrics: &str) -> Result<String, String> {
+    fn decrypt(&self, lyrics: &str) -> LyrixResult<String> {
         qrc_decrypt(lyrics)
     }
-    pub fn decrypt_and_parse(&self, lyrics: String) -> Result<Vec<LineInfo>, String>  {
+    pub fn decrypt_and_parse(&self, lyrics: String) -> LyrixResult<Vec<LineInfo>> {
         let lyrics = self.decrypt(&lyrics)?;
         self.parse(lyrics)
     }
 }
 impl IParsers for QQMusicParser {
-    fn parse_syllables(&self, s: u32, content: &str) -> Result<Vec<TextInfo>, String> {
+    fn parse_syllables(&self, s: u32, content: &str) -> LyrixResult<Vec<TextInfo>> {
         let cbytes = content.as_bytes();
         let clen = cbytes.len();
         let mut cpos = 0;
@@ -39,7 +41,9 @@ impl IParsers for QQMusicParser {
             let Some(c1) = memchr(b',', &cbytes[cpos..]) else { break };
             let s1 = content[cpos..cpos + c1]
                 .parse::<u32>()
-                .map_err(|e| format!("s1: {:?} raw={:?}", e, &content[cpos..cpos + c1]))?;
+                .map_err(|e| LyricsParseError::SyllableParse {
+                    detail: format!("s1 parse error: {:?} raw={:?}", e, &content[cpos..cpos + c1]),
+                })?;
             cpos += c1 + 1;
 
             // d1，兼容 (s,d,x)
@@ -53,7 +57,9 @@ impl IParsers for QQMusicParser {
             };
             let d1 = content[cpos..d1_end]
                 .parse::<u16>()
-                .map_err(|e| format!("d1: {:?} raw={:?}", e, &content[cpos..d1_end]))?;
+                .map_err(|e| LyricsParseError::SyllableParse {
+                    detail: format!("d1 parse error: {:?} raw={:?}", e, &content[cpos..d1_end]),
+                })?;
 
             let Some(rp) = memchr(b')', &cbytes[cpos..]) else { break };
             cpos += rp + 1;

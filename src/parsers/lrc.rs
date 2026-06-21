@@ -1,35 +1,53 @@
+use crate::error::parser::lyrics_parse::LyricsParseError;
+use crate::error::LyrixResult;
 use crate::logger;
 use crate::models::LineInfo;
 use memchr::memchr;
 
 pub trait LrcParser {
-    fn parse_lrc_time(&self, tag: &str) -> Result<u32, String> {
+    fn parse_lrc_time(&self, tag: &str) -> LyrixResult<u32> {
         let tag = tag.trim();
         let (minutes_str, rest) = tag
             .split_once(':')
-            .ok_or_else(|| format!("no ':' in time tag: {:?}", tag))?;
+            .ok_or_else(|| LyricsParseError::InvalidLrcFormat {
+                detail: format!("时间标签缺少 ':' : {:?}", tag),
+            })?;
         let (seconds_str, centis_str) = rest
             .split_once('.')
-            .ok_or_else(|| format!("no '.' in time tag: {:?}", tag))?;
+            .ok_or_else(|| LyricsParseError::InvalidLrcFormat {
+                detail: format!("时间标签缺少 '.' : {:?}", tag),
+            })?;
 
         if minutes_str.is_empty() || seconds_str.is_empty() || centis_str.is_empty() {
-            return Err(format!("invalid time tag: {:?}", tag));
+            return Err(LyricsParseError::InvalidLrcFormat {
+                detail: format!("时间标签不完整: {:?}", tag),
+            }
+            .into());
         }
 
-        let minutes = minutes_str
-            .parse::<u32>()
-            .map_err(|e| format!("minutes: {:?} raw={:?}", e, minutes_str))?;
-        let seconds = seconds_str
-            .parse::<u32>()
-            .map_err(|e| format!("seconds: {:?} raw={:?}", e, seconds_str))?;
-        let centis = centis_str
-            .parse::<u32>()
-            .map_err(|e| format!("centis: {:?} raw={:?}", e, centis_str))?;
+        let minutes = minutes_str.parse::<u32>().map_err(|_| {
+            LyricsParseError::TimestampParse {
+                field: "minutes".to_string(),
+                raw: minutes_str.to_string(),
+            }
+        })?;
+        let seconds = seconds_str.parse::<u32>().map_err(|_| {
+            LyricsParseError::TimestampParse {
+                field: "seconds".to_string(),
+                raw: seconds_str.to_string(),
+            }
+        })?;
+        let centis = centis_str.parse::<u32>().map_err(|_| {
+            LyricsParseError::TimestampParse {
+                field: "centis".to_string(),
+                raw: centis_str.to_string(),
+            }
+        })?;
 
         Ok(minutes * 60_000 + seconds * 1_000 + centis * 10)
     }
 
-    fn parse(&self, lyrics: String) -> Result<Vec<LineInfo>, String> {
+    fn parse(&self, lyrics: String) -> LyrixResult<Vec<LineInfo>> {
         let start = std::time::Instant::now();
         let result = self.parse_without_st(lyrics);
         let t = start.elapsed();
@@ -46,7 +64,7 @@ pub trait LrcParser {
         result
     }
 
-    fn parse_without_st(&self, lyrics: String) -> Result<Vec<LineInfo>, String> {
+    fn parse_without_st(&self, lyrics: String) -> LyrixResult<Vec<LineInfo>> {
         let mut lineinfo: Vec<LineInfo> = Vec::new();
         let len = lyrics.len();
         let cbytes = lyrics.as_bytes();

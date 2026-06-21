@@ -1,3 +1,5 @@
+use crate::error::parser::lyrics_parse::LyricsParseError;
+use crate::error::LyrixResult;
 use crate::logger;
 use crate::models::{LineInfo};
 use serde::Deserialize;
@@ -28,7 +30,7 @@ struct RawLine {
 pub struct SpotifyParser;
 
 impl SpotifyParser {
-    pub fn parse(&self, lyrics: String) -> Result<Vec<LineInfo>, String> {
+    pub fn parse(&self, lyrics: String) -> LyrixResult<Vec<LineInfo>> {
         let start = std::time::Instant::now();
         let result = self.parse_without_st(lyrics);
         let t = start.elapsed();
@@ -44,17 +46,19 @@ impl SpotifyParser {
         }
         result
     }
-    pub fn parse_without_st(&self, lyrics: String) -> Result<Vec<LineInfo>, String> {
+    pub fn parse_without_st(&self, lyrics: String) -> LyrixResult<Vec<LineInfo>> {
         let resp: LyricsResponse =
-            serde_json::from_str(&lyrics).map_err(|e| e.to_string())?;
+            serde_json::from_str(&lyrics).map_err(|e| LyricsParseError::InvalidStructure {
+                detail: format!("JSON 解析失败: {}", e),
+            })?;
 
         let data = resp.lyrics;
         let sync_type = data.sync_type.as_deref().unwrap_or("");
         if sync_type != "LINE_SYNCED" {
-            return Err(format!("SpotifyParser: unknown sync_type: {sync_type}"));
+            return Err(LyricsParseError::UnknownSyncType.into());
         }
 
-        let lines = data.lines.ok_or("SpotifyParser: missing lines")?;
+        let lines = data.lines.ok_or_else(|| LyricsParseError::EmptyContent)?;
         let mut lineinfo = Vec::with_capacity(lines.len());
 
         for raw in lines {
@@ -69,14 +73,20 @@ impl SpotifyParser {
                 .as_deref()
                 .unwrap_or("0")
                 .parse()
-                .map_err(|_| "SpotifyParser: invalid startTimeMs")?;
+                .map_err(|_| LyricsParseError::TimestampParse {
+                    field: "startTimeMs".to_string(),
+                    raw: raw.start_time_ms.unwrap_or_default(),
+                })?;
 
             let et_raw: u32 = raw
                 .end_time_ms
                 .as_deref()
                 .unwrap_or("0")
                 .parse()
-                .map_err(|_| "SpotifyParser: invalid endTimeMs")?;
+                .map_err(|_| LyricsParseError::TimestampParse {
+                    field: "endTimeMs".to_string(),
+                    raw: raw.end_time_ms.unwrap_or_default(),
+                })?;
 
             let duration = if et_raw > st { (et_raw - st) as u16 } else { 0 };
 

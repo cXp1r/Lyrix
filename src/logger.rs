@@ -91,7 +91,7 @@ pub fn set_filter(tags: Vec<String>, invert: bool) {
         .map(|tag| tag.trim().to_string())
         .filter(|tag| !tag.is_empty())
         .collect();
-    *LOG_FILTER_TAGS.get_or_init(|| RwLock::new(Vec::new())).write().unwrap() = normalized;
+    *LOG_FILTER_TAGS.get_or_init(|| RwLock::new(Vec::new())).write().expect("logger filter lock poisoned") = normalized;
     LOG_FILTER_INVERT.store(if invert { 1 } else { 0 }, Ordering::Relaxed);
 }
 
@@ -99,7 +99,7 @@ pub fn get_filter_tags() -> Vec<String> {
     LOG_FILTER_TAGS
         .get_or_init(|| RwLock::new(Vec::new()))
         .read()
-        .unwrap()
+        .expect("logger filter lock poisoned")
         .clone()
 }
 
@@ -186,7 +186,7 @@ where
     if (level as u8) < LOG_LEVEL.load(Ordering::Relaxed) {
         return;
     }
-    let filter_tags = LOG_FILTER_TAGS.get_or_init(|| RwLock::new(Vec::new())).read().unwrap();
+    let filter_tags = LOG_FILTER_TAGS.get_or_init(|| RwLock::new(Vec::new())).read().expect("logger filter lock poisoned");
     if !filter_tags.is_empty() {
         let matched = filter_tags.iter().any(|filter_tag| filter_tag == tag);
         let invert = LOG_FILTER_INVERT.load(Ordering::Relaxed) != 0;

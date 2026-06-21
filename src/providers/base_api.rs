@@ -1,3 +1,5 @@
+use crate::error::provider::http::HttpError;
+use crate::error::LyrixResult;
 use crate::logger;
 use reqwest::{Client, header};
 use std::collections::HashMap;
@@ -54,7 +56,44 @@ impl BaseApi {
         headers
     }
 
-    pub async fn get_async(&self, url: &str) -> Result<String, reqwest::Error> {
+    fn classify_reqwest_error(url: &str, e: &reqwest::Error) -> HttpError {
+        if e.is_timeout() {
+            HttpError::Timeout {
+                url: url.to_string(),
+            }
+        } else if e.is_connect() {
+            HttpError::ConnectionFailed {
+                detail: e.to_string(),
+                url: url.to_string(),
+            }
+        } else {
+            HttpError::ConnectionFailed {
+                detail: e.to_string(),
+                url: url.to_string(),
+            }
+        }
+    }
+
+    fn status_to_error(status: reqwest::StatusCode, url: &str) -> HttpError {
+        let url = url.to_string();
+        match status.as_u16() {
+            400 => HttpError::BadRequest { url },
+            401 => HttpError::Unauthorized { url },
+            403 => HttpError::Forbidden { url },
+            404 => HttpError::NotFound { url },
+            429 => HttpError::TooManyRequests { url },
+            500 => HttpError::ServerError { url },
+            502 => HttpError::BadGateway { url },
+            503 => HttpError::ServiceUnavailable { url },
+            301 | 302 => HttpError::Redirect {
+                status: status.as_u16(),
+                url,
+            },
+            s => HttpError::OtherStatus { status: s, url },
+        }
+    }
+
+    pub async fn get_async(&self, url: &str) -> LyrixResult<String> {
         let start = std::time::Instant::now();
         let result = async {
             let resp = self
@@ -62,20 +101,25 @@ impl BaseApi {
                 .get(url)
                 .headers(self.build_headers())
                 .send()
-                .await?
-                .error_for_status()?;
-            resp.text().await
+                .await
+                .map_err(|e| Self::classify_reqwest_error(url, &e))?;
+
+            if !resp.status().is_success() {
+                return Err(Self::status_to_error(resp.status(), url));
+            }
+
+            resp.text().await.map_err(|e| Self::classify_reqwest_error(url, &e))
         }
         .await;
         log_http_result("GET", url, start.elapsed(), &result);
-        result
+        result.map_err(Into::into)
     }
 
     pub async fn post_form_async(
         &self,
         url: &str,
         params: &HashMap<String, String>,
-    ) -> Result<String, reqwest::Error> {
+    ) -> LyrixResult<String> {
         let start = std::time::Instant::now();
         let result = async {
             let resp = self
@@ -84,20 +128,25 @@ impl BaseApi {
                 .headers(self.build_headers())
                 .form(params)
                 .send()
-                .await?
-                .error_for_status()?;
-            resp.text().await
+                .await
+                .map_err(|e| Self::classify_reqwest_error(url, &e))?;
+
+            if !resp.status().is_success() {
+                return Err(Self::status_to_error(resp.status(), url));
+            }
+
+            resp.text().await.map_err(|e| Self::classify_reqwest_error(url, &e))
         }
         .await;
         log_http_result("POST_FORM", url, start.elapsed(), &result);
-        result
+        result.map_err(Into::into)
     }
 
     pub async fn post_json_async<T: serde::Serialize + ?Sized>(
         &self,
         url: &str,
         body: &T,
-    ) -> Result<String, reqwest::Error> {
+    ) -> LyrixResult<String> {
         let start = std::time::Instant::now();
         let result = async {
             let resp = self
@@ -106,20 +155,25 @@ impl BaseApi {
                 .headers(self.build_headers())
                 .json(body)
                 .send()
-                .await?
-                .error_for_status()?;
-            resp.text().await
+                .await
+                .map_err(|e| Self::classify_reqwest_error(url, &e))?;
+
+            if !resp.status().is_success() {
+                return Err(Self::status_to_error(resp.status(), url));
+            }
+
+            resp.text().await.map_err(|e| Self::classify_reqwest_error(url, &e))
         }
         .await;
         log_http_result("POST_JSON", url, start.elapsed(), &result);
-        result
+        result.map_err(Into::into)
     }
 
     pub async fn post_string_async(
         &self,
         url: &str,
         body: &str,
-    ) -> Result<String, reqwest::Error> {
+    ) -> LyrixResult<String> {
         let start = std::time::Instant::now();
         let result = async {
             let resp = self
@@ -129,13 +183,18 @@ impl BaseApi {
                 .header(header::CONTENT_TYPE, "application/json")
                 .body(body.to_string())
                 .send()
-                .await?
-                .error_for_status()?;
-            resp.text().await
+                .await
+                .map_err(|e| Self::classify_reqwest_error(url, &e))?;
+
+            if !resp.status().is_success() {
+                return Err(Self::status_to_error(resp.status(), url));
+            }
+
+            resp.text().await.map_err(|e| Self::classify_reqwest_error(url, &e))
         }
         .await;
         log_http_result("POST_STRING", url, start.elapsed(), &result);
-        result
+        result.map_err(Into::into)
     }
 }
 
@@ -143,7 +202,7 @@ fn log_http_result(
     method: &str,
     url: &str,
     elapsed: Duration,
-    result: &Result<String, reqwest::Error>,
+    result: &Result<String, HttpError>,
 ) {
     let url = sanitize_url(url);
     match result {

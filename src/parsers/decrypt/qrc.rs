@@ -1,5 +1,7 @@
 use flate2::read::{DeflateDecoder, ZlibDecoder};
 use std::io::Read;
+use crate::error::parser::decrypt::DecryptError;
+use crate::error::LyrixResult;
 //57行正片开始
 pub const ENCRYPT: u32 = 1;
 pub const DECRYPT: u32 = 0;
@@ -55,13 +57,16 @@ const SBOX8: [u8; 64] = [
 ];
 
 //I'm here
-pub fn qrc_decrypt(encrypted_lyrics: &str) -> Result<String, String> {
+pub fn qrc_decrypt(encrypted_lyrics: &str) -> LyrixResult<String> {
     let encrypted_text_byte = hex_string_to_byte_array(encrypted_lyrics)?;
     if encrypted_text_byte.len() % 8 != 0 {
-        return Err(format!(
-            "Decryptor: ciphertext length is not aligned to 8-byte blocks: {}",
-            encrypted_text_byte.len()
-        ));
+        return Err(DecryptError::TripleDesDecrypt {
+            detail: format!(
+                "ciphertext length not aligned to 8-byte blocks: {}",
+                encrypted_text_byte.len()
+            ),
+        }
+        .into());
     }
 
     let mut data = vec![0u8; encrypted_text_byte.len()];
@@ -401,7 +406,7 @@ fn triple_des_crypt(input: &[u8; 8], output: &mut [u8; 8], key: &[[[u8; 6]; 16];
     crypt(&tmp2, output, &key[2]);
 }
 
-fn inflate_bytes(data: &[u8]) -> Result<Vec<u8>, String> {
+fn inflate_bytes(data: &[u8]) -> LyrixResult<Vec<u8>> {
     let mut zlib_output = Vec::new();
     match ZlibDecoder::new(data).read_to_end(&mut zlib_output) {
         Ok(_) => Ok(zlib_output),
@@ -409,25 +414,32 @@ fn inflate_bytes(data: &[u8]) -> Result<Vec<u8>, String> {
             let mut deflate_output = Vec::new();
             match DeflateDecoder::new(data).read_to_end(&mut deflate_output) {
                 Ok(_) => Ok(deflate_output),
-                Err(deflate_err) => {
-                    Err(format!(
-                        "Decryptor: inflate failed: zlib decode failed ({zlib_err}); raw deflate decode failed ({deflate_err})"
-                    ))
+                Err(deflate_err) => Err(DecryptError::Deflate {
+                    detail: format!(
+                        "zlib decode failed ({zlib_err}); raw deflate decode failed ({deflate_err})"
+                    ),
                 }
+                .into()),
             }
         }
     }
 }
 
-fn hex_string_to_byte_array(hex_string: &str) -> Result<Vec<u8>, String> {
+fn hex_string_to_byte_array(hex_string: &str) -> LyrixResult<Vec<u8>> {
     if !hex_string.len().is_multiple_of(2) {
-        return Err("Decryptor: hex string has odd length".to_string());
+        return Err(DecryptError::TripleDesDecrypt {
+            detail: format!("hex string has odd length: {}", hex_string.len()),
+        }
+        .into());
     }
 
     let mut bytes = Vec::with_capacity(hex_string.len() / 2);
     for i in (0..hex_string.len()).step_by(2) {
-        let parsed = u8::from_str_radix(&hex_string[i..i + 2], 16)
-            .map_err(|err| format!("Decryptor: invalid hex: {err}"))?;
+        let parsed = u8::from_str_radix(&hex_string[i..i + 2], 16).map_err(|err| {
+            DecryptError::TripleDesDecrypt {
+                detail: format!("invalid hex at offset {i}: {err}"),
+            }
+        })?;
         bytes.push(parsed);
     }
     Ok(bytes)

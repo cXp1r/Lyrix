@@ -7,21 +7,23 @@ pub mod kugou;
 pub mod lrc;
 pub mod decrypt;
 pub mod generate;
+use crate::error::parser::lyrics_parse::LyricsParseError;
+use crate::error::LyrixResult;
 use crate::logger;
 use memchr::memchr;
 use crate::models::*;
 ///逐字歌词解析器
 pub trait IParsers {
 
-    fn get_offset_time(&self, t1: u32, t2: u32) -> Result<u16, String> {
+    fn get_offset_time(&self, t1: u32, t2: u32) -> LyrixResult<u16> {
         let diff = t2
             .checked_sub(t1)
-            .ok_or(format!("Parsers: overflow ({} {})", t1, t2))?;
+            .ok_or(LyricsParseError::OffsetOverflow { t1, t2 })?;
         //u16够你offset用了
         u16::try_from(diff)
-            .map_err(|_| format!("Parsers: offset overflow({})",diff))
+            .map_err(|_| LyricsParseError::OffsetOverflow { t1, t2 }.into())
     }
-    fn parse(&self, lyrics: String) -> Result<Vec<LineInfo>, String> {
+    fn parse(&self, lyrics: String) -> LyrixResult<Vec<LineInfo>> {
         let start = std::time::Instant::now();
         let result = self.parse_without_st(lyrics);
         let t = start.elapsed();
@@ -37,7 +39,7 @@ pub trait IParsers {
         }
         result
     }
-    fn parse_syllables(&self, s: u32, content: &str) -> Result<Vec<TextInfo>, String> {
+    fn parse_syllables(&self, s: u32, content: &str) -> LyrixResult<Vec<TextInfo>> {
         let cbytes = content.as_bytes();
         let clen = cbytes.len();
         let mut cpos = 0;
@@ -58,7 +60,9 @@ pub trait IParsers {
             let Some(c1) = memchr(b',', &cbytes[cpos..]) else { break };
             let s1 = content[cpos..cpos + c1]
                 .parse::<u32>()
-                .map_err(|e| format!("s1: {:?} raw={:?}", e, &content[cpos..cpos + c1]))?;
+                .map_err(|e| LyricsParseError::SyllableParse {
+                    detail: format!("s1 parse error: {:?} raw={:?}", e, &content[cpos..cpos + c1]),
+                })?;
             cpos += c1 + 1;
 
             // d1，兼容 <s,d> 和 <s,d,x>
@@ -72,7 +76,9 @@ pub trait IParsers {
             };
             let d1 = content[cpos..d1_end]
                 .parse::<u16>()
-                .map_err(|e| format!("d1: {:?} raw={:?}", e, &content[cpos..d1_end]))?;
+                .map_err(|e| LyricsParseError::SyllableParse {
+                    detail: format!("d1 parse error: {:?} raw={:?}", e, &content[cpos..d1_end]),
+                })?;
 
             // 跳到 '>' 后面
             let Some(ra) = memchr(b'>', &cbytes[cpos..]) else { break };
@@ -94,10 +100,10 @@ pub trait IParsers {
 
         Ok(result)
     }
-    
 
-    
-    fn parse_without_st(&self, lyrics: String) -> Result<Vec<LineInfo>, String> {
+
+
+    fn parse_without_st(&self, lyrics: String) -> LyrixResult<Vec<LineInfo>> {
         let mut lineinfo: Vec<LineInfo> = Vec::new();
         let src = lyrics.as_bytes();
         let len = src.len();
@@ -119,14 +125,20 @@ pub trait IParsers {
                 }
                 continue;
             }
-            let s = tag1_str.parse::<u32>().map_err(|e| e.to_string())?;
+            let s = tag1_str.parse::<u32>().map_err(|_| LyricsParseError::TimestampParse {
+                field: "start_time".to_string(),
+                raw: tag1_str.to_string(),
+            })?;
             pos += cm + 1;
 
             // 3. tag2 → d
             let Some(rb) = memchr(b']', &src[pos..]) else { break };
             let d = lyrics[pos..pos + rb]
                 .parse::<u32>()
-                .map_err(|e| format!("d parse error: {:?} raw={:?}", e, &lyrics[pos..pos + rb]))?;
+                .map_err(|_| LyricsParseError::TimestampParse {
+                    field: "duration".to_string(),
+                    raw: lyrics[pos..pos + rb].to_string(),
+                })?;
             pos += rb + 1;
 
             // 4. content 到下一个 '[' 或末尾
@@ -137,8 +149,8 @@ pub trait IParsers {
             pos = content_end;
 
 
-            
-            
+
+
             lineinfo.push(LineInfo {
                 start_time: s,
                 duration: d as u16,

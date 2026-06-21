@@ -1,3 +1,5 @@
+use crate::error::provider::json::JsonError;
+use crate::error::LyrixResult;
 use super::base_api::BaseApi;
 use serde::Deserialize;
 use std::{collections::HashMap};
@@ -23,7 +25,7 @@ impl QQMusicApi {
     }
 
     /// 搜索歌曲
-    pub async fn search(&self, keyword: &str) -> Result<Option<MusicFcgApiResult>, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn search(&self, keyword: &str) -> LyrixResult<Option<MusicFcgApiResult>> {
         let data = serde_json::json!({
             "req_1": {
                 "method": "DoSearchForQQMusicDesktop",
@@ -38,11 +40,15 @@ impl QQMusicApi {
         });
 
         let resp = self.api.post_json_async("https://u.y.qq.com/cgi-bin/musicu.fcg", &data).await?;
-        Ok(serde_json::from_str(&resp)?)
+        let result: Option<MusicFcgApiResult> = serde_json::from_str(&resp).map_err(|e| JsonError {
+            api: "QQMusicSearch".to_string(),
+            source: e,
+        })?;
+        Ok(result)
     }
 
     /// 获取歌词
-    pub async fn get_lyric(&self, song_mid: &str) -> Result<Option<LyricResult>, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_lyric(&self, song_mid: &str) -> LyrixResult<Option<LyricResult>> {
         let current_millis = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
@@ -74,13 +80,16 @@ impl QQMusicApi {
             return Ok(None);
         }
 
-        let mut result: LyricResult = serde_json::from_str(&json_str)?;
+        let mut result: LyricResult = serde_json::from_str(&json_str).map_err(|e| JsonError {
+            api: "QQMusicLyric".to_string(),
+            source: e,
+        })?;
         result.decode();
         Ok(Some(result))
     }
 
     /// 获取QRC歌词,需要解密
-    pub async fn get_lyrics_qrc(&self, id: &str) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_lyrics_qrc(&self, id: &str) -> LyrixResult<String> {
         let mut params = HashMap::new();
         params.insert("version".to_string(), "15".to_string());
         params.insert("miniversion".to_string(), "82".to_string());
@@ -91,7 +100,7 @@ impl QQMusicApi {
             "https://c.y.qq.com/qqmusic/fcgi-bin/lyric_download.fcg",
             &params,
         ).await?;
-        
+
         let len = resp.len();
         let content = resp.as_bytes();
         let mut cpos = 0;
@@ -108,7 +117,10 @@ impl QQMusicApi {
                 return Ok(resp[cpos..cpos + end].to_string());
             }
         }
-        Err("QQMuiscApi: not found qrc".into())
+        Err(crate::error::SearcherError::NoResults {
+            label: "QQMusic".to_string(),
+            query: format!("qrc id={id}"),
+        }.into())
     }
 }
 

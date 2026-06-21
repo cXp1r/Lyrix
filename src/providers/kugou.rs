@@ -1,3 +1,5 @@
+use crate::error::provider::json::JsonError;
+use crate::error::LyrixResult;
 use super::base_api::BaseApi;
 use serde::Deserialize;
 
@@ -19,13 +21,17 @@ impl KugouApi {
     }
 
     /// 搜索歌曲
-    pub async fn get_search_song(&self, keywords: &str) -> Result<Option<SearchSongResponse>, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_search_song(&self, keywords: &str) -> LyrixResult<Option<SearchSongResponse>> {
         let url = format!(
             "http://mobilecdn.kugou.com/api/v3/search/song?format=json&keyword={}&page=1&pagesize=20&showtype=1",
             urlencoding::encode(keywords)
         );
         let resp = self.api.get_async(&url).await?;
-        Ok(serde_json::from_str(&resp).ok())
+        let result: Option<SearchSongResponse> = serde_json::from_str(&resp).map_err(|e| JsonError {
+            api: "KugouSearchSong".to_string(),
+            source: e,
+        })?;
+        Ok(result)
     }
 
     /// 下载 KRC 歌词 需要解密
@@ -33,13 +39,17 @@ impl KugouApi {
         &self,
         id: &str,
         access_key: &str,
-    ) -> Result<Option<DownloadKrcResponse>, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> LyrixResult<Option<DownloadKrcResponse>> {
         let url = format!(
             "https://lyrics.kugou.com/download?ver=1&client=pc&id={}&accesskey={}&fmt=krc&charset=utf8",
             id, access_key
         );
         let resp = self.api.get_async(&url).await?;
-        Ok(serde_json::from_str(&resp).ok())
+        let result: Option<DownloadKrcResponse> = serde_json::from_str(&resp).map_err(|e| JsonError {
+            api: "KugouDownloadKrc".to_string(),
+            source: e,
+        })?;
+        Ok(result)
     }
 
     /// 获取歌词
@@ -47,7 +57,7 @@ impl KugouApi {
         &self,
         keywords: Option<&str>,
         hash: Option<&str>,
-    ) -> Result<Option<SearchLyricsResponse>, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> LyrixResult<Option<SearchLyricsResponse>> {
         let hash_val = hash.unwrap_or("");
         let keyword_val = keywords.unwrap_or("");
         let url = format!(
@@ -56,7 +66,11 @@ impl KugouApi {
             hash_val
         );
         let resp = self.api.get_async(&url).await?;
-        Ok(serde_json::from_str(&resp).ok())
+        let result: Option<SearchLyricsResponse> = serde_json::from_str(&resp).map_err(|e| JsonError {
+            api: "KugouSearchLyrics".to_string(),
+            source: e,
+        })?;
+        Ok(result)
     }
 }
 

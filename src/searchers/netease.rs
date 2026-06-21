@@ -1,3 +1,4 @@
+use crate::error::{LyrixResult, SearcherError};
 use async_trait::async_trait;
 use crate::providers::netease::NeteaseApi;
 use super::{ISearcher, ISearchResult};
@@ -23,12 +24,18 @@ impl Default for NeteaseSearcher {
 
 #[async_trait]
 impl ISearcher for NeteaseSearcher {
-    async fn search_for_results_by_string(&self, search_string: &str) -> Result<Vec<Box<dyn ISearchResult>>, Box<dyn std::error::Error + Send + Sync>> {
+    async fn search_for_results_by_string(&self, search_string: &str) -> LyrixResult<Vec<Box<dyn ISearchResult>>> {
         let result = self.api.search(search_string, 1).await?;
         let mut results: Vec<Box<dyn ISearchResult>> = Vec::new();
 
-        let data = result.result.ok_or_else(|| "Netease: result is None")?;
-        let songs = data.songs.ok_or_else(|| "Netease: songs is None")?;
+        let data = result.result.ok_or_else(|| SearcherError::NoResults {
+            label: self.label().to_string(),
+            query: search_string.to_string(),
+        })?;
+        let songs = data.songs.ok_or_else(|| SearcherError::NoResults {
+            label: self.label().to_string(),
+            query: search_string.to_string(),
+        })?;
 
         for song in songs {
             let title = song.name.unwrap_or_default();
@@ -46,27 +53,6 @@ impl ISearcher for NeteaseSearcher {
             };
             let trial = {
                 Some([0, 30000])
-                /*if let Some(trial) = self.api.get_detail(&id).await? {
-                    if let Some(data) = trial.data {
-                        if let Some(data) = data.get(0) {
-                            if let Some(info) = &data.free_trial_info {
-                                if let (Some(s), Some(e)) = (info.start, info.end) {
-                                    Some([s as u32 * 1000, (e - s) as u32 * 1000])
-                                } else {
-                                    None
-                                }
-                            } else {
-                                None
-                            }
-                        } else {
-                            None
-                        }
-                    } else {
-                        None
-                    }
-                } else {
-                    None
-                }*/
             };
 
             results.push(Box::new(NeteaseSearchResult {
@@ -83,6 +69,8 @@ impl ISearcher for NeteaseSearcher {
 
         Ok(results)
     }
+
+    fn label(&self) -> &'static str { "网易云" }
 
     fn get_split_char(&self) -> char {
         '/'
@@ -113,5 +101,3 @@ impl ISearchResult for NeteaseSearchResult {
     fn set_trial(&mut self, i: bool) { self.is_trial = i; }
     fn is_trial(&self) -> bool { self.is_trial }
 }
-
-

@@ -4,6 +4,7 @@ pub mod kugou;
 pub mod soda_music;
 pub mod spotify;
 pub mod applemusic;
+use crate::error::{LyrixResult, SearcherError};
 use crate::logger;
 use async_trait::async_trait;
 use crate::models::ITrackMetadata;
@@ -39,7 +40,7 @@ pub trait ISearchResult: Send + Sync {
 #[async_trait]
 pub trait ISearcher: Send + Sync {
 
-    async fn search_for_results_by_string(&self, search_string: &str) -> Result<Vec<Box<dyn ISearchResult>>, Box<dyn std::error::Error + Send + Sync>>;
+    async fn search_for_results_by_string(&self, search_string: &str) -> LyrixResult<Vec<Box<dyn ISearchResult>>>;
 
     fn make_search_string(&self, track: &dyn ITrackMetadata) -> Vec<String> {
         let title = track.title().unwrap_or_default().trim();
@@ -80,7 +81,7 @@ pub trait ISearcher: Send + Sync {
     /// 直接返回分数线，大于此分数线可以直接拿去请求歌词（可 override）
     fn wow_score(&self) -> i8 { 7 }
     //下面那个函数调用了这个
-    async fn search_for_results(&self, track: &dyn ITrackMetadata, _full_search: bool) -> Result<Vec<Box<dyn ISearchResult>>, Box<dyn std::error::Error + Send + Sync>> {
+    async fn search_for_results(&self, track: &dyn ITrackMetadata, _full_search: bool) -> LyrixResult<Vec<Box<dyn ISearchResult>>> {
         let strings = self.make_search_string(track);
         if strings.is_empty() {
             return Ok(vec![]);
@@ -181,27 +182,41 @@ pub trait ISearcher: Send + Sync {
                 track.album().unwrap_or_default()
             ),
         );
-        Err("Nothing here".into())
+        Err(SearcherError::NoResults {
+            label: self.label().to_string(),
+            query: track.title().unwrap_or_default().to_string(),
+        }.into())
     }
 
-    
+
 
     //smtc统一接口调用了这个
-    async fn search_for_result(&self, track: &dyn ITrackMetadata) -> Result<Option<Box<dyn ISearchResult>>, Box<dyn std::error::Error + Send + Sync>> {
+    async fn search_for_result(&self, track: &dyn ITrackMetadata) -> LyrixResult<Option<Box<dyn ISearchResult>>> {
         let threshold = self.min_score();
         let search = self.search_for_results(track, false).await?;
         if let Some(best) = search.into_iter().next() {
             if best.match_score() >= threshold {
                 return Ok(Some(best));
             }
-            return Err(format!("Low score: {}/{}; id:{}", best.match_score(), threshold, best.title()).into());
+            return Err(SearcherError::LowScore {
+                label: self.label().to_string(),
+                score: best.match_score(),
+                threshold,
+                query: best.title().to_string(),
+            }.into());
         }
         let search = self.search_for_results(track, true).await?;
         if let Some(best) = search.into_iter().next() {
             return Ok((best.match_score() >= threshold).then_some(best));
         }
-        Err("Nothing here".into())
+        Err(SearcherError::NoResults {
+            label: self.label().to_string(),
+            query: track.title().unwrap_or_default().to_string(),
+        }.into())
     }
+
+    /// 搜索源的标签（中文名，用于错误消息）
+    fn label(&self) -> &'static str { "" }
     fn get_split_char(&self) -> char {
         ' '
     }
