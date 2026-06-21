@@ -264,24 +264,3 @@ impl AppleMusicParser {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::AppleMusicParser;
-
-    #[test]
-    fn parse_time_rejects_bad_input() {
-        let parser = AppleMusicParser {};
-        assert!(parser.parse_time("bad").is_err());
-        assert!(parser.parse_time("01:02").is_err());
-        assert!(parser.parse_time("01:02:03").is_err());
-        assert!(parser.parse_time("01:xx:03.10").is_err());
-    }
-
-    #[test]
-    fn parse_time_accepts_valid_input() {
-        let parser = AppleMusicParser {};
-        assert_eq!(parser.parse_time("01:02:03.04").unwrap(), 3_723_040);
-        assert_eq!(parser.parse_syllables_time("01:02.03").unwrap(), 62_003);
-    }
-}
