@@ -16,4 +16,8 @@ pub enum GeneralError {
     /// 内部错误 —— 理论上不应发生，防御性编程用
     #[error("internal error: {detail}")]
     Internal { detail: String },
+
+    /// 平台错误, 可能硬编码了某些只在特点平台实践过的逻辑
+    #[error("platform error: {platform}")]
+    Platform { platform: String },
 }
