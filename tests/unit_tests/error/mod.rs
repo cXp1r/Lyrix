@@ -10,10 +10,10 @@ mod fetcher;
 #[path = "searcher/mod.rs"]
 mod test_searcher;
 
+use lyrix::error::FetcherError;
 use lyrix::error::GeneralError;
 use lyrix::error::LyrixError;
 use lyrix::error::ParserError;
-use lyrix::error::FetcherError;
 use lyrix::error::SearcherError;
 
 #[test]

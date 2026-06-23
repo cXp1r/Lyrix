@@ -1,11 +1,11 @@
+pub mod fetcher;
 pub mod general;
 pub mod parser;
-pub mod fetcher;
 pub mod searcher;
 
+pub use fetcher::FetcherError;
 pub use general::GeneralError;
 pub use parser::ParserError;
-pub use fetcher::FetcherError;
 pub use searcher::SearcherError;
 
 /// 库级别 Result 别名
