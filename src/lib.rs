@@ -7,3 +7,6 @@ pub mod models;
 pub mod parsers;
 pub mod providers;
 pub mod searchers;
+
+pub use lyrix::Lyrix;
+pub use models::{id2player, MusicPlayer, Session};
