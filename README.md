@@ -22,11 +22,10 @@
 
 ## 功能
 
-- **smtc_lyrics** — 一键从 SMTC / app_id 获取歌词，自动分发到对应播放器，并支持试听区间裁剪
-- **Providers** — 网易云、QQ 音乐、酷狗、汽水音乐、Apple Music、Spotify 的 API 客户端
+- **Lyrix** — 一键从 SMTC / app_id 获取歌词，自动分发到对应播放器，并支持试听区间裁剪
+- **Fetchers** — 网易云、QQ 音乐、酷狗、汽水音乐、Apple Music、Spotify 的 API 客户端
 - **Searchers** — 统一搜索与匹配流程，返回最佳匹配结果
 - **Parsers** — 解析网易云、汽水、QQ 音乐、酷狗音乐、Apple Music 歌词，支持逐字高亮歌词
-- **files::qqmusic** — Windows 下读取 QQMusic WebkitCachePath.ini，定位 `QQMusicLyricNew`，并按 `TrackMetadata` 反查对应 qrc
 - **logger / proxy** — 内置轻量日志与代理客户端，方便调试和网络请求配置
 
 ## 安装
@@ -56,65 +55,79 @@ tokio = { version = "1", features = ["full"] }
 
 ```text
 src/
-├── lib.rs
-├── logger.rs
-├── smtc_lyrics.rs
-├── error/
-│   ├── mod.rs
-│   ├── general/
-│   │   └── mod.rs
-│   ├── parser/
-│   │   ├── mod.rs
-│   │   ├── lyrics_parse.rs
-│   │   ├── decrypt.rs
-│   │   └── totp_gen.rs
-│   ├── provider/
-│   │   ├── mod.rs
+├── error
+│   ├── fetcher
+│   │   ├── auth.rs
 │   │   ├── http.rs
 │   │   ├── json.rs
-│   │   ├── auth.rs
-│   │   └── proxy.rs
-│   └── searcher/
-│       └── mod.rs
-├── models/
-│   ├── mod.rs
-│   ├── file_info.rs
-│   ├── line_info.rs
-│   ├── lyrics_data.rs
-│   ├── lyrics_types.rs
-│   ├── sync_types.rs
-│   └── track_metadata.rs
-├── parsers/
-│   ├── mod.rs
-│   ├── applemusic.rs
-│   ├── kugou.rs
-│   ├── lrc.rs
-│   ├── netease.rs
-│   ├── qqmusic.rs
-│   ├── soda_music.rs
-│   ├── spotify.rs
-│   ├── decrypt/
 │   │   ├── mod.rs
-│   │   ├── krc.rs
-│   │   ├── netease.rs
-│   │   └── qrc.rs
-│   └── generate/
-│       ├── mod.rs
-│       └── spotify.rs
-├── providers/
+│   │   └── proxy.rs
+│   ├── general
+│   │   └── mod.rs
 │   ├── mod.rs
+│   ├── parser
+│   │   ├── decrypt.rs
+│   │   ├── lyrics_parse.rs
+│   │   ├── mod.rs
+│   │   └── totp_gen.rs
+│   └── searcher
+│       └── mod.rs
+├── fetchers
 │   ├── applemusic.rs
 │   ├── base_api.rs
 │   ├── kugou.rs
+│   ├── mod.rs
 │   ├── netease.rs
 │   ├── proxy.rs
 │   ├── qqmusic.rs
 │   ├── soda_music.rs
 │   └── spotify.rs
-└── searchers/
-    ├── mod.rs
+├── files
+│   ├── mod.rs
+│   └── qqmusic.rs
+├── lib.rs
+├── logger.rs
+├── lyrix.rs
+├── models
+│   ├── file_info.rs
+│   ├── line_info.rs
+│   ├── lyrics_data.rs
+│   ├── lyrics_types.rs
+│   ├── mod.rs
+│   ├── music_player.rs
+│   ├── session.rs
+│   ├── sync_types.rs
+│   └── track_metadata.rs
+├── parsers
+│   ├── applemusic.rs
+│   ├── decrypt
+│   │   ├── krc.rs
+│   │   ├── mod.rs
+│   │   ├── netease.rs
+│   │   └── qrc.rs
+│   ├── generate
+│   │   ├── mod.rs
+│   │   └── spotify.rs
+│   ├── kugou.rs
+│   ├── lrc.rs
+│   ├── mod.rs
+│   ├── netease.rs
+│   ├── qqmusic.rs
+│   ├── soda_music.rs
+│   └── spotify.rs
+├── providers
+│   ├── applemusic.rs
+│   ├── kugou.rs
+│   ├── lyrics_provider.rs
+│   ├── mod.rs
+│   ├── netease.rs
+│   ├── qqmusic.rs
+│   ├── soda_music.rs
+│   └── spotify.rs
+└── searchers
     ├── applemusic.rs
     ├── kugou.rs
+    ├── mod.rs
     ├── netease.rs
     ├── qqmusic.rs
     ├── soda_music.rs

@@ -10,7 +10,7 @@ LyrixError
 │   ├── LyricsParseError
 │   ├── DecryptError
 │   └── TotpGenError
-├── ProviderError
+├── FetcherError
 │   ├── HttpError
 │   ├── JsonError
 │   ├── AuthError
@@ -22,7 +22,7 @@ LyrixError
 ## 顶层匹配
 
 ```rust
-use lyrix::error::{GeneralError, LyrixError, ParserError, ProviderError, SearcherError};
+use lyrix::error::{GeneralError, LyrixError, ParserError, FetcherError, SearcherError};
 
 match lyrix.get_lyrics_with_appid(app_id, title, Some(artist), None, None, 0).await {
     Ok(data) => {
@@ -70,19 +70,19 @@ match err {
 }
 ```
 
-### ProviderError
+### FetcherError
 
-Provider 层用于 HTTP、JSON、鉴权和代理错误。
+Fetcher 层用于 HTTP、JSON、鉴权和代理错误。
 
 ```rust
-use lyrix::error::ProviderError;
+use lyrix::error::FetcherError;
 
 match err {
-    LyrixError::Provider(e) => match e {
-        ProviderError::Http(e) => eprintln!("HTTP 错误: {e}"),
-        ProviderError::Json(e) => eprintln!("JSON 解析失败 ({}): {}", e.api, e.source),
-        ProviderError::Auth(e) => eprintln!("鉴权失败: {e}"),
-        ProviderError::Proxy(e) => eprintln!("代理配置错误: {e}"),
+    LyrixError::Fetcher(e) => match e {
+        FetcherError::Http(e) => eprintln!("HTTP 错误: {e}"),
+        FetcherError::Json(e) => eprintln!("JSON 解析失败 ({}): {}", e.api, e.source),
+        FetcherError::Auth(e) => eprintln!("鉴权失败: {e}"),
+        FetcherError::Proxy(e) => eprintln!("代理配置错误: {e}"),
     },
     _ => {}
 }
@@ -172,7 +172,7 @@ None
 
 ```rust
 use lyrix::error::provider::HttpError;
-use lyrix::error::{LyrixError, ProviderError, LyrixResult};
+use lyrix::error::{LyrixError, FetcherError, LyrixResult};
 
 async fn get_lyrics_with_retry(
     lyrix: &Lyrix,
@@ -186,7 +186,7 @@ async fn get_lyrics_with_retry(
             .await
         {
             Ok(data) => return Ok(data),
-            Err(LyrixError::Provider(ProviderError::Http(ref e))) => {
+            Err(LyrixError::Provider(FetcherError::Http(ref e))) => {
                 match e {
                     HttpError::TooManyRequests { .. }
                     | HttpError::ServerError { .. }
@@ -199,7 +199,7 @@ async fn get_lyrics_with_retry(
                     }
                     _ => {}
                 }
-                return Err(LyrixError::Provider(ProviderError::Http(e.clone())));
+                return Err(LyrixError::Provider(FetcherError::Http(e.clone())));
             }
             Err(e) => return Err(e),
         }
@@ -220,8 +220,8 @@ fn user_friendly_msg(e: &LyrixError) -> String {
             _ => format!("搜索失败: {se}"),
         },
         LyrixError::Provider(pe) => match pe {
-            ProviderError::Auth(ae) => format!("鉴权失败: {ae}"),
-            ProviderError::Http(he) => format!("网络请求失败: {he}"),
+            FetcherError::Auth(ae) => format!("鉴权失败: {ae}"),
+            FetcherError::Http(he) => format!("网络请求失败: {he}"),
             _ => format!("请求失败: {pe}"),
         },
         LyrixError::Parser(pe) => format!("歌词解析失败: {pe}"),
