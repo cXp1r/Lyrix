@@ -120,20 +120,16 @@ enum LogMsg {
 }
 
 fn config_dir() -> Result<PathBuf, std::env::VarError> {
-    #[cfg(target_os = "windows")]
-    { std::env::var("APPDATA").map(PathBuf::from) }
-
-    #[cfg(target_os = "macos")]
-    { std::env::var("HOME").map(|h| PathBuf::from(h).join("Library").join("Application Support")) }
-
-    #[cfg(target_os = "linux")]
-    {
+    if cfg!(target_os = "windows") {
+        std::env::var("APPDATA").map(PathBuf::from)
+    } else if cfg!(target_os = "macos") {
+        std::env::var("HOME").map(|h| PathBuf::from(h).join("Library").join("Application Support"))
+    } else if cfg!(target_os = "linux") {
         std::env::var("XDG_CONFIG_HOME").map(PathBuf::from)
             .or_else(|_| std::env::var("HOME").map(|h| PathBuf::from(h).join(".config")))
+    } else {
+        Err(std::env::VarError::NotPresent)
     }
-
-    #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
-    { Err(std::env::VarError::NotPresent) }
 }
 
 fn get_sender() -> &'static Sender<LogMsg> {
