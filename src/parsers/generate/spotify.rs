@@ -2,21 +2,21 @@
 
 //逆向于https://open.spotifycdn.com/cdn/build/web-player/web-player.1234abcd.js
 pub struct Sha1 {
-    state:     [u32; 5],
-    buffer:    [u8; 64],
-    buf_len:   usize,
+    state: [u32; 5],
+    buffer: [u8; 64],
+    buf_len: usize,
     total_len: u64,
-    finished:  bool,
+    finished: bool,
 }
 
 impl Sha1 {
     pub fn new() -> Self {
         Self {
-            state:     [0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0],
-            buffer:    [0u8; 64],
-            buf_len:   0,
+            state: [0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0],
+            buffer: [0u8; 64],
+            buf_len: 0,
             total_len: 0,
-            finished:  false,
+            finished: false,
         }
     }
 
@@ -37,7 +37,8 @@ impl Sha1 {
             }
         }
         while off + 64 <= data.len() {
-            let block: [u8; 64] = data[off..off + 64].try_into()
+            let block: [u8; 64] = data[off..off + 64]
+                .try_into()
                 .expect("64-byte block split invariant");
             Self::compress(&mut self.state, &block);
             off += 64;
@@ -54,7 +55,9 @@ impl Sha1 {
         let bit_len = self.total_len * 8;
 
         self.buffer[self.buf_len] = 0x80;
-        for b in self.buffer[self.buf_len + 1..].iter_mut() { *b = 0; }
+        for b in self.buffer[self.buf_len + 1..].iter_mut() {
+            *b = 0;
+        }
 
         if self.buf_len + 1 > 56 {
             let b = self.buffer;
@@ -79,23 +82,34 @@ impl Sha1 {
     fn compress(state: &mut [u32; 5], block: &[u8; 64]) {
         let mut w = [0u32; 80];
         for i in 0..16 {
-            w[i] = u32::from_be_bytes(block[i * 4..i * 4 + 4].try_into()
-                .expect("4-byte word split invariant"));
+            w[i] = u32::from_be_bytes(
+                block[i * 4..i * 4 + 4]
+                    .try_into()
+                    .expect("4-byte word split invariant"),
+            );
         }
         for i in 16..80 {
-            w[i] = (w[i-3] ^ w[i-8] ^ w[i-14] ^ w[i-16]).rotate_left(1);
+            w[i] = (w[i - 3] ^ w[i - 8] ^ w[i - 14] ^ w[i - 16]).rotate_left(1);
         }
         let [mut a, mut b, mut c, mut d, mut e] = *state;
         for i in 0..80 {
             let (f, k): (u32, u32) = match i {
-                0..=19  => ((b & c) | (!b & d),           0x5a827999),
-                20..=39 => (b ^ c ^ d,                    0x6ed9eba1),
+                0..=19 => ((b & c) | (!b & d), 0x5a827999),
+                20..=39 => (b ^ c ^ d, 0x6ed9eba1),
                 40..=59 => ((b & c) | (b & d) | (c & d), 0x8f1bbcdc),
-                _       => (b ^ c ^ d,                    0xca62c1d6),
+                _ => (b ^ c ^ d, 0xca62c1d6),
             };
-            let t = a.rotate_left(5).wrapping_add(f).wrapping_add(e)
-                     .wrapping_add(k).wrapping_add(w[i]);
-            e = d; d = c; c = b.rotate_left(30); b = a; a = t;
+            let t = a
+                .rotate_left(5)
+                .wrapping_add(f)
+                .wrapping_add(e)
+                .wrapping_add(k)
+                .wrapping_add(w[i]);
+            e = d;
+            d = c;
+            c = b.rotate_left(30);
+            b = a;
+            a = t;
         }
         state[0] = state[0].wrapping_add(a);
         state[1] = state[1].wrapping_add(b);
@@ -116,16 +130,25 @@ impl HmacSha1 {
         let mut k = [0u8; 64];
         k[..key.len().min(64)].copy_from_slice(&key[..key.len().min(64)]);
 
-        let mut ipad = k; for b in ipad.iter_mut() { *b ^= 0x36; }
-        let mut opad = k; for b in opad.iter_mut() { *b ^= 0x5c; }
+        let mut ipad = k;
+        for b in ipad.iter_mut() {
+            *b ^= 0x36;
+        }
+        let mut opad = k;
+        for b in opad.iter_mut() {
+            *b ^= 0x5c;
+        }
 
-        let mut i_hash = Sha1::new(); i_hash.update(&ipad);
-        let mut o_hash = Sha1::new(); o_hash.update(&opad);
+        let mut i_hash = Sha1::new();
+        i_hash.update(&ipad);
+        let mut o_hash = Sha1::new();
+        o_hash.update(&opad);
         Self { i_hash, o_hash }
     }
 
     pub fn update(&mut self, data: &[u8]) -> &mut Self {
-        self.i_hash.update(data); self
+        self.i_hash.update(data);
+        self
     }
 
     pub fn digest(mut self) -> [u8; 20] {
@@ -135,37 +158,46 @@ impl HmacSha1 {
     }
 
     pub fn oneshot(key: &[u8], data: &[u8]) -> [u8; 20] {
-        let mut h = Self::new(key); h.update(data); h.digest()
+        let mut h = Self::new(key);
+        h.update(data);
+        h.digest()
     }
 }
-
 
 fn counter_to_bytes(counter: u64) -> [u8; 8] {
     counter.to_be_bytes()
 }
 
-
 pub fn hotp(secret: &[u8], counter: u64, digits: u32) -> String {
-    let hmac   = HmacSha1::oneshot(secret, &counter_to_bytes(counter));
+    let hmac = HmacSha1::oneshot(secret, &counter_to_bytes(counter));
     let offset = (hmac[19] & 0x0f) as usize;
-    let code   = ((hmac[offset]     as u32 & 0x7f) << 24)
-               | ((hmac[offset + 1] as u32 & 0xff) << 16)
-               | ((hmac[offset + 2] as u32 & 0xff) << 8)
-               |  (hmac[offset + 3] as u32 & 0xff);
-    format!("{:0>width$}", code % 10u32.pow(digits), width = digits as usize)
+    let code = ((hmac[offset] as u32 & 0x7f) << 24)
+        | ((hmac[offset + 1] as u32 & 0xff) << 16)
+        | ((hmac[offset + 2] as u32 & 0xff) << 8)
+        | (hmac[offset + 3] as u32 & 0xff);
+    format!(
+        "{:0>width$}",
+        code % 10u32.pow(digits),
+        width = digits as usize
+    )
 }
 
 // 本质e6
 pub struct Totp {
-    pub secret:  Vec<u8>,
-    pub period:  u64,
-    pub digits:  u32,
+    pub secret: Vec<u8>,
+    pub period: u64,
+    pub digits: u32,
     pub version: u32,
 }
 
 impl Totp {
     pub fn new(secret: Vec<u8>, period: u64, digits: u32, version: u32) -> Self {
-        Self { secret, period, digits, version }
+        Self {
+            secret,
+            period,
+            digits,
+            version,
+        }
     }
 
     /// e6.counter({ period, timestamp })
@@ -188,25 +220,23 @@ impl Totp {
     }
 }
 
-
-
 pub struct TotpPayload {
-    pub reason:       String,
+    pub reason: String,
     pub product_type: String,
-    pub totp:         String,
-    pub totp_server:  String,
-    pub totp_ver:     String,
+    pub totp: String,
+    pub totp_server: String,
+    pub totp_ver: String,
 }
 
 //本质tl函数
 pub fn tl(ts: &Totp, reason: &str, product_type: &str, server_ts_s: Option<u64>) -> TotpPayload {
-    let totp        = ts.generate_now();
+    let totp = ts.generate_now();
     let totp_server = match server_ts_s {
-        Some(s) => ts.generate(s * 1000),   // 1e3 * r
-        None    => "unavailable".to_string(),
+        Some(s) => ts.generate(s * 1000), // 1e3 * r
+        None => "unavailable".to_string(),
     };
     TotpPayload {
-        reason:       reason.to_string(),
+        reason: reason.to_string(),
         product_type: product_type.to_string(),
         totp,
         totp_server,
@@ -221,29 +251,37 @@ use crate::error::LyrixResult;
 pub fn build_totp(index: usize) -> LyrixResult<Totp> {
     let (bytes, version): (&[u8], u32) = match index {
         // version 61  (60 bytes)
-        0 => (&[
-            51,55,54,49,51,54,51,56,55,53,51,56,52,53,57,56,57,51,56,56,
-            51,51,49,50,51,49,48,57,49,49,57,57,50,56,52,55,49,49,50,52,
-            52,56,56,57,52,52,49,48,50,49,48,53,49,49,50,57,55,49,48,56,
-        ], 61),
+        0 => (
+            &[
+                51, 55, 54, 49, 51, 54, 51, 56, 55, 53, 51, 56, 52, 53, 57, 56, 57, 51, 56, 56, 51,
+                51, 49, 50, 51, 49, 48, 57, 49, 49, 57, 57, 50, 56, 52, 55, 49, 49, 50, 52, 52, 56,
+                56, 57, 52, 52, 49, 48, 50, 49, 48, 53, 49, 49, 50, 57, 55, 49, 48, 56,
+            ],
+            61,
+        ),
         // version 60  (46 bytes)
-        1 => (&[
-            55,48,49,48,51,55,56,49,49,57,56,55,55,57,51,51,57,48,55,57,
-            52,56,52,49,51,54,56,51,56,49,55,53,55,55,57,57,51,55,54,52,
-            57,50,55,52,55,51,
-        ], 60),
+        1 => (
+            &[
+                55, 48, 49, 48, 51, 55, 56, 49, 49, 57, 56, 55, 55, 57, 51, 51, 57, 48, 55, 57, 52,
+                56, 52, 49, 51, 54, 56, 51, 56, 49, 55, 53, 55, 55, 57, 57, 51, 55, 54, 52, 57, 50,
+                55, 52, 55, 51,
+            ],
+            60,
+        ),
         // version 59  (70 bytes)
-        2 => (&[
-            49,49,52,57,57,54,56,55,52,57,57,53,51,53,57,49,48,57,52,53,
-            51,53,54,55,56,50,55,54,57,51,55,49,55,56,51,56,52,55,57,54,
-            53,55,49,48,52,52,55,52,51,49,50,53,49,48,56,50,56,49,50,49,
-            49,52,50,49,55,56,57,57,57,54,
-        ], 59),
+        2 => (
+            &[
+                49, 49, 52, 57, 57, 54, 56, 55, 52, 57, 57, 53, 51, 53, 57, 49, 48, 57, 52, 53, 51,
+                53, 54, 55, 56, 50, 55, 54, 57, 51, 55, 49, 55, 56, 51, 56, 52, 55, 57, 54, 53, 55,
+                49, 48, 52, 52, 55, 52, 51, 49, 50, 53, 49, 48, 56, 50, 56, 49, 50, 49, 49, 52, 50,
+                49, 55, 56, 57, 57, 57, 54,
+            ],
+            59,
+        ),
         _ => return Err(TotpGenError::InvalidIndex { index }.into()),
     };
     Ok(Totp::new(bytes.to_vec(), 30, 6, version))
 }
-
 
 #[cfg(test)]
 mod tests {

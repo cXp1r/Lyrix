@@ -1,7 +1,7 @@
-use lyrix::error::LyrixError;
 use lyrix::error::parser::lyrics_parse::LyricsParseError;
-use lyrix::parsers::IParsers;
+use lyrix::error::LyrixError;
 use lyrix::parsers::kugou::KugouParser;
+use lyrix::parsers::IParsers;
 
 // ── KugouParser::get_offset_time ──────────────────────────────
 // Kugou 直接返回 t2 as u16，忽略 t1（因为 KRC 格式本身存的就是 offset）

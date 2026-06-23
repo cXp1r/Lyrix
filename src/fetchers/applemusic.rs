@@ -1,6 +1,6 @@
+use super::base_api::BaseApi;
 use crate::error::provider::json::JsonError;
 use crate::error::LyrixResult;
-use super::base_api::BaseApi;
 use serde::Deserialize;
 use std::collections::HashMap;
 
@@ -104,11 +104,10 @@ pub struct SongAttributes {
     pub name: Option<String>,
     pub artist_name: Option<String>,
     pub album_name: Option<String>,
-    pub duration_in_millis: Option<u32>,  // snake_case
+    pub duration_in_millis: Option<u32>, // snake_case
     pub url: Option<String>,
-    pub has_lyrics: Option<bool>,         // snake_case
+    pub has_lyrics: Option<bool>, // snake_case
 }
-
 
 #[derive(Debug, Deserialize, Default)]
 

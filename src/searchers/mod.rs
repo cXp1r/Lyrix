@@ -1,15 +1,13 @@
+pub mod applemusic;
+pub mod kugou;
 pub mod netease;
 pub mod qqmusic;
-pub mod kugou;
 pub mod soda_music;
 pub mod spotify;
-pub mod applemusic;
 use crate::error::{LyrixResult, SearcherError};
 use crate::logger;
-use async_trait::async_trait;
 use crate::models::ITrackMetadata;
-
-
+use async_trait::async_trait;
 
 /// 搜索源类型
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -26,7 +24,9 @@ pub trait ISearchResult: Send + Sync {
     fn title(&self) -> &str;
     fn artists(&self) -> &[String];
     fn album(&self) -> &str;
-    fn album_artists(&self) -> Option<&[String]> { None }
+    fn album_artists(&self) -> Option<&[String]> {
+        None
+    }
     fn duration_ms(&self) -> Option<u32>;
     fn match_score(&self) -> i8;
     fn set_match_score(&mut self, mt: i8);
@@ -39,8 +39,10 @@ pub trait ISearchResult: Send + Sync {
 /// 搜索提供者 trait
 #[async_trait]
 pub trait ISearcher: Send + Sync {
-
-    async fn search_for_results_by_string(&self, search_string: &str) -> LyrixResult<Vec<Box<dyn ISearchResult>>>;
+    async fn search_for_results_by_string(
+        &self,
+        search_string: &str,
+    ) -> LyrixResult<Vec<Box<dyn ISearchResult>>>;
 
     fn make_search_string(&self, track: &dyn ITrackMetadata) -> Vec<String> {
         let title = track.title().unwrap_or_default().trim();
@@ -52,7 +54,12 @@ pub trait ISearcher: Send + Sync {
         let cal = self.clean_title(album);
 
         let join = |parts: &[&str]| {
-            parts.iter().filter(|s| !s.is_empty()).copied().collect::<Vec<_>>().join(" ")
+            parts
+                .iter()
+                .filter(|s| !s.is_empty())
+                .copied()
+                .collect::<Vec<_>>()
+                .join(" ")
         };
 
         let mut strings: Vec<String> = Vec::with_capacity(8);
@@ -67,21 +74,29 @@ pub trait ISearcher: Send + Sync {
 
         push(join(&[title, artist, album]));
         push(join(&[&ct, &ca, &cal]));
-        
+
         push(title.to_string());
         push(ct.to_string());
-        
+
         push(join(&[title, album]));
         push(join(&[&ct, &cal]));
 
         strings
     }
     /// 最低匹配分数线，低于此分数的结果将被丢弃（可 override）
-    fn min_score(&self) -> i8 { 5 }
+    fn min_score(&self) -> i8 {
+        5
+    }
     /// 直接返回分数线，大于此分数线可以直接拿去请求歌词（可 override）
-    fn wow_score(&self) -> i8 { 7 }
+    fn wow_score(&self) -> i8 {
+        7
+    }
     //下面那个函数调用了这个
-    async fn search_for_results(&self, track: &dyn ITrackMetadata, _full_search: bool) -> LyrixResult<Vec<Box<dyn ISearchResult>>> {
+    async fn search_for_results(
+        &self,
+        track: &dyn ITrackMetadata,
+        _full_search: bool,
+    ) -> LyrixResult<Vec<Box<dyn ISearchResult>>> {
         let strings = self.make_search_string(track);
         if strings.is_empty() {
             return Ok(vec![]);
@@ -185,13 +200,15 @@ pub trait ISearcher: Send + Sync {
         Err(SearcherError::NoResults {
             label: self.label().to_string(),
             query: track.title().unwrap_or_default().to_string(),
-        }.into())
+        }
+        .into())
     }
 
-
-
     //smtc统一接口调用了这个
-    async fn search_for_result(&self, track: &dyn ITrackMetadata) -> LyrixResult<Option<Box<dyn ISearchResult>>> {
+    async fn search_for_result(
+        &self,
+        track: &dyn ITrackMetadata,
+    ) -> LyrixResult<Option<Box<dyn ISearchResult>>> {
         let threshold = self.min_score();
         let search = self.search_for_results(track, false).await?;
         if let Some(best) = search.into_iter().next() {
@@ -203,7 +220,8 @@ pub trait ISearcher: Send + Sync {
                 score: best.match_score(),
                 threshold,
                 query: best.title().to_string(),
-            }.into());
+            }
+            .into());
         }
         let search = self.search_for_results(track, true).await?;
         if let Some(best) = search.into_iter().next() {
@@ -212,11 +230,14 @@ pub trait ISearcher: Send + Sync {
         Err(SearcherError::NoResults {
             label: self.label().to_string(),
             query: track.title().unwrap_or_default().to_string(),
-        }.into())
+        }
+        .into())
     }
 
     /// 搜索源的标签（中文名，用于错误消息）
-    fn label(&self) -> &'static str { "" }
+    fn label(&self) -> &'static str {
+        ""
+    }
     fn get_split_char(&self) -> char {
         ' '
     }
@@ -252,7 +273,8 @@ pub trait ISearcher: Send + Sync {
                         format_args!("track : {}\nresult: {}", clean_track, clean_result),
                         3,
                     );
-                } else if clean_result.contains(&clean_track) || clean_track.contains(&clean_result) {
+                } else if clean_result.contains(&clean_track) || clean_track.contains(&clean_result)
+                {
                     score += 1;
                     log_score_gain(
                         "searcher::score",
@@ -278,7 +300,7 @@ pub trait ISearcher: Send + Sync {
         // Artist match
         let artists: Vec<String> = track
             .artist()
-            .unwrap_or_default()  
+            .unwrap_or_default()
             .split(self.get_split_char())
             .map(|s| s.trim().to_lowercase())
             .filter(|s| !s.is_empty())
@@ -306,13 +328,17 @@ pub trait ISearcher: Send + Sync {
             log_score_warn(
                 "searcher::score",
                 result,
-                format_args!("artist: {}\nresult: {}", "(empty)", result.artists().join(" / ")),
+                format_args!(
+                    "artist: {}\nresult: {}",
+                    "(empty)",
+                    result.artists().join(" / ")
+                ),
             );
         }
         // Album match
         let track_album = track.album().unwrap_or_default().to_lowercase();
         let result_album = result.album().to_lowercase();
-        if !track_album.is_empty() && !result_album.is_empty(){
+        if !track_album.is_empty() && !result_album.is_empty() {
             if track_album == result_album {
                 score += 2;
                 log_score_gain(
@@ -320,7 +346,7 @@ pub trait ISearcher: Send + Sync {
                     format_args!("album : {}\nresult: {}", track_album, result_album),
                     2,
                 );
-            } else if result_album.contains(&track_album) || track_album.contains(&result_album){
+            } else if result_album.contains(&track_album) || track_album.contains(&result_album) {
                 score += 1;
                 log_score_gain(
                     "searcher::score",
@@ -342,10 +368,14 @@ pub trait ISearcher: Send + Sync {
             );
         }
         // Album artist match
-        let track_album_artist = self.clean_title(&track.album_artist().unwrap_or_default().to_lowercase());
+        let track_album_artist =
+            self.clean_title(&track.album_artist().unwrap_or_default().to_lowercase());
         let result_album_artist = result.album_artists().unwrap_or_default().to_vec();
 
-        if result_album_artist.iter().any(|s:&String| s.contains(&track_album_artist)) {
+        if result_album_artist
+            .iter()
+            .any(|s: &String| s.contains(&track_album_artist))
+        {
             score += 1;
             log_score_gain(
                 "searcher::score",
@@ -370,11 +400,15 @@ pub trait ISearcher: Send + Sync {
         if let Some(duration_ms) = track.duration_ms() {
             if let Some(result_duration_ms) = result.duration_ms() {
                 let diff = (duration_ms as i64 - result_duration_ms as i64).abs();
-                if diff == 0 { // 完全匹配
+                if diff == 0 {
+                    // 完全匹配
                     score += 3;
                     log_score_gain(
                         "searcher::score",
-                        format_args!("dur   : {}ms\nresult: {}ms", duration_ms, result_duration_ms),
+                        format_args!(
+                            "dur   : {}ms\nresult: {}ms",
+                            duration_ms, result_duration_ms
+                        ),
                         3,
                     );
                 } else if diff <= 500 {
@@ -401,7 +435,10 @@ pub trait ISearcher: Send + Sync {
                     log_score_warn(
                         "searcher::score",
                         result,
-                        format_args!("dur   : {}ms\nresult: {}ms", duration_ms, result_duration_ms),
+                        format_args!(
+                            "dur   : {}ms\nresult: {}ms",
+                            duration_ms, result_duration_ms
+                        ),
                     );
                 }
             } else {
@@ -415,15 +452,20 @@ pub trait ISearcher: Send + Sync {
             log_score_warn(
                 "searcher::score",
                 result,
-                format_args!("dur   : {}\nresult: {}ms", "N/A", result.duration_ms().unwrap_or(0)),
+                format_args!(
+                    "dur   : {}\nresult: {}ms",
+                    "N/A",
+                    result.duration_ms().unwrap_or(0)
+                ),
             );
         }
-        
+
         let is_trial = {
             if let Some(duration_ms) = track.duration_ms() {
                 if let Some(result_duration_ms) = result.trial() {
                     let diff = (duration_ms as i64 - result_duration_ms[1] as i64).abs();
-                    if diff <= 100 { // 完全匹配
+                    if diff <= 100 {
+                        // 完全匹配
                         score += 2;
                         log_score_gain(
                             "searcher::score",
@@ -434,7 +476,8 @@ pub trait ISearcher: Send + Sync {
                             2,
                         );
                         true
-                    } else if diff <= 1000 { // 近似匹配
+                    } else if diff <= 1000 {
+                        // 近似匹配
                         score += 1;
                         log_score_gain(
                             "searcher::score",
@@ -480,9 +523,20 @@ pub trait ISearcher: Send + Sync {
             .filter(|c| {
                 !matches!(
                     c,
-                    '《' | '》' | '「' | '」' | '『' | '』' |
-                    '！' | '!' | '？' | '?' | '。' | '、' |
-                    '·' | '•' | '…'
+                    '《' | '》'
+                        | '「'
+                        | '」'
+                        | '『'
+                        | '』'
+                        | '！'
+                        | '!'
+                        | '？'
+                        | '?'
+                        | '。'
+                        | '、'
+                        | '·'
+                        | '•'
+                        | '…'
                 )
             })
             .collect();
@@ -501,19 +555,8 @@ pub trait ISearcher: Send + Sync {
     }
 }
 
-pub(crate) fn log_score_gain(
-    tag: &str,
-    current: impl std::fmt::Display,
-    points: i8,
-) {
-    logger::info(
-        tag,
-        format_args!(
-            "{}\n       +{}",
-            current,
-            points
-        ),
-    );
+pub(crate) fn log_score_gain(tag: &str, current: impl std::fmt::Display, points: i8) {
+    logger::info(tag, format_args!("{}\n       +{}", current, points));
 }
 
 pub(crate) fn log_score_warn(
@@ -521,21 +564,10 @@ pub(crate) fn log_score_warn(
     _result: &dyn ISearchResult,
     current: impl std::fmt::Display,
 ) {
-    logger::warn(
-        tag,
-        format_args!(
-            "{}\n       +0",
-            current,
-        ),
-    );
+    logger::warn(tag, format_args!("{}\n       +0", current,));
 }
 
-pub(crate) fn log_score_total(
-    tag: &str,
-    result: &dyn ISearchResult,
-    total: i8,
-    is_trial: bool,
-) {
+pub(crate) fn log_score_total(tag: &str, result: &dyn ISearchResult, total: i8, is_trial: bool) {
     logger::info(
         tag,
         format_args!(

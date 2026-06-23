@@ -11,6 +11,3 @@ pub enum SyncTypes {
     #[default]
     Unsynced,
 }
-
-
-

@@ -1,9 +1,9 @@
-pub mod lyrics_parse;
 pub mod decrypt;
+pub mod lyrics_parse;
 pub mod totp_gen;
 
-pub use lyrics_parse::LyricsParseError;
 pub use decrypt::DecryptError;
+pub use lyrics_parse::LyricsParseError;
 pub use totp_gen::TotpGenError;
 
 /// 解析器层错误

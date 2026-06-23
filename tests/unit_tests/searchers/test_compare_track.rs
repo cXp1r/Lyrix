@@ -2,7 +2,7 @@
 //! 使用 NeteaseSearcher + NeteaseSearchResult 作为具体实现
 
 use lyrix::models::{ITrackMetadata, TrackMetadata};
-use lyrix::searchers::netease::{NeteaseSearcher, NeteaseSearchResult};
+use lyrix::searchers::netease::{NeteaseSearchResult, NeteaseSearcher};
 use lyrix::searchers::ISearcher;
 
 /// 构造 TrackMetadata 的辅助函数
@@ -10,7 +10,11 @@ fn track(title: &str, artist: &str, album: &str, duration_ms: Option<u32>) -> Tr
     TrackMetadata {
         title: Some(title.to_string()),
         artist: Some(artist.to_string()),
-        album: if album.is_empty() { None } else { Some(album.to_string()) },
+        album: if album.is_empty() {
+            None
+        } else {
+            Some(album.to_string())
+        },
         duration_ms,
         ..Default::default()
     }
@@ -41,7 +45,10 @@ fn compare(
     track: &TrackMetadata,
     r: &NeteaseSearchResult,
 ) -> (i8, bool) {
-    searcher.compare_track(track as &dyn ITrackMetadata, r as &dyn lyrix::searchers::ISearchResult)
+    searcher.compare_track(
+        track as &dyn ITrackMetadata,
+        r as &dyn lyrix::searchers::ISearchResult,
+    )
 }
 
 // ═══════════════════════ Title 维度 ════════════════════════════

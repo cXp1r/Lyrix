@@ -1,8 +1,8 @@
-use async_trait::async_trait;
-use reqwest::Client;
+use super::lyrics_provider::LyricsProvider;
 use crate::error::{GeneralError, LyrixResult, SearcherError};
 use crate::models::LineInfo;
-use super::lyrics_provider::LyricsProvider;
+use async_trait::async_trait;
+use reqwest::Client;
 
 pub(crate) struct KugouProvider {
     pub(crate) client: Client,
@@ -15,10 +15,14 @@ impl LyricsProvider for KugouProvider {
     type SearchResult = crate::searchers::kugou::KugouSearchResult;
 
     async fn create_searcher(&self) -> LyrixResult<Self::Searcher> {
-        Ok(crate::searchers::kugou::KugouSearcher::with_client(self.client.clone()))
+        Ok(crate::searchers::kugou::KugouSearcher::with_client(
+            self.client.clone(),
+        ))
     }
     async fn create_api(&self) -> LyrixResult<Self::Api> {
-        Ok(crate::fetchers::kugou::KugouApi::with_client(self.client.clone()))
+        Ok(crate::fetchers::kugou::KugouApi::with_client(
+            self.client.clone(),
+        ))
     }
     fn label() -> &'static str {
         "酷狗"
@@ -38,31 +42,40 @@ impl LyricsProvider for KugouProvider {
                 query: keyword.clone(),
             })?;
         let candidates = lyrics_resp.candidates.unwrap_or_default();
-        let candidate = candidates.first().ok_or_else(|| SearcherError::MissingField {
-            label: "酷狗".to_string(),
-            field: "candidate".to_string(),
-        })?;
-        let id = candidate.id.as_deref().ok_or_else(|| SearcherError::MissingField {
-            label: "酷狗".to_string(),
-            field: "id".to_string(),
-        })?;
-        let access_key = candidate.access_key.as_deref().ok_or_else(|| SearcherError::MissingField {
-            label: "酷狗".to_string(),
-            field: "accesskey".to_string(),
-        })?;
-        let dl_resp = api
-            .get_download_krc(id, access_key)
-            .await?
-            .ok_or_else(|| GeneralError::MissingField {
-                field: "酷狗: 下载 KRC 失败".to_string(),
+        let candidate = candidates
+            .first()
+            .ok_or_else(|| SearcherError::MissingField {
+                label: "酷狗".to_string(),
+                field: "candidate".to_string(),
             })?;
+        let id = candidate
+            .id
+            .as_deref()
+            .ok_or_else(|| SearcherError::MissingField {
+                label: "酷狗".to_string(),
+                field: "id".to_string(),
+            })?;
+        let access_key =
+            candidate
+                .access_key
+                .as_deref()
+                .ok_or_else(|| SearcherError::MissingField {
+                    label: "酷狗".to_string(),
+                    field: "accesskey".to_string(),
+                })?;
+        let dl_resp = api.get_download_krc(id, access_key).await?.ok_or_else(|| {
+            GeneralError::MissingField {
+                field: "酷狗: 下载 KRC 失败".to_string(),
+            }
+        })?;
         let krc = dl_resp.content.ok_or_else(|| GeneralError::MissingField {
             field: "酷狗: KRC 内容为空".to_string(),
         })?;
         if krc.is_empty() {
             return Err(GeneralError::MissingField {
                 field: "酷狗: KRC 内容为空".to_string(),
-            }.into());
+            }
+            .into());
         }
         Ok(KugouParser {}.decrypt_and_parse(krc)?)
     }

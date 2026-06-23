@@ -1,8 +1,8 @@
+use super::base_api::BaseApi;
 use crate::error::provider::http::HttpError;
 use crate::error::provider::json::JsonError;
 use crate::error::LyrixResult;
 use crate::logger;
-use super::base_api::BaseApi;
 use serde::Deserialize;
 use std::collections::HashMap;
 pub const COOKIE: &str = "os=pc;osver=Microsoft-Windows-10-Professional-build-19045-64bit;appver=3.1.32.205206;channel=netease;__remember_me=true";
@@ -19,13 +19,20 @@ impl NeteaseApi {
 
     pub fn new() -> Self {
         Self {
-            api: BaseApi::new(Some("https://music.163.com/"), Some(Self::netease_headers())),
+            api: BaseApi::new(
+                Some("https://music.163.com/"),
+                Some(Self::netease_headers()),
+            ),
         }
     }
 
     pub fn with_client(client: reqwest::Client) -> Self {
         Self {
-            api: BaseApi::with_client(client, Some("https://music.163.com/"), Some(Self::netease_headers())),
+            api: BaseApi::with_client(
+                client,
+                Some("https://music.163.com/"),
+                Some(Self::netease_headers()),
+            ),
         }
     }
 
@@ -37,10 +44,10 @@ impl NeteaseApi {
         params.insert("limit".to_string(), "20".to_string());
         params.insert("offset".to_string(), "0".to_string());
 
-        let resp = self.api.post_form_async(
-            "https://music.163.com/api/search/get/web",
-            &params,
-        ).await?;
+        let resp = self
+            .api
+            .post_form_async("https://music.163.com/api/search/get/web", &params)
+            .await?;
 
         let parsed: SearchResult = serde_json::from_str(&resp).map_err(|e| JsonError {
             api: "NeteaseSearch".to_string(),
@@ -62,10 +69,13 @@ impl NeteaseApi {
         params.insert("ytv".to_string(), "-1".to_string());
         params.insert("yrv".to_string(), "-1".to_string());
 
-        let resp = self.api.post_form_async(
-            "https://interface3.music.163.com/api/song/lyric/v1",
-            &params,
-        ).await?;
+        let resp = self
+            .api
+            .post_form_async(
+                "https://interface3.music.163.com/api/song/lyric/v1",
+                &params,
+            )
+            .await?;
 
         let parsed: LyricResult = serde_json::from_str(&resp).map_err(|e| JsonError {
             api: "NeteaseLyric".to_string(),
@@ -132,18 +142,17 @@ impl NeteaseApi {
             ),
         }
         let resp = result?;
-        let detail: Option<DetailResult> = serde_json::from_str(&resp)
-            .map_err(|e| JsonError {
-                api: "NeteaseDetail".to_string(),
-                source: e,
-            })?;
+        let detail: Option<DetailResult> = serde_json::from_str(&resp).map_err(|e| JsonError {
+            api: "NeteaseDetail".to_string(),
+            source: e,
+        })?;
         Ok(detail)
     }
 }
 
 impl Default for NeteaseApi {
     fn default() -> Self {
-         Self::new()
+        Self::new()
     }
 }
 // ===== Response Models =====
@@ -196,11 +205,10 @@ pub struct Detail {
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct Trial  {
+pub struct Trial {
     pub start: Option<u8>,
     pub end: Option<u8>,
 }
-
 
 #[derive(Debug, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]

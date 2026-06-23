@@ -75,7 +75,10 @@ fn sha1_empty() {
     let mut s = spotify::Sha1::new();
     s.update(b"");
     let digest = s.digest();
-    assert_eq!(hex::encode(digest), "da39a3ee5e6b4b0d3255bfef95601890afd80709");
+    assert_eq!(
+        hex::encode(digest),
+        "da39a3ee5e6b4b0d3255bfef95601890afd80709"
+    );
 }
 
 #[test]
@@ -83,7 +86,10 @@ fn sha1_abc() {
     let mut s = spotify::Sha1::new();
     s.update(b"abc");
     let digest = s.digest();
-    assert_eq!(hex::encode(digest), "a9993e364706816aba3e25717850c26c9cd0d89d");
+    assert_eq!(
+        hex::encode(digest),
+        "a9993e364706816aba3e25717850c26c9cd0d89d"
+    );
 }
 
 #[test]
@@ -91,7 +97,10 @@ fn sha1_long_message() {
     let mut s = spotify::Sha1::new();
     s.update(b"abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq");
     let digest = s.digest();
-    assert_eq!(hex::encode(digest), "84983e441c3bd26ebaae4aa1f95129e5e54670f1");
+    assert_eq!(
+        hex::encode(digest),
+        "84983e441c3bd26ebaae4aa1f95129e5e54670f1"
+    );
 }
 
 #[test]
@@ -100,7 +109,10 @@ fn sha1_multiple_updates() {
     s.update(b"ab");
     s.update(b"c");
     let digest = s.digest();
-    assert_eq!(hex::encode(digest), "a9993e364706816aba3e25717850c26c9cd0d89d");
+    assert_eq!(
+        hex::encode(digest),
+        "a9993e364706816aba3e25717850c26c9cd0d89d"
+    );
 }
 
 #[test]
@@ -119,7 +131,10 @@ fn hmac_sha1_rfc2202_case1() {
     let key = [0x0b; 20];
     let data = b"Hi There";
     let result = spotify::HmacSha1::oneshot(&key, data);
-    assert_eq!(hex::encode(result), "b617318655057264e28bc0b6fb378c8ef146be00");
+    assert_eq!(
+        hex::encode(result),
+        "b617318655057264e28bc0b6fb378c8ef146be00"
+    );
 }
 
 #[test]
@@ -127,7 +142,10 @@ fn hmac_sha1_rfc2202_case2() {
     let key = b"Jefe";
     let data = b"what do ya want for nothing?";
     let result = spotify::HmacSha1::oneshot(key, data);
-    assert_eq!(hex::encode(result), "effcdf6ae5eb2fa2d27416d5f184df9c259a7c79");
+    assert_eq!(
+        hex::encode(result),
+        "effcdf6ae5eb2fa2d27416d5f184df9c259a7c79"
+    );
 }
 
 #[test]

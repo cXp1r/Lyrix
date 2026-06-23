@@ -1,12 +1,12 @@
+pub mod general;
 pub mod parser;
 pub mod provider;
 pub mod searcher;
-pub mod general;
 
+pub use general::GeneralError;
 pub use parser::ParserError;
 pub use provider::ProviderError;
 pub use searcher::SearcherError;
-pub use general::GeneralError;
 
 /// 库级别 Result 别名
 pub type LyrixResult<T> = Result<T, LyrixError>;
@@ -73,4 +73,3 @@ impl From<provider::proxy::ProxyError> for LyrixError {
         LyrixError::Provider(ProviderError::Proxy(e))
     }
 }
-

@@ -5,22 +5,36 @@
 //!   3. 无 trial 评分 (is_trial 永远 false)
 
 use lyrix::models::{ITrackMetadata, TrackMetadata};
-use lyrix::searchers::applemusic::{ApplemusicSearcher, ApplemusicSearchResult};
+use lyrix::searchers::applemusic::{ApplemusicSearchResult, ApplemusicSearcher};
 use lyrix::searchers::ISearchResult;
 use lyrix::searchers::ISearcher;
 
-fn apple_track(title: &str, artist: &str, album_artist: &str, duration_ms: Option<u32>) -> TrackMetadata {
+fn apple_track(
+    title: &str,
+    artist: &str,
+    album_artist: &str,
+    duration_ms: Option<u32>,
+) -> TrackMetadata {
     TrackMetadata {
         title: Some(title.to_string()),
         artist: Some(artist.to_string()),
         album: None, // Apple Music 专辑从 artist 字段 "—" 拆分取第二段
-        album_artist: if album_artist.is_empty() { None } else { Some(album_artist.to_string()) },
+        album_artist: if album_artist.is_empty() {
+            None
+        } else {
+            Some(album_artist.to_string())
+        },
         duration_ms,
         ..Default::default()
     }
 }
 
-fn apple_result(title: &str, artists: &[&str], album: &str, duration_ms: Option<u32>) -> ApplemusicSearchResult {
+fn apple_result(
+    title: &str,
+    artists: &[&str],
+    album: &str,
+    duration_ms: Option<u32>,
+) -> ApplemusicSearchResult {
     ApplemusicSearchResult {
         id: String::new(),
         title: title.to_string(),

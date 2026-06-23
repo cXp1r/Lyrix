@@ -1,15 +1,12 @@
+use super::base_api::BaseApi;
 use crate::error::provider::json::JsonError;
 use crate::error::LyrixResult;
-use super::base_api::BaseApi;
-use serde::Deserialize;
-use std::{collections::HashMap};
 use memchr::memchr;
+use serde::Deserialize;
+use std::collections::HashMap;
 pub struct QQMusicApi {
     api: BaseApi,
 }
-
-
-
 
 impl QQMusicApi {
     pub fn new() -> Self {
@@ -39,11 +36,15 @@ impl QQMusicApi {
             }
         });
 
-        let resp = self.api.post_json_async("https://u.y.qq.com/cgi-bin/musicu.fcg", &data).await?;
-        let result: Option<MusicFcgApiResult> = serde_json::from_str(&resp).map_err(|e| JsonError {
-            api: "QQMusicSearch".to_string(),
-            source: e,
-        })?;
+        let resp = self
+            .api
+            .post_json_async("https://u.y.qq.com/cgi-bin/musicu.fcg", &data)
+            .await?;
+        let result: Option<MusicFcgApiResult> =
+            serde_json::from_str(&resp).map_err(|e| JsonError {
+                api: "QQMusicSearch".to_string(),
+                source: e,
+            })?;
         Ok(result)
     }
 
@@ -70,10 +71,13 @@ impl QQMusicApi {
         params.insert("platform".to_string(), "yqq".to_string());
         params.insert("needNewCode".to_string(), "0".to_string());
 
-        let resp = self.api.post_form_async(
-            "https://c.y.qq.com/lyric/fcgi-bin/fcg_query_lyric_new.fcg",
-            &params,
-        ).await?;
+        let resp = self
+            .api
+            .post_form_async(
+                "https://c.y.qq.com/lyric/fcgi-bin/fcg_query_lyric_new.fcg",
+                &params,
+            )
+            .await?;
 
         let json_str = resolve_resp_json(callback, &resp);
         if json_str.is_empty() {
@@ -96,37 +100,45 @@ impl QQMusicApi {
         params.insert("lrctype".to_string(), "4".to_string());
         params.insert("musicid".to_string(), id.to_string());
 
-        let resp = self.api.post_form_async(
-            "https://c.y.qq.com/qqmusic/fcgi-bin/lyric_download.fcg",
-            &params,
-        ).await?;
+        let resp = self
+            .api
+            .post_form_async(
+                "https://c.y.qq.com/qqmusic/fcgi-bin/lyric_download.fcg",
+                &params,
+            )
+            .await?;
 
         let len = resp.len();
         let content = resp.as_bytes();
         let mut cpos = 0;
 
         while cpos < len {
-            let Some(cc) = memchr(b'[', &content[cpos..]) else { break };
+            let Some(cc) = memchr(b'[', &content[cpos..]) else {
+                break;
+            };
             cpos += cc + 1; // 跳过 '['
 
             // 判断是不是 CDATA[
             if cpos + 6 <= len && &resp[cpos..cpos + 6] == "CDATA[" {
                 cpos += 6; // 跳过 "CDATA["
-                // 找结束的 ]]>
-                let Some(end) = memchr(b']', &content[cpos..]) else { break };
+                           // 找结束的 ]]>
+                let Some(end) = memchr(b']', &content[cpos..]) else {
+                    break;
+                };
                 return Ok(resp[cpos..cpos + end].to_string());
             }
         }
         Err(crate::error::SearcherError::NoResults {
             label: "QQMusic".to_string(),
             query: format!("qrc id={id}"),
-        }.into())
+        }
+        .into())
     }
 }
 
 impl Default for QQMusicApi {
     fn default() -> Self {
-         Self::new()
+        Self::new()
     }
 }
 
@@ -159,7 +171,6 @@ pub struct MusicFcgReq1 {
 #[derive(Debug, Deserialize, Default)]
 pub struct MusicFcgReq1Data {
     pub body: Option<MusicFcgReq1DataBody>,
-
 }
 
 #[derive(Debug, Deserialize, Default)]
@@ -172,7 +183,6 @@ pub struct SongList {
     pub list: Option<Vec<Song>>,
 }
 
-
 #[derive(Debug, Deserialize, Default)]
 pub struct Song {
     pub album: Option<Album>,
@@ -184,12 +194,12 @@ pub struct Song {
     pub subtitle: Option<String>,
     pub singer: Option<Vec<Singer>>,
     pub time_public: Option<String>,
-    pub file: Option<Preview>
+    pub file: Option<Preview>,
 }
 
 #[derive(Debug, Deserialize, Default)]
 pub struct Preview {
-    pub b_30s: Option<u32>,//试听开始ms
+    pub b_30s: Option<u32>, //试听开始ms
     pub e_30s: Option<u32>,
 }
 #[derive(Debug, Deserialize, Default)]
@@ -218,8 +228,8 @@ pub struct LyricResult {
 
 impl LyricResult {
     pub fn decode(&mut self) {
-        use base64::Engine;
         use base64::engine::general_purpose::STANDARD;
+        use base64::Engine;
         if let Some(ref lyric) = self.lyric {
             if let Ok(decoded) = STANDARD.decode(lyric) {
                 self.lyric = String::from_utf8(decoded).ok();

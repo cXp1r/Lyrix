@@ -1,11 +1,11 @@
+pub mod auth;
 pub mod http;
 pub mod json;
-pub mod auth;
 pub mod proxy;
 
+pub use auth::AuthError;
 pub use http::HttpError;
 pub use json::JsonError;
-pub use auth::AuthError;
 pub use proxy::ProxyError;
 
 /// 提供器层错误

@@ -1,7 +1,7 @@
+use super::{ISearchResult, ISearcher};
 use crate::error::{LyrixResult, SearcherError};
-use async_trait::async_trait;
 use crate::fetchers::qqmusic::QQMusicApi;
-use super::{ISearcher, ISearchResult};
+use async_trait::async_trait;
 
 pub struct QQMusicSearcher {
     api: QQMusicApi,
@@ -9,11 +9,15 @@ pub struct QQMusicSearcher {
 
 impl QQMusicSearcher {
     pub fn new() -> Self {
-        Self { api: QQMusicApi::new() }
+        Self {
+            api: QQMusicApi::new(),
+        }
     }
 
     pub fn with_client(client: reqwest::Client) -> Self {
-        Self { api: QQMusicApi::with_client(client) }
+        Self {
+            api: QQMusicApi::with_client(client),
+        }
     }
 }
 
@@ -25,7 +29,10 @@ impl Default for QQMusicSearcher {
 
 #[async_trait]
 impl ISearcher for QQMusicSearcher {
-    async fn search_for_results_by_string(&self, search_string: &str) -> LyrixResult<Vec<Box<dyn ISearchResult>>> {
+    async fn search_for_results_by_string(
+        &self,
+        search_string: &str,
+    ) -> LyrixResult<Vec<Box<dyn ISearchResult>>> {
         let result = self.api.search(search_string).await?;
         let mut results: Vec<Box<dyn ISearchResult>> = Vec::new();
 
@@ -56,15 +63,20 @@ impl ISearcher for QQMusicSearcher {
 
         for song in songs {
             let title = song.title.or(song.name).unwrap_or_default();
-            let artists: Vec<String> = song.singer
+            let artists: Vec<String> = song
+                .singer
                 .unwrap_or_default()
                 .iter()
                 .filter_map(|s| s.title.clone())
                 .collect();
-            let album = song.album.as_ref().and_then(|a| a.title.clone()).unwrap_or_default();
+            let album = song
+                .album
+                .as_ref()
+                .and_then(|a| a.title.clone())
+                .unwrap_or_default();
             let duration = song.interval.map(|i| (i * 1000) as u32);
             let mid = song.mid.unwrap_or_default();
-            let id  = song.id.unwrap_or_default();
+            let id = song.id.unwrap_or_default();
             let trial = if let Some(file) = song.file {
                 if let (Some(b), Some(e)) = (file.b_30s, file.e_30s) {
                     Some([b, e - b])
@@ -91,12 +103,15 @@ impl ISearcher for QQMusicSearcher {
             return Err(SearcherError::NoResults {
                 label: self.label().to_string(),
                 query: search_string.to_string(),
-            }.into());
+            }
+            .into());
         }
         Ok(results)
     }
 
-    fn label(&self) -> &'static str { "QQ音乐" }
+    fn label(&self) -> &'static str {
+        "QQ音乐"
+    }
 
     fn get_split_char(&self) -> char {
         '/'
@@ -116,14 +131,34 @@ pub struct QQMusicSearchResult {
 }
 
 impl ISearchResult for QQMusicSearchResult {
-    fn title(&self) -> &str { &self.title }
-    fn artists(&self) -> &[String] { &self.artists }
-    fn album(&self) -> &str { &self.album }
-    fn duration_ms(&self) -> Option<u32> { self.duration_ms }
-    fn match_score(&self) -> i8 { self.match_score }
-    fn set_match_score(&mut self, score: i8) { self.match_score = score; }
-    fn as_any(&self) -> &dyn std::any::Any { self }
-    fn trial(&self) -> Option<[u32; 2]> { self.trial }
-    fn set_trial(&mut self, i: bool) { self.is_trial = i; }
-    fn is_trial(&self) -> bool { self.is_trial }
+    fn title(&self) -> &str {
+        &self.title
+    }
+    fn artists(&self) -> &[String] {
+        &self.artists
+    }
+    fn album(&self) -> &str {
+        &self.album
+    }
+    fn duration_ms(&self) -> Option<u32> {
+        self.duration_ms
+    }
+    fn match_score(&self) -> i8 {
+        self.match_score
+    }
+    fn set_match_score(&mut self, score: i8) {
+        self.match_score = score;
+    }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+    fn trial(&self) -> Option<[u32; 2]> {
+        self.trial
+    }
+    fn set_trial(&mut self, i: bool) {
+        self.is_trial = i;
+    }
+    fn is_trial(&self) -> bool {
+        self.is_trial
+    }
 }

@@ -1,19 +1,17 @@
 use crate::error::provider::auth::AuthError;
-use crate::error::{
-    GeneralError, LyrixResult, SearcherError,
-};
+use crate::error::{GeneralError, LyrixResult, SearcherError};
+use crate::lyrix::{MusicPlayer, Session};
+use crate::models::{ITrackMetadata, LineInfo, LyricsData, TrackMetadata};
+use crate::searchers::{ISearchResult, ISearcher};
 use async_trait::async_trait;
 use reqwest::Client;
-use crate::models::{LineInfo, LyricsData, TrackMetadata, ITrackMetadata};
-use crate::searchers::{ISearcher, ISearchResult};
-use crate::smtc_lyrics::{MusicPlayer, Session};
 
+use super::applemusic::AppleMusicProvider;
+use super::kugou::KugouProvider;
 use super::netease::NeteaseProvider;
 use super::qqmusic::QQMusicProvider;
-use super::kugou::KugouProvider;
 use super::soda_music::SodaMusicProvider;
 use super::spotify::SpotifyProvider;
-use super::applemusic::AppleMusicProvider;
 
 /// LyricsProvider trait —— 定义「搜索 → API → 解析」一条龙服务接口
 #[async_trait]
@@ -39,13 +37,14 @@ async fn fetch_lyrics<P: LyricsProvider>(
     let label = P::label();
 
     let searcher = provider.create_searcher().await?;
-    let result = searcher
-        .search_for_result(track)
-        .await?
-        .ok_or_else(|| SearcherError::NoMatch {
-            label: label.to_string(),
-            title: track.title().unwrap_or_default().to_string(),
-        })?;
+    let result =
+        searcher
+            .search_for_result(track)
+            .await?
+            .ok_or_else(|| SearcherError::NoMatch {
+                label: label.to_string(),
+                title: track.title().unwrap_or_default().to_string(),
+            })?;
 
     let best = result
         .as_any()
@@ -60,7 +59,8 @@ async fn fetch_lyrics<P: LyricsProvider>(
     if lines.is_empty() {
         return Err(GeneralError::MissingField {
             field: format!("{}: 未获取到歌词内容", label),
-        }.into());
+        }
+        .into());
     }
     Ok(LyricsData {
         file: None,
@@ -86,10 +86,42 @@ pub(crate) async fn fetch_lyrics_from_player(
     client: &Client,
 ) -> LyrixResult<LyricsData> {
     match player {
-        MusicPlayer::Netease => fetch_lyrics(&NeteaseProvider { client: client.clone() }, track).await,
-        MusicPlayer::QQMusic => fetch_lyrics(&QQMusicProvider { client: client.clone() }, track).await,
-        MusicPlayer::Kugou => fetch_lyrics(&KugouProvider { client: client.clone() }, track).await,
-        MusicPlayer::SodaMusic => fetch_lyrics(&SodaMusicProvider { client: client.clone() }, track).await,
+        MusicPlayer::Netease => {
+            fetch_lyrics(
+                &NeteaseProvider {
+                    client: client.clone(),
+                },
+                track,
+            )
+            .await
+        }
+        MusicPlayer::QQMusic => {
+            fetch_lyrics(
+                &QQMusicProvider {
+                    client: client.clone(),
+                },
+                track,
+            )
+            .await
+        }
+        MusicPlayer::Kugou => {
+            fetch_lyrics(
+                &KugouProvider {
+                    client: client.clone(),
+                },
+                track,
+            )
+            .await
+        }
+        MusicPlayer::SodaMusic => {
+            fetch_lyrics(
+                &SodaMusicProvider {
+                    client: client.clone(),
+                },
+                track,
+            )
+            .await
+        }
         MusicPlayer::Spotify => {
             let cookie = session
                 .spotify_cookie
@@ -99,8 +131,15 @@ pub(crate) async fn fetch_lyrics_from_player(
                     field: "spotify_cookie".to_string(),
                 })?
                 .clone();
-            fetch_lyrics(&SpotifyProvider { cookie, client: client.clone() }, track).await
-        },
+            fetch_lyrics(
+                &SpotifyProvider {
+                    cookie,
+                    client: client.clone(),
+                },
+                track,
+            )
+            .await
+        }
         MusicPlayer::AppleMusic => {
             let token = session
                 .applemusic_token
@@ -110,18 +149,22 @@ pub(crate) async fn fetch_lyrics_from_player(
                     field: "applemusic_token".to_string(),
                 })?
                 .clone();
-            fetch_lyrics(&AppleMusicProvider { token, client: client.clone() }, track).await
-        },
-        MusicPlayer::LXMusic => {
-            Err(GeneralError::UnsupportedPlayer {
-                name: "落雪音乐".to_string(),
-            }.into())
+            fetch_lyrics(
+                &AppleMusicProvider {
+                    token,
+                    client: client.clone(),
+                },
+                track,
+            )
+            .await
         }
-        MusicPlayer::AnyListen => {
-            Err(GeneralError::UnsupportedPlayer {
-                name: "Any Listen".to_string(),
-            }.into())
+        MusicPlayer::LXMusic => Err(GeneralError::UnsupportedPlayer {
+            name: "落雪音乐".to_string(),
         }
-
+        .into()),
+        MusicPlayer::AnyListen => Err(GeneralError::UnsupportedPlayer {
+            name: "Any Listen".to_string(),
+        }
+        .into()),
     }
 }

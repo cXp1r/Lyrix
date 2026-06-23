@@ -1,9 +1,9 @@
+use super::base_api::BaseApi;
 use crate::error::provider::http::HttpError;
 use crate::error::provider::json::JsonError;
 use crate::error::LyrixResult;
 use crate::logger;
 use crate::parsers::generate::spotify::build_totp;
-use super::base_api::BaseApi;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -41,11 +41,9 @@ impl SpotifyApi {
             }
         });
 
-        let resp = self.api
-            .post_json_async(
-                "https://api-partner.spotify.com/pathfinder/v2/query",
-                &body,
-            )
+        let resp = self
+            .api
+            .post_json_async("https://api-partner.spotify.com/pathfinder/v2/query", &body)
             .await?;
 
         let result: Option<SearchResult> = serde_json::from_str(&resp).map_err(|e| JsonError {
@@ -66,7 +64,10 @@ impl SpotifyApi {
     }
 }
 
-async fn init_spotify(cookie: &str, async_client: Option<reqwest::Client>) -> LyrixResult<SpotifyApi> {
+async fn init_spotify(
+    cookie: &str,
+    async_client: Option<reqwest::Client>,
+) -> LyrixResult<SpotifyApi> {
     let start = std::time::Instant::now();
     logger::debug("provider::spotify", "initializing client tokens");
 
@@ -93,12 +94,10 @@ async fn init_spotify(cookie: &str, async_client: Option<reqwest::Client>) -> Ly
         .text()
         .await
         .map_err(|e| http_err(&token_url, &e))?;
-    let token_result: TokenResult =
-        serde_json::from_str(&token_resp)
-            .map_err(|e| JsonError {
-                api: "SpotifyToken".to_string(),
-                source: e,
-            })?;
+    let token_result: TokenResult = serde_json::from_str(&token_resp).map_err(|e| JsonError {
+        api: "SpotifyToken".to_string(),
+        source: e,
+    })?;
 
     let ct_body = ClientTokenRequest {
         client_data: ClientData {
@@ -117,11 +116,7 @@ async fn init_spotify(cookie: &str, async_client: Option<reqwest::Client>) -> Ly
 
     //不知道是不是没有options
     let options_url = "https://clienttoken.spotify.com/v1/clienttoken";
-    http
-        .request(
-            reqwest::Method::OPTIONS,
-            options_url,
-        )
+    http.request(reqwest::Method::OPTIONS, options_url)
         .header("Origin", "https://open.spotify.com")
         .header("Access-Control-Request-Method", "POST")
         .header("Access-Control-Request-Headers", "content-type")
@@ -149,11 +144,10 @@ async fn init_spotify(cookie: &str, async_client: Option<reqwest::Client>) -> Ly
         .await
         .map_err(|e| http_err(options_url, &e))?;
     let client_token_result: ClientTokenResult =
-        serde_json::from_str(&ct_resp)
-            .map_err(|e| JsonError {
-                api: "SpotifyClientToken".to_string(),
-                source: e,
-            })?;
+        serde_json::from_str(&ct_resp).map_err(|e| JsonError {
+            api: "SpotifyClientToken".to_string(),
+            source: e,
+        })?;
     //初始化baseapi的头
     let mut extra_headers = HashMap::new();
     extra_headers.insert(
@@ -165,8 +159,14 @@ async fn init_spotify(cookie: &str, async_client: Option<reqwest::Client>) -> Ly
         client_token_result.granted_token.token.clone(),
     );
     extra_headers.insert("Origin".to_string(), "https://open.spotify.com".to_string());
-    extra_headers.insert("Referer".to_string(), "https://open.spotify.com/".to_string());
-    extra_headers.insert("User-Agent".to_string(), super::base_api::USER_AGENT.to_string());
+    extra_headers.insert(
+        "Referer".to_string(),
+        "https://open.spotify.com/".to_string(),
+    );
+    extra_headers.insert(
+        "User-Agent".to_string(),
+        super::base_api::USER_AGENT.to_string(),
+    );
     extra_headers.insert("App-platform".to_string(), "WebPlayer".to_string());
 
     let api = if let Some(c) = async_client {
@@ -185,11 +185,19 @@ async fn init_spotify(cookie: &str, async_client: Option<reqwest::Client>) -> Ly
 
 fn http_err(url: &str, e: &reqwest::Error) -> HttpError {
     if e.is_timeout() {
-        HttpError::Timeout { url: url.to_string() }
+        HttpError::Timeout {
+            url: url.to_string(),
+        }
     } else if e.is_connect() {
-        HttpError::ConnectionFailed { detail: e.to_string(), url: url.to_string() }
+        HttpError::ConnectionFailed {
+            detail: e.to_string(),
+            url: url.to_string(),
+        }
     } else {
-        HttpError::ConnectionFailed { detail: e.to_string(), url: url.to_string() }
+        HttpError::ConnectionFailed {
+            detail: e.to_string(),
+            url: url.to_string(),
+        }
     }
 }
 
@@ -242,7 +250,6 @@ pub struct GrantedToken {
     pub expires_after_seconds: u32,
     pub refresh_after_seconds: u32,
 }
-
 
 #[derive(Debug, Deserialize, Default)]
 pub struct SearchResult {

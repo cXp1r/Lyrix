@@ -11,18 +11,21 @@ fn parse_lrc_time_valid() {
     // [00:00.00]
     assert_eq!(parser.parse_lrc_time("00:00.00").unwrap(), 0);
     // [59:59.99]
-    assert_eq!(parser.parse_lrc_time("59:59.99").unwrap(), 59 * 60000 + 59 * 1000 + 99 * 10);
+    assert_eq!(
+        parser.parse_lrc_time("59:59.99").unwrap(),
+        59 * 60000 + 59 * 1000 + 99 * 10
+    );
 }
 
 #[test]
 fn parse_lrc_time_invalid() {
     let parser = Dummy;
     assert!(parser.parse_lrc_time("not-a-time").is_err());
-    assert!(parser.parse_lrc_time("00:01").is_err());       // 缺少 .
-    assert!(parser.parse_lrc_time("00:01.").is_err());      // 缺少 centis
-    assert!(parser.parse_lrc_time("00:xx.10").is_err());    // 非数字
-    assert!(parser.parse_lrc_time("xx:00.10").is_err());    // 非数字
-    assert!(parser.parse_lrc_time("00:00.xx").is_err());    // 非数字
+    assert!(parser.parse_lrc_time("00:01").is_err()); // 缺少 .
+    assert!(parser.parse_lrc_time("00:01.").is_err()); // 缺少 centis
+    assert!(parser.parse_lrc_time("00:xx.10").is_err()); // 非数字
+    assert!(parser.parse_lrc_time("xx:00.10").is_err()); // 非数字
+    assert!(parser.parse_lrc_time("00:00.xx").is_err()); // 非数字
     assert!(parser.parse_lrc_time("").is_err());
 }
 

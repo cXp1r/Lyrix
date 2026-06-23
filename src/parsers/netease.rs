@@ -1,11 +1,11 @@
 use crate::error::parser::lyrics_parse::LyricsParseError;
 use crate::error::LyrixResult;
-use crate::parsers::{IParsers, lrc::*};
-use memchr::{memchr, memchr2};
 use crate::models::*;
+use crate::parsers::{lrc::*, IParsers};
+use memchr::{memchr, memchr2};
 
 ///网易LRC歌词解析器
-pub struct NeteaseLrcParser{
+pub struct NeteaseLrcParser {
     pub version: u8,
 }
 impl LrcParser for NeteaseLrcParser {
@@ -36,23 +36,25 @@ impl LrcParser for NeteaseLrcParser {
         };
         let sep = col + 1 + sep; // 转绝对偏移
 
-        let seconds = tag[col + 1..sep]
-            .parse::<u32>()
-            .map_err(|_| LyricsParseError::TimestampParse {
-                field: "seconds".to_string(),
-                raw: tag[col + 1..sep].to_string(),
-            })?;
-        let centis = tag[sep + 1..]
-            .parse::<u32>()
-            .map_err(|_| LyricsParseError::TimestampParse {
-                field: "centis".to_string(),
-                raw: tag[sep + 1..].to_string(),
-            })?;
+        let seconds =
+            tag[col + 1..sep]
+                .parse::<u32>()
+                .map_err(|_| LyricsParseError::TimestampParse {
+                    field: "seconds".to_string(),
+                    raw: tag[col + 1..sep].to_string(),
+                })?;
+        let centis =
+            tag[sep + 1..]
+                .parse::<u32>()
+                .map_err(|_| LyricsParseError::TimestampParse {
+                    field: "centis".to_string(),
+                    raw: tag[sep + 1..].to_string(),
+                })?;
 
         // ':' → v3 毫秒直接用，'.' → v4 百分秒 *10
         match tbytes[sep] {
             b'.' => Ok(minutes * 60_000 + seconds * 1_000 + centis),
-            _    => Ok(minutes * 60_000 + seconds * 1_000 + centis * 10),
+            _ => Ok(minutes * 60_000 + seconds * 1_000 + centis * 10),
         }
     }
 }
@@ -68,22 +70,30 @@ impl IParsers for NeteaseParser {
         let mut result: Vec<TextInfo> = Vec::new();
 
         while cpos < clen {
-            let Some(lp) = memchr(b'(', &cbytes[cpos..]) else { break };
+            let Some(lp) = memchr(b'(', &cbytes[cpos..]) else {
+                break;
+            };
 
             let after_lp = cpos + lp + 1;
             if after_lp >= clen || !cbytes[after_lp].is_ascii_digit() {
                 cpos += lp + 1;
-                continue;//不是数字,你已飞升
+                continue; //不是数字,你已飞升
             }
             cpos += lp + 1;
 
             // s1
-            let Some(c1) = memchr(b',', &cbytes[cpos..]) else { break };
-            let s1 = content[cpos..cpos + c1]
-                .parse::<u32>()
-                .map_err(|e| LyricsParseError::SyllableParse {
-                    detail: format!("s1 parse error: {:?} raw={:?}", e, &content[cpos..cpos + c1]),
-                })?;
+            let Some(c1) = memchr(b',', &cbytes[cpos..]) else {
+                break;
+            };
+            let s1 = content[cpos..cpos + c1].parse::<u32>().map_err(|e| {
+                LyricsParseError::SyllableParse {
+                    detail: format!(
+                        "s1 parse error: {:?} raw={:?}",
+                        e,
+                        &content[cpos..cpos + c1]
+                    ),
+                }
+            })?;
             cpos += c1 + 1;
 
             // d1，兼容 (s,d,x)
@@ -91,18 +101,20 @@ impl IParsers for NeteaseParser {
             let next_paren = memchr(b')', &cbytes[cpos..]).map(|x| cpos + x);
             let d1_end = match (next_comma, next_paren) {
                 (Some(nc), Some(np)) => nc.min(np),
-                (Some(nc), None)     => nc,
-                (None, Some(np))     => np,
-                (None, None)         => break,
+                (Some(nc), None) => nc,
+                (None, Some(np)) => np,
+                (None, None) => break,
             };
-            let d1 = content[cpos..d1_end]
-                .parse::<u16>()
-                .map_err(|e| LyricsParseError::SyllableParse {
+            let d1 = content[cpos..d1_end].parse::<u16>().map_err(|e| {
+                LyricsParseError::SyllableParse {
                     detail: format!("d1 parse error: {:?} raw={:?}", e, &content[cpos..d1_end]),
-                })?;
+                }
+            })?;
 
             // 跳到 ')' 后面
-            let Some(rp) = memchr(b')', &cbytes[cpos..]) else { break };
+            let Some(rp) = memchr(b')', &cbytes[cpos..]) else {
+                break;
+            };
             cpos += rp + 1;
 
             // 文字在 ')' 到下一个 '(' 之间

@@ -1,8 +1,8 @@
-use lyrix::error::LyrixError;
 use lyrix::error::parser::lyrics_parse::LyricsParseError;
-use lyrix::parsers::IParsers;
+use lyrix::error::LyrixError;
 use lyrix::parsers::lrc::LrcParser;
 use lyrix::parsers::netease::{NeteaseLrcParser, NeteaseParser};
+use lyrix::parsers::IParsers;
 
 // ── NeteaseLrcParser ──────────────────────────────────────────
 
@@ -148,7 +148,9 @@ fn netease_syllable_empty() {
 #[test]
 fn netease_syllable_no_paren() {
     let parser = NeteaseParser;
-    let result = parser.parse_syllables(0, "plain text without times").unwrap();
+    let result = parser
+        .parse_syllables(0, "plain text without times")
+        .unwrap();
     assert!(result.is_empty());
 }
 

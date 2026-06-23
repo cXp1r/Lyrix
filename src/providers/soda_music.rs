@@ -1,8 +1,8 @@
-use async_trait::async_trait;
-use reqwest::Client;
+use super::lyrics_provider::LyricsProvider;
 use crate::error::{GeneralError, LyrixResult};
 use crate::models::LineInfo;
-use super::lyrics_provider::LyricsProvider;
+use async_trait::async_trait;
+use reqwest::Client;
 
 pub(crate) struct SodaMusicProvider {
     pub(crate) client: Client,
@@ -18,7 +18,9 @@ impl LyricsProvider for SodaMusicProvider {
         Ok(crate::searchers::soda_music::SodaMusicSearcher::with_client(self.client.clone()))
     }
     async fn create_api(&self) -> LyrixResult<Self::Api> {
-        Ok(crate::fetchers::soda_music::SodaMusicApi::with_client(self.client.clone()))
+        Ok(crate::fetchers::soda_music::SodaMusicApi::with_client(
+            self.client.clone(),
+        ))
     }
     fn label() -> &'static str {
         "汽水音乐"
@@ -39,13 +41,16 @@ impl LyricsProvider for SodaMusicProvider {
         let lyric_info = detail.lyric.ok_or_else(|| GeneralError::MissingField {
             field: "汽水音乐: 歌曲没有歌词".to_string(),
         })?;
-        let content = lyric_info.content.ok_or_else(|| GeneralError::MissingField {
-            field: "汽水音乐: 无歌曲详细信息".to_string(),
-        })?;
+        let content = lyric_info
+            .content
+            .ok_or_else(|| GeneralError::MissingField {
+                field: "汽水音乐: 无歌曲详细信息".to_string(),
+            })?;
         if content.is_empty() {
             return Err(GeneralError::MissingField {
                 field: "汽水音乐: 歌词内容为空".to_string(),
-            }.into());
+            }
+            .into());
         }
         Ok(SodaParser {}.parse(content)?)
     }

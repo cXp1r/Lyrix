@@ -1,5 +1,5 @@
-mod test_lyrics_parse;
 mod test_decrypt;
+mod test_lyrics_parse;
 mod test_totp_gen;
 
 use lyrix::error::parser::ParserError;
@@ -30,9 +30,7 @@ fn parser_error_from_totp_gen() {
 
 #[test]
 fn parser_error_debug() {
-    let e = ParserError::TotpGenerate(
-        lyrix::error::parser::totp_gen::TotpGenError::ClockError,
-    );
+    let e = ParserError::TotpGenerate(lyrix::error::parser::totp_gen::TotpGenError::ClockError);
     let dbg = format!("{:?}", e);
     assert!(dbg.contains("ClockError"));
 }

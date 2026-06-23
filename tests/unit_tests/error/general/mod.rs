@@ -36,9 +36,7 @@ fn internal_display() {
 
 #[test]
 fn general_error_debug() {
-    let e = GeneralError::MissingField {
-        field: "x".into(),
-    };
+    let e = GeneralError::MissingField { field: "x".into() };
     let debug = format!("{:?}", e);
     assert!(debug.contains("MissingField"));
 }

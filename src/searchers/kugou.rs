@@ -1,18 +1,22 @@
+use super::{ISearchResult, ISearcher};
 use crate::error::{LyrixResult, SearcherError};
-use async_trait::async_trait;
 use crate::fetchers::kugou::KugouApi;
-use super::{ISearcher, ISearchResult};
+use async_trait::async_trait;
 pub struct KugouSearcher {
     api: KugouApi,
 }
 
 impl KugouSearcher {
     pub fn new() -> Self {
-        Self { api: KugouApi::new() }
+        Self {
+            api: KugouApi::new(),
+        }
     }
 
     pub fn with_client(client: reqwest::Client) -> Self {
-        Self { api: KugouApi::with_client(client) }
+        Self {
+            api: KugouApi::with_client(client),
+        }
     }
 }
 
@@ -25,7 +29,10 @@ impl Default for KugouSearcher {
 //duration只能api拿了
 #[async_trait]
 impl ISearcher for KugouSearcher {
-    async fn search_for_results_by_string(&self, search_string: &str) -> LyrixResult<Vec<Box<dyn ISearchResult>>> {
+    async fn search_for_results_by_string(
+        &self,
+        search_string: &str,
+    ) -> LyrixResult<Vec<Box<dyn ISearchResult>>> {
         let result = self.api.get_search_song(search_string).await?;
         let mut results: Vec<Box<dyn ISearchResult>> = Vec::new();
 
@@ -45,7 +52,8 @@ impl ISearcher for KugouSearcher {
         for info in info_list {
             let title = info.song_name.clone().unwrap_or_default();
             let singer = info.singer_name.clone().unwrap_or_default();
-            let artists: Vec<String> = singer.split('、')
+            let artists: Vec<String> = singer
+                .split('、')
                 .map(|s| s.trim().to_string())
                 .filter(|s| !s.is_empty())
                 .collect();
@@ -68,9 +76,13 @@ impl ISearcher for KugouSearcher {
         Ok(results)
     }
 
-    fn label(&self) -> &'static str { "酷狗" }
+    fn label(&self) -> &'static str {
+        "酷狗"
+    }
 
-    fn min_score(&self) -> i8 { 5 }
+    fn min_score(&self) -> i8 {
+        5
+    }
     fn get_split_char(&self) -> char {
         '、'
     }
@@ -88,14 +100,34 @@ pub struct KugouSearchResult {
 }
 
 impl ISearchResult for KugouSearchResult {
-    fn title(&self) -> &str { &self.title }
-    fn artists(&self) -> &[String] { &self.artists }
-    fn album(&self) -> &str { &self.album }
-    fn duration_ms(&self) -> Option<u32> { self.duration_ms }
-    fn match_score(&self) -> i8 { self.match_score }
-    fn set_match_score(&mut self, score: i8) { self.match_score = score; }
-    fn as_any(&self) -> &dyn std::any::Any { self }
-    fn trial(&self) -> Option<[u32; 2]> { self.trial }
-    fn set_trial(&mut self, i: bool) { self.is_trial = i; }
-    fn is_trial(&self) -> bool { self.is_trial }
+    fn title(&self) -> &str {
+        &self.title
+    }
+    fn artists(&self) -> &[String] {
+        &self.artists
+    }
+    fn album(&self) -> &str {
+        &self.album
+    }
+    fn duration_ms(&self) -> Option<u32> {
+        self.duration_ms
+    }
+    fn match_score(&self) -> i8 {
+        self.match_score
+    }
+    fn set_match_score(&mut self, score: i8) {
+        self.match_score = score;
+    }
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+    fn trial(&self) -> Option<[u32; 2]> {
+        self.trial
+    }
+    fn set_trial(&mut self, i: bool) {
+        self.is_trial = i;
+    }
+    fn is_trial(&self) -> bool {
+        self.is_trial
+    }
 }

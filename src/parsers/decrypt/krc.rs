@@ -2,13 +2,13 @@ use crate::error::parser::decrypt::DecryptError;
 use crate::error::LyrixResult;
 
 pub fn krc_decrypt(encoded: &str) -> LyrixResult<String> {
-    use base64::{Engine as _, engine::general_purpose::STANDARD as B64};
+    use base64::{engine::general_purpose::STANDARD as B64, Engine as _};
     use flate2::read::{DeflateDecoder, ZlibDecoder};
     use std::io::Read;
 
     const KEY: &[u8] = &[
-        0x40, 0x47, 0x61, 0x77, 0x5e, 0x32, 0x74, 0x47,
-        0x51, 0x36, 0x31, 0x2d, 0xce, 0xd2, 0x6e, 0x69,
+        0x40, 0x47, 0x61, 0x77, 0x5e, 0x32, 0x74, 0x47, 0x51, 0x36, 0x31, 0x2d, 0xce, 0xd2, 0x6e,
+        0x69,
     ];
 
     let clean: String = encoded.chars().filter(|c| !c.is_whitespace()).collect();
@@ -68,7 +68,10 @@ pub fn krc_decrypt(encoded: &str) -> LyrixResult<String> {
         }
         .into());
     }
-    String::from_utf8(inflated[skip..].to_vec()).map_err(|e| DecryptError::Utf8Decode {
-        detail: e.to_string(),
-    }.into())
+    String::from_utf8(inflated[skip..].to_vec()).map_err(|e| {
+        DecryptError::Utf8Decode {
+            detail: e.to_string(),
+        }
+        .into()
+    })
 }

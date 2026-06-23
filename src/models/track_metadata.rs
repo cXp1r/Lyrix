@@ -5,16 +5,30 @@ pub trait ITrackMetadata: Send + Sync {
     fn title(&self) -> Option<&str>;
     fn artist(&self) -> Option<&str>;
     fn album(&self) -> Option<&str>;
-    fn album_artist(&self) -> Option<&str> { None }
-    fn duration_ms(&self) -> Option<u32> { None }
+    fn album_artist(&self) -> Option<&str> {
+        None
+    }
+    fn duration_ms(&self) -> Option<u32> {
+        None
+    }
 }
 
 impl ITrackMetadata for TrackMetadata {
-    fn title(&self) -> Option<&str> { self.title.as_deref() }
-    fn artist(&self) -> Option<&str> { self.artist.as_deref() }
-    fn album(&self) -> Option<&str> { self.album.as_deref() }
-    fn album_artist(&self) -> Option<&str> { self.album_artist.as_deref() }
-    fn duration_ms(&self) -> Option<u32> { self.duration_ms }
+    fn title(&self) -> Option<&str> {
+        self.title.as_deref()
+    }
+    fn artist(&self) -> Option<&str> {
+        self.artist.as_deref()
+    }
+    fn album(&self) -> Option<&str> {
+        self.album.as_deref()
+    }
+    fn album_artist(&self) -> Option<&str> {
+        self.album_artist.as_deref()
+    }
+    fn duration_ms(&self) -> Option<u32> {
+        self.duration_ms
+    }
 }
 
 /// 曲目元数据类型在此...............
@@ -50,4 +64,3 @@ impl TrackMultiArtistMetadata {
         self.artists.as_ref().map(|a| a.join(", "))
     }
 }
-

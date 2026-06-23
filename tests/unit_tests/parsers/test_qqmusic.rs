@@ -1,6 +1,6 @@
-use lyrix::parsers::IParsers;
 use lyrix::parsers::lrc::LrcParser;
 use lyrix::parsers::qqmusic::{QQMusicLrcParser, QQMusicParser};
+use lyrix::parsers::IParsers;
 
 // ── QQMusicLrcParser ──────────────────────────────────────────
 // QQMusicLrcParser 使用默认 LrcParser 实现
@@ -36,9 +36,7 @@ fn qqmusic_syllable_text_before_time() {
 #[test]
 fn qqmusic_syllable_multiple() {
     let parser = QQMusicParser;
-    let result = parser
-        .parse_syllables(0, "A(0,200)B(200,300)")
-        .unwrap();
+    let result = parser.parse_syllables(0, "A(0,200)B(200,300)").unwrap();
     assert_eq!(result.len(), 2);
     assert_eq!(result[0].text, "A");
     assert_eq!(result[0].duration, 200);

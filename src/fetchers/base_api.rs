@@ -1,13 +1,12 @@
 use crate::error::provider::http::HttpError;
 use crate::error::LyrixResult;
 use crate::logger;
-use reqwest::{Client, header};
+use reqwest::{header, Client};
 use std::collections::HashMap;
 use std::time::Duration;
 
 pub const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
 //失效了更新这个
-
 
 #[derive(Clone)]
 pub struct BaseApi {
@@ -17,7 +16,10 @@ pub struct BaseApi {
 }
 
 impl BaseApi {
-    pub fn new(http_refer: Option<&str>, additional_headers: Option<HashMap<String, String>>) -> Self {
+    pub fn new(
+        http_refer: Option<&str>,
+        additional_headers: Option<HashMap<String, String>>,
+    ) -> Self {
         Self {
             client: Client::new(),
             http_refer: http_refer.map(|s| s.to_string()),
@@ -25,7 +27,11 @@ impl BaseApi {
         }
     }
 
-    pub fn with_client(client: Client, http_refer: Option<&str>, additional_headers: Option<HashMap<String, String>>) -> Self {
+    pub fn with_client(
+        client: Client,
+        http_refer: Option<&str>,
+        additional_headers: Option<HashMap<String, String>>,
+    ) -> Self {
         Self {
             client,
             http_refer: http_refer.map(|s| s.to_string()),
@@ -108,7 +114,9 @@ impl BaseApi {
                 return Err(Self::status_to_error(resp.status(), url));
             }
 
-            resp.text().await.map_err(|e| Self::classify_reqwest_error(url, &e))
+            resp.text()
+                .await
+                .map_err(|e| Self::classify_reqwest_error(url, &e))
         }
         .await;
         log_http_result("GET", url, start.elapsed(), &result);
@@ -135,7 +143,9 @@ impl BaseApi {
                 return Err(Self::status_to_error(resp.status(), url));
             }
 
-            resp.text().await.map_err(|e| Self::classify_reqwest_error(url, &e))
+            resp.text()
+                .await
+                .map_err(|e| Self::classify_reqwest_error(url, &e))
         }
         .await;
         log_http_result("POST_FORM", url, start.elapsed(), &result);
@@ -162,18 +172,16 @@ impl BaseApi {
                 return Err(Self::status_to_error(resp.status(), url));
             }
 
-            resp.text().await.map_err(|e| Self::classify_reqwest_error(url, &e))
+            resp.text()
+                .await
+                .map_err(|e| Self::classify_reqwest_error(url, &e))
         }
         .await;
         log_http_result("POST_JSON", url, start.elapsed(), &result);
         result.map_err(Into::into)
     }
 
-    pub async fn post_string_async(
-        &self,
-        url: &str,
-        body: &str,
-    ) -> LyrixResult<String> {
+    pub async fn post_string_async(&self, url: &str, body: &str) -> LyrixResult<String> {
         let start = std::time::Instant::now();
         let result = async {
             let resp = self
@@ -190,7 +198,9 @@ impl BaseApi {
                 return Err(Self::status_to_error(resp.status(), url));
             }
 
-            resp.text().await.map_err(|e| Self::classify_reqwest_error(url, &e))
+            resp.text()
+                .await
+                .map_err(|e| Self::classify_reqwest_error(url, &e))
         }
         .await;
         log_http_result("POST_STRING", url, start.elapsed(), &result);
@@ -198,12 +208,7 @@ impl BaseApi {
     }
 }
 
-fn log_http_result(
-    method: &str,
-    url: &str,
-    elapsed: Duration,
-    result: &Result<String, HttpError>,
-) {
+fn log_http_result(method: &str, url: &str, elapsed: Duration, result: &Result<String, HttpError>) {
     let url = sanitize_url(url);
     match result {
         Ok(body) => logger::debug(
@@ -220,10 +225,7 @@ fn log_http_result(
             "provider::http",
             format_args!(
                 "request failed | method={} | url={} | elapsed={:?} | error={}",
-                method,
-                url,
-                elapsed,
-                err
+                method, url, elapsed, err
             ),
         ),
     }

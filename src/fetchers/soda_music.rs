@@ -1,13 +1,15 @@
+use super::base_api::BaseApi;
 use crate::error::provider::json::JsonError;
 use crate::error::LyrixResult;
-use super::base_api::BaseApi;
 use serde::Deserialize;
 use std::collections::HashMap;
 
 mod string_or_int {
     use serde::{Deserialize, Deserializer};
     pub fn deserialize<'de, D>(d: D) -> Result<Option<String>, D::Error>
-    where D: Deserializer<'de> {
+    where
+        D: Deserializer<'de>,
+    {
         let v: Option<serde_json::Value> = Option::deserialize(d)?;
         Ok(v.and_then(|v| match v {
             serde_json::Value::String(s) => Some(s),
@@ -56,10 +58,11 @@ impl SodaMusicApi {
         );
         match self.api.get_async(&url).await {
             Ok(resp) => {
-                let result: Option<TrackDetailResult> = serde_json::from_str(&resp).map_err(|e| JsonError {
-                    api: "SodaMusicDetail".to_string(),
-                    source: e,
-                })?;
+                let result: Option<TrackDetailResult> =
+                    serde_json::from_str(&resp).map_err(|e| JsonError {
+                        api: "SodaMusicDetail".to_string(),
+                        source: e,
+                    })?;
                 Ok(result)
             }
             Err(_) => Ok(None),
@@ -69,7 +72,7 @@ impl SodaMusicApi {
 
 impl Default for SodaMusicApi {
     fn default() -> Self {
-         Self::new()
+        Self::new()
     }
 }
 // ===== Response Models =====
@@ -124,7 +127,7 @@ pub struct TrackContainer {
     pub artists: Option<Vec<SodaArtist>>,
     pub duration: Option<i64>,
     pub name: Option<String>,
-    pub preview: Option<Trial>
+    pub preview: Option<Trial>,
 }
 
 #[derive(Debug, Deserialize, Default)]

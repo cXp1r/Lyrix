@@ -1,8 +1,8 @@
-use async_trait::async_trait;
-use reqwest::Client;
+use super::lyrics_provider::LyricsProvider;
 use crate::error::{GeneralError, LyrixResult};
 use crate::models::LineInfo;
-use super::lyrics_provider::LyricsProvider;
+use async_trait::async_trait;
+use reqwest::Client;
 
 pub(crate) struct AppleMusicProvider {
     pub(crate) token: String,
@@ -16,10 +16,18 @@ impl LyricsProvider for AppleMusicProvider {
     type SearchResult = crate::searchers::applemusic::ApplemusicSearchResult;
 
     async fn create_searcher(&self) -> LyrixResult<Self::Searcher> {
-        Ok(crate::searchers::applemusic::ApplemusicSearcher::with_client(self.client.clone(), self.token.clone()))
+        Ok(
+            crate::searchers::applemusic::ApplemusicSearcher::with_client(
+                self.client.clone(),
+                self.token.clone(),
+            ),
+        )
     }
     async fn create_api(&self) -> LyrixResult<Self::Api> {
-        Ok(crate::fetchers::applemusic::ApplemusicApi::with_client(self.client.clone(), self.token.clone()))
+        Ok(crate::fetchers::applemusic::ApplemusicApi::with_client(
+            self.client.clone(),
+            self.token.clone(),
+        ))
     }
     fn label() -> &'static str {
         "applemusic"
@@ -40,12 +48,17 @@ impl LyricsProvider for AppleMusicProvider {
         let lyric_data = detail.data.ok_or_else(|| GeneralError::MissingField {
             field: "applemusic: 歌曲没有歌词".to_string(),
         })?;
-        let u = lyric_data.get(0).ok_or_else(|| GeneralError::MissingField {
-            field: "applemusic: 歌曲没有歌词".to_string(),
-        })?;
-        let att = u.attributes.as_ref().ok_or_else(|| GeneralError::MissingField {
-            field: "applemusic: 无歌曲详细信息".to_string(),
-        })?;
+        let u = lyric_data
+            .get(0)
+            .ok_or_else(|| GeneralError::MissingField {
+                field: "applemusic: 歌曲没有歌词".to_string(),
+            })?;
+        let att = u
+            .attributes
+            .as_ref()
+            .ok_or_else(|| GeneralError::MissingField {
+                field: "applemusic: 无歌曲详细信息".to_string(),
+            })?;
         let lyrics = att
             .ttml_localizations
             .as_ref()
@@ -55,7 +68,8 @@ impl LyricsProvider for AppleMusicProvider {
         if lyrics.is_empty() {
             return Err(GeneralError::MissingField {
                 field: "applemusic: 歌词内容为空".to_string(),
-            }.into());
+            }
+            .into());
         }
         Ok(AppleMusicParser {}.parse(lyrics.to_string())?)
     }

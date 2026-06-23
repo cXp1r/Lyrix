@@ -1,6 +1,6 @@
+use super::base_api::BaseApi;
 use crate::error::provider::json::JsonError;
 use crate::error::LyrixResult;
-use super::base_api::BaseApi;
 use serde::Deserialize;
 
 pub struct KugouApi {
@@ -27,10 +27,11 @@ impl KugouApi {
             urlencoding::encode(keywords)
         );
         let resp = self.api.get_async(&url).await?;
-        let result: Option<SearchSongResponse> = serde_json::from_str(&resp).map_err(|e| JsonError {
-            api: "KugouSearchSong".to_string(),
-            source: e,
-        })?;
+        let result: Option<SearchSongResponse> =
+            serde_json::from_str(&resp).map_err(|e| JsonError {
+                api: "KugouSearchSong".to_string(),
+                source: e,
+            })?;
         Ok(result)
     }
 
@@ -45,10 +46,11 @@ impl KugouApi {
             id, access_key
         );
         let resp = self.api.get_async(&url).await?;
-        let result: Option<DownloadKrcResponse> = serde_json::from_str(&resp).map_err(|e| JsonError {
-            api: "KugouDownloadKrc".to_string(),
-            source: e,
-        })?;
+        let result: Option<DownloadKrcResponse> =
+            serde_json::from_str(&resp).map_err(|e| JsonError {
+                api: "KugouDownloadKrc".to_string(),
+                source: e,
+            })?;
         Ok(result)
     }
 
@@ -66,17 +68,18 @@ impl KugouApi {
             hash_val
         );
         let resp = self.api.get_async(&url).await?;
-        let result: Option<SearchLyricsResponse> = serde_json::from_str(&resp).map_err(|e| JsonError {
-            api: "KugouSearchLyrics".to_string(),
-            source: e,
-        })?;
+        let result: Option<SearchLyricsResponse> =
+            serde_json::from_str(&resp).map_err(|e| JsonError {
+                api: "KugouSearchLyrics".to_string(),
+                source: e,
+            })?;
         Ok(result)
     }
 }
 
 impl Default for KugouApi {
     fn default() -> Self {
-         Self::new()
+        Self::new()
     }
 }
 

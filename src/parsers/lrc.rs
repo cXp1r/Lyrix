@@ -7,16 +7,16 @@ use memchr::memchr;
 pub trait LrcParser {
     fn parse_lrc_time(&self, tag: &str) -> LyrixResult<u32> {
         let tag = tag.trim();
-        let (minutes_str, rest) = tag
-            .split_once(':')
-            .ok_or_else(|| LyricsParseError::InvalidLrcFormat {
-                detail: format!("时间标签缺少 ':' : {:?}", tag),
-            })?;
-        let (seconds_str, centis_str) = rest
-            .split_once('.')
-            .ok_or_else(|| LyricsParseError::InvalidLrcFormat {
-                detail: format!("时间标签缺少 '.' : {:?}", tag),
-            })?;
+        let (minutes_str, rest) =
+            tag.split_once(':')
+                .ok_or_else(|| LyricsParseError::InvalidLrcFormat {
+                    detail: format!("时间标签缺少 ':' : {:?}", tag),
+                })?;
+        let (seconds_str, centis_str) =
+            rest.split_once('.')
+                .ok_or_else(|| LyricsParseError::InvalidLrcFormat {
+                    detail: format!("时间标签缺少 '.' : {:?}", tag),
+                })?;
 
         if minutes_str.is_empty() || seconds_str.is_empty() || centis_str.is_empty() {
             return Err(LyricsParseError::InvalidLrcFormat {
@@ -25,24 +25,24 @@ pub trait LrcParser {
             .into());
         }
 
-        let minutes = minutes_str.parse::<u32>().map_err(|_| {
-            LyricsParseError::TimestampParse {
+        let minutes = minutes_str
+            .parse::<u32>()
+            .map_err(|_| LyricsParseError::TimestampParse {
                 field: "minutes".to_string(),
                 raw: minutes_str.to_string(),
-            }
-        })?;
-        let seconds = seconds_str.parse::<u32>().map_err(|_| {
-            LyricsParseError::TimestampParse {
+            })?;
+        let seconds = seconds_str
+            .parse::<u32>()
+            .map_err(|_| LyricsParseError::TimestampParse {
                 field: "seconds".to_string(),
                 raw: seconds_str.to_string(),
-            }
-        })?;
-        let centis = centis_str.parse::<u32>().map_err(|_| {
-            LyricsParseError::TimestampParse {
+            })?;
+        let centis = centis_str
+            .parse::<u32>()
+            .map_err(|_| LyricsParseError::TimestampParse {
                 field: "centis".to_string(),
                 raw: centis_str.to_string(),
-            }
-        })?;
+            })?;
 
         Ok(minutes * 60_000 + seconds * 1_000 + centis * 10)
     }
@@ -71,7 +71,9 @@ pub trait LrcParser {
         let mut c = 0;
 
         while c < len {
-            let Some(lb) = memchr(b'[', &cbytes[c..]) else { break };
+            let Some(lb) = memchr(b'[', &cbytes[c..]) else {
+                break;
+            };
             c += lb + 1;
 
             if c >= len || !cbytes[c].is_ascii_digit() {
@@ -83,14 +85,14 @@ pub trait LrcParser {
                 continue;
             }
 
-            let Some(rb) = memchr(b']', &cbytes[c..]) else { break };
+            let Some(rb) = memchr(b']', &cbytes[c..]) else {
+                break;
+            };
             let tag = &lyrics[c..c + rb];
             let s = self.parse_lrc_time(tag)?;
             c += rb + 1;
 
-            let content_end = memchr(b'[', &cbytes[c..])
-                .map(|x| c + x)
-                .unwrap_or(len);
+            let content_end = memchr(b'[', &cbytes[c..]).map(|x| c + x).unwrap_or(len);
             let text = lyrics[c..content_end]
                 .trim_matches(|ch| ch == '\r' || ch == '\n')
                 .to_string();

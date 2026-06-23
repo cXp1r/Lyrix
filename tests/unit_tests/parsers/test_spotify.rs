@@ -1,5 +1,5 @@
-use lyrix::error::LyrixError;
 use lyrix::error::parser::lyrics_parse::LyricsParseError;
+use lyrix::error::LyrixError;
 use lyrix::parsers::spotify::SpotifyParser;
 
 // ── SpotifyParser::parse_without_st ───────────────────────────
@@ -91,7 +91,8 @@ fn spotify_parse_skip_empty_words() {
 #[test]
 fn spotify_parse_missing_start_time_defaults_zero() {
     let parser = SpotifyParser;
-    let json = r#"{"lyrics":{"syncType":"LINE_SYNCED","lines":[{"words":"Hi","endTimeMs":"1000"}]}}"#;
+    let json =
+        r#"{"lyrics":{"syncType":"LINE_SYNCED","lines":[{"words":"Hi","endTimeMs":"1000"}]}}"#;
     let result = parser.parse_without_st(json.into()).unwrap();
     assert_eq!(result[0].start_time, 0);
 }

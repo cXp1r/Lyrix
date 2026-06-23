@@ -1,10 +1,10 @@
-mod test_lrc;
-mod test_soda_music;
+mod test_applemusic;
 mod test_decrypt;
 mod test_generate;
+mod test_iparsers;
+mod test_kugou;
+mod test_lrc;
 mod test_netease;
 mod test_qqmusic;
-mod test_kugou;
+mod test_soda_music;
 mod test_spotify;
-mod test_applemusic;
-mod test_iparsers;

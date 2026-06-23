@@ -91,7 +91,10 @@ pub fn set_filter(tags: Vec<String>, invert: bool) {
         .map(|tag| tag.trim().to_string())
         .filter(|tag| !tag.is_empty())
         .collect();
-    *LOG_FILTER_TAGS.get_or_init(|| RwLock::new(Vec::new())).write().expect("logger filter lock poisoned") = normalized;
+    *LOG_FILTER_TAGS
+        .get_or_init(|| RwLock::new(Vec::new()))
+        .write()
+        .expect("logger filter lock poisoned") = normalized;
     LOG_FILTER_INVERT.store(if invert { 1 } else { 0 }, Ordering::Relaxed);
 }
 
@@ -125,7 +128,8 @@ fn config_dir() -> Result<PathBuf, std::env::VarError> {
     } else if cfg!(target_os = "macos") {
         std::env::var("HOME").map(|h| PathBuf::from(h).join("Library").join("Application Support"))
     } else if cfg!(target_os = "linux") {
-        std::env::var("XDG_CONFIG_HOME").map(PathBuf::from)
+        std::env::var("XDG_CONFIG_HOME")
+            .map(PathBuf::from)
             .or_else(|_| std::env::var("HOME").map(|h| PathBuf::from(h).join(".config")))
     } else {
         Err(std::env::VarError::NotPresent)
@@ -182,7 +186,10 @@ where
     if (level as u8) < LOG_LEVEL.load(Ordering::Relaxed) {
         return;
     }
-    let filter_tags = LOG_FILTER_TAGS.get_or_init(|| RwLock::new(Vec::new())).read().expect("logger filter lock poisoned");
+    let filter_tags = LOG_FILTER_TAGS
+        .get_or_init(|| RwLock::new(Vec::new()))
+        .read()
+        .expect("logger filter lock poisoned");
     if !filter_tags.is_empty() {
         let matched = filter_tags.iter().any(|filter_tag| filter_tag == tag);
         let invert = LOG_FILTER_INVERT.load(Ordering::Relaxed) != 0;

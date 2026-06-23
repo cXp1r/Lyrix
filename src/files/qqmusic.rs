@@ -29,9 +29,14 @@ pub fn qqmusic_lyric_new_dir() -> LyrixResult<PathBuf> {
     let ini_path = qqmusic_webkit_cache_path_ini()?;
     let ini = fs::read_to_string(&ini_path).map_err(GeneralError::Io)?;
     let webkit_cache_path = parse_webkit_cache_path(&ini)?;
-    let cache_parent = webkit_cache_path.parent().ok_or_else(|| GeneralError::Internal {
-        detail: format!("webkit cache path has no parent: {}", webkit_cache_path.display()),
-    })?;
+    let cache_parent = webkit_cache_path
+        .parent()
+        .ok_or_else(|| GeneralError::Internal {
+            detail: format!(
+                "webkit cache path has no parent: {}",
+                webkit_cache_path.display()
+            ),
+        })?;
 
     Ok(cache_parent.join(QQMUSIC_LYRIC_NEW_DIR_NAME))
 }
@@ -69,12 +74,13 @@ pub fn read_qqmusic_qrc_file(path: impl AsRef<Path>) -> LyrixResult<String> {
 
 /// Reads the first `.qrc` file found in `QQMusicLyricNew`.
 pub fn read_first_qqmusic_qrc() -> LyrixResult<String> {
-    let qrc_path = qqmusic_qrc_files()?
-        .into_iter()
-        .next()
-        .ok_or_else(|| GeneralError::MissingField {
-            field: "QQMusic qrc file".to_string(),
-        })?;
+    let qrc_path =
+        qqmusic_qrc_files()?
+            .into_iter()
+            .next()
+            .ok_or_else(|| GeneralError::MissingField {
+                field: "QQMusic qrc file".to_string(),
+            })?;
 
     read_qqmusic_qrc_file(qrc_path)
 }
@@ -118,10 +124,9 @@ pub fn find_qqmusic_qrc_path_in_dir(
 
 /// Reads a QQ Music qrc file by exact file name.
 pub fn read_qqmusic_qrc_by_filename(file_name: impl AsRef<str>) -> LyrixResult<String> {
-    let qrc_path = find_qqmusic_qrc_path(file_name)?
-        .ok_or_else(|| GeneralError::MissingField {
-            field: "QQMusic qrc file".to_string(),
-        })?;
+    let qrc_path = find_qqmusic_qrc_path(file_name)?.ok_or_else(|| GeneralError::MissingField {
+        field: "QQMusic qrc file".to_string(),
+    })?;
 
     read_qqmusic_qrc_file(qrc_path)
 }
@@ -183,8 +188,8 @@ pub fn find_qqmusic_qrc_path_by_metadata_in_dir(
 
 /// Reads a QQ Music qrc file by track metadata.
 pub fn read_qqmusic_qrc_by_metadata(track: &dyn ITrackMetadata) -> LyrixResult<String> {
-    let qrc_path = find_qqmusic_qrc_path_by_metadata(track)?
-        .ok_or_else(|| GeneralError::MissingField {
+    let qrc_path =
+        find_qqmusic_qrc_path_by_metadata(track)?.ok_or_else(|| GeneralError::MissingField {
             field: "QQMusic qrc file".to_string(),
         })?;
 
@@ -301,7 +306,10 @@ mod tests {
         assert_eq!(info.artist, "安月名莉子 (Azuna Riko)");
         assert_eq!(info.title, "rise");
         assert_eq!(info.index, "303");
-        assert_eq!(info.album, "TVアニメ「やがて君になる」オープニングテーマ「君にふれて」 (触摸你)");
+        assert_eq!(
+            info.album,
+            "TVアニメ「やがて君になる」オープニングテーマ「君にふれて」 (触摸你)"
+        );
         assert!(is_qqmusic_qrc_filename(
             "安月名莉子 (Azuna Riko) - rise - 303 - TVアニメ「やがて君になる」オープニングテーマ「君にふれて」 (触摸你)_qm.qrc"
         ));
@@ -324,7 +332,9 @@ mod tests {
         let metadata = crate::models::TrackMetadata {
             title: Some("rise".to_string()),
             artist: Some("安月名莉子 (Azuna Riko)".to_string()),
-            album: Some("TVアニメ「やがて君になる」オープニングテーマ「君にふれて」 (触摸你)".to_string()),
+            album: Some(
+                "TVアニメ「やがて君になる」オープニングテーマ「君にふれて」 (触摸你)".to_string(),
+            ),
             ..Default::default()
         };
 

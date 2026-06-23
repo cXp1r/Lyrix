@@ -7,10 +7,10 @@ use std::sync::LazyLock;
 
 static FINDER_IN: LazyLock<Finder<'static>> = LazyLock::new(|| Finder::new(b"in=\""));
 static FINDER_ND: LazyLock<Finder<'static>> = LazyLock::new(|| Finder::new(b"nd=\""));
-static FINDER_P:  LazyLock<Finder<'static>> = LazyLock::new(|| Finder::new(b"<p"));
+static FINDER_P: LazyLock<Finder<'static>> = LazyLock::new(|| Finder::new(b"<p"));
 static FINDER_EP: LazyLock<Finder<'static>> = LazyLock::new(|| Finder::new(b"</p"));
 static FINDER_EQ: LazyLock<Finder<'static>> = LazyLock::new(|| Finder::new(b"=\""));
-static FINDER_DIV:LazyLock<Finder<'static>> = LazyLock::new(|| Finder::new(b"div"));
+static FINDER_DIV: LazyLock<Finder<'static>> = LazyLock::new(|| Finder::new(b"div"));
 
 pub struct AppleMusicParser {}
 
@@ -44,11 +44,11 @@ impl AppleMusicParser {
         } else {
             (0, tag)
         };
-        let (seconds_str, centis_str) = rest
-            .split_once('.')
-            .ok_or_else(|| LyricsParseError::InvalidLrcFormat {
-                detail: format!("音节时间缺少 '.' : {:?}", tag),
-            })?;
+        let (seconds_str, centis_str) =
+            rest.split_once('.')
+                .ok_or_else(|| LyricsParseError::InvalidLrcFormat {
+                    detail: format!("音节时间缺少 '.' : {:?}", tag),
+                })?;
         let seconds = Self::parse_u32_field(seconds_str, "seconds")? * 1_000;
         let centis = Self::parse_u32_field(centis_str, "centis")?;
         Ok(minutes + seconds + centis)
@@ -56,21 +56,21 @@ impl AppleMusicParser {
 
     pub fn parse_time(&self, tag: &str) -> LyrixResult<u32> {
         let tag = tag.trim();
-        let (hours_str, rest) = tag
-            .split_once(':')
-            .ok_or_else(|| LyricsParseError::InvalidLrcFormat {
-                detail: format!("时间标签缺少 ':' : {:?}", tag),
-            })?;
-        let (minutes_str, rest) = rest
-            .split_once(':')
-            .ok_or_else(|| LyricsParseError::InvalidLrcFormat {
-                detail: format!("时间标签缺少第二个 ':' : {:?}", tag),
-            })?;
-        let (seconds_str, centis_str) = rest
-            .split_once('.')
-            .ok_or_else(|| LyricsParseError::InvalidLrcFormat {
-                detail: format!("时间标签缺少 '.' : {:?}", tag),
-            })?;
+        let (hours_str, rest) =
+            tag.split_once(':')
+                .ok_or_else(|| LyricsParseError::InvalidLrcFormat {
+                    detail: format!("时间标签缺少 ':' : {:?}", tag),
+                })?;
+        let (minutes_str, rest) =
+            rest.split_once(':')
+                .ok_or_else(|| LyricsParseError::InvalidLrcFormat {
+                    detail: format!("时间标签缺少第二个 ':' : {:?}", tag),
+                })?;
+        let (seconds_str, centis_str) =
+            rest.split_once('.')
+                .ok_or_else(|| LyricsParseError::InvalidLrcFormat {
+                    detail: format!("时间标签缺少 '.' : {:?}", tag),
+                })?;
 
         let hours = Self::parse_u32_field(hours_str, "hours")? * 3_600_000;
         let minutes = Self::parse_u32_field(minutes_str, "minutes")? * 60_000;
@@ -116,33 +116,38 @@ impl AppleMusicParser {
         let mut textinfo: Vec<TextInfo> = Vec::with_capacity(8);
 
         loop {
-            let Some(off) = FINDER_IN.find(&bytes[pos..]) else { break };
+            let Some(off) = FINDER_IN.find(&bytes[pos..]) else {
+                break;
+            };
             pos += off + 4;
-            let w = memchr(b'"', &bytes[pos..]).ok_or_else(|| LyricsParseError::InvalidStructure {
-                detail: "word start_time not found".to_string(),
-            })?;
+            let w =
+                memchr(b'"', &bytes[pos..]).ok_or_else(|| LyricsParseError::InvalidStructure {
+                    detail: "word start_time not found".to_string(),
+                })?;
             let st = self.parse_syllables_time(&line[pos..pos + w])?;
             pos += w + 1;
 
-            pos += FINDER_ND
-                .find(&bytes[pos..])
-                .ok_or_else(|| LyricsParseError::InvalidStructure {
+            pos += FINDER_ND.find(&bytes[pos..]).ok_or_else(|| {
+                LyricsParseError::InvalidStructure {
                     detail: "word end_time not found".to_string(),
-                })?
-                + 4;
-            let w = memchr(b'"', &bytes[pos..]).ok_or_else(|| LyricsParseError::InvalidStructure {
-                detail: "word end_time quote not found".to_string(),
-            })?;
+                }
+            })? + 4;
+            let w =
+                memchr(b'"', &bytes[pos..]).ok_or_else(|| LyricsParseError::InvalidStructure {
+                    detail: "word end_time quote not found".to_string(),
+                })?;
             let et = self.parse_syllables_time(&line[pos..pos + w])?;
             pos += w + 1;
 
-            let gt = memchr(b'>', &bytes[pos..]).ok_or_else(|| LyricsParseError::InvalidStructure {
-                detail: "missing '>' in syllable line".to_string(),
-            })?;
+            let gt =
+                memchr(b'>', &bytes[pos..]).ok_or_else(|| LyricsParseError::InvalidStructure {
+                    detail: "missing '>' in syllable line".to_string(),
+                })?;
             pos += gt + 1;
-            let lt = memchr(b'<', &bytes[pos..]).ok_or_else(|| LyricsParseError::InvalidStructure {
-                detail: "missing '<' in syllable line".to_string(),
-            })?;
+            let lt =
+                memchr(b'<', &bytes[pos..]).ok_or_else(|| LyricsParseError::InvalidStructure {
+                    detail: "missing '<' in syllable line".to_string(),
+                })?;
             let text = line[pos..pos + lt].to_string();
             pos += lt + 1;
 
@@ -182,11 +187,11 @@ impl AppleMusicParser {
     }
 
     pub fn parse_w(&self, lyrics: String) -> LyrixResult<Vec<LineInfo>> {
-        let cpos = FINDER_DIV
-            .find(lyrics.as_bytes())
-            .ok_or_else(|| LyricsParseError::InvalidStructure {
+        let cpos = FINDER_DIV.find(lyrics.as_bytes()).ok_or_else(|| {
+            LyricsParseError::InvalidStructure {
                 detail: "lyrics body (div) not found".to_string(),
-            })?;
+            }
+        })?;
         let ulyrics = &lyrics[cpos..];
         let bytes = ulyrics.as_bytes();
         let mut it = FINDER_EQ.find_iter(bytes);
@@ -245,7 +250,11 @@ impl AppleMusicParser {
         match &r {
             Ok(lines) => logger::debug(
                 "parser::applemusic",
-                format_args!("parse completed | elapsed={:?} | lines={}", elapsed, lines.len()),
+                format_args!(
+                    "parse completed | elapsed={:?} | lines={}",
+                    elapsed,
+                    lines.len()
+                ),
             ),
             Err(err) => logger::warn(
                 "parser::applemusic",

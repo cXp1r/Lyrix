@@ -1,8 +1,8 @@
-use async_trait::async_trait;
-use reqwest::Client;
+use super::lyrics_provider::LyricsProvider;
 use crate::error::{GeneralError, LyrixResult};
 use crate::models::LineInfo;
-use super::lyrics_provider::LyricsProvider;
+use async_trait::async_trait;
+use reqwest::Client;
 
 pub(crate) struct SpotifyProvider {
     pub(crate) cookie: String,
@@ -16,10 +16,18 @@ impl LyricsProvider for SpotifyProvider {
     type SearchResult = crate::searchers::spotify::SpotifySearchResult;
 
     async fn create_searcher(&self) -> LyrixResult<Self::Searcher> {
-        Ok(crate::searchers::spotify::SpotifySearcher::with_client(self.client.clone(), self.cookie.clone()).await?)
+        Ok(crate::searchers::spotify::SpotifySearcher::with_client(
+            self.client.clone(),
+            self.cookie.clone(),
+        )
+        .await?)
     }
     async fn create_api(&self) -> LyrixResult<Self::Api> {
-        Ok(crate::fetchers::spotify::SpotifyApi::with_client(self.client.clone(), self.cookie.clone()).await?)
+        Ok(crate::fetchers::spotify::SpotifyApi::with_client(
+            self.client.clone(),
+            self.cookie.clone(),
+        )
+        .await?)
     }
     fn label() -> &'static str {
         "Spotify"
@@ -30,13 +38,12 @@ impl LyricsProvider for SpotifyProvider {
         best: &Self::SearchResult,
     ) -> LyrixResult<Vec<LineInfo>> {
         use crate::parsers::spotify::SpotifyParser;
-        let lryics = api
-            .get_lyrics(&best.id)
-            .await?;
+        let lryics = api.get_lyrics(&best.id).await?;
         if lryics.is_empty() {
             return Err(GeneralError::MissingField {
                 field: "Spotify: 歌词内容为空".to_string(),
-            }.into());
+            }
+            .into());
         }
         Ok(SpotifyParser {}.parse(lryics)?)
     }

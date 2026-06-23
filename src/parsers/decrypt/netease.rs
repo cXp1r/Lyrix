@@ -1,11 +1,10 @@
-use aes::Aes128;
-use aes::cipher::{block_padding::Pkcs7, BlockEncryptMut, KeyInit};
 use crate::error::LyrixResult;
+use aes::cipher::{block_padding::Pkcs7, BlockEncryptMut, KeyInit};
+use aes::Aes128;
 
 type Aes128EcbEnc = ecb::Encryptor<Aes128>;
 
 const EAPI_KEY: &[u8; 16] = b"e82ckenh8dichen8";
-
 
 pub fn eapi_encrypt(url: &str, body: &str) -> LyrixResult<String> {
     let message = format!("nobody{url}use{body}md5forencrypt");

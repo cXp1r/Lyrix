@@ -1,6 +1,6 @@
+mod test_auth;
 mod test_http;
 mod test_json;
-mod test_auth;
 mod test_proxy;
 
 use lyrix::error::provider::ProviderError;
@@ -47,12 +47,10 @@ fn provider_error_from_proxy() {
 
 #[test]
 fn provider_error_debug() {
-    let e = ProviderError::Auth(
-        lyrix::error::provider::auth::AuthError::CredentialExpired {
-            provider: "X".into(),
-            field: "y".into(),
-        },
-    );
+    let e = ProviderError::Auth(lyrix::error::provider::auth::AuthError::CredentialExpired {
+        provider: "X".into(),
+        field: "y".into(),
+    });
     let dbg = format!("{:?}", e);
     assert!(dbg.contains("Auth"));
 }

@@ -10,11 +10,11 @@ mod test_provider;
 #[path = "searcher/mod.rs"]
 mod test_searcher;
 
+use lyrix::error::GeneralError;
 use lyrix::error::LyrixError;
 use lyrix::error::ParserError;
 use lyrix::error::ProviderError;
 use lyrix::error::SearcherError;
-use lyrix::error::GeneralError;
 
 #[test]
 fn lyrix_error_from_parser() {
@@ -111,12 +111,10 @@ fn parser_error_display() {
 
 #[test]
 fn provider_error_display() {
-    let e = ProviderError::Auth(
-        lyrix::error::provider::auth::AuthError::CredentialExpired {
-            provider: "X".into(),
-            field: "token".into(),
-        },
-    );
+    let e = ProviderError::Auth(lyrix::error::provider::auth::AuthError::CredentialExpired {
+        provider: "X".into(),
+        field: "token".into(),
+    });
     assert!(e.to_string().contains("X"));
     assert!(e.to_string().contains("expired"));
 }

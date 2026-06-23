@@ -1,5 +1,5 @@
-use lyrix::error::LyrixError;
 use lyrix::error::parser::lyrics_parse::LyricsParseError;
+use lyrix::error::LyrixError;
 use lyrix::parsers::IParsers;
 
 // ── Dummy parser for testing default IParsers implementations ─
@@ -111,9 +111,7 @@ fn iparsers_syllable_single() {
 #[test]
 fn iparsers_syllable_multiple() {
     let p = DummyParser;
-    let result = p
-        .parse_syllables(1000, "<1000,200>A<1200,300>B")
-        .unwrap();
+    let result = p.parse_syllables(1000, "<1000,200>A<1200,300>B").unwrap();
     assert_eq!(result.len(), 2);
     assert_eq!(result[0].text, "A");
     assert_eq!(result[0].start_time, 0); // 1000-1000
@@ -126,9 +124,7 @@ fn iparsers_syllable_multiple() {
 #[test]
 fn iparsers_syllable_triplet() {
     let p = DummyParser;
-    let result = p
-        .parse_syllables(0, "<0,500,0>Text")
-        .unwrap();
+    let result = p.parse_syllables(0, "<0,500,0>Text").unwrap();
     assert_eq!(result.len(), 1);
     assert_eq!(result[0].duration, 500);
     assert_eq!(result[0].text, "Text");
@@ -159,9 +155,7 @@ fn iparsers_syllable_non_digit_after_angle() {
 #[test]
 fn iparsers_syllable_with_spaces_in_text() {
     let p = DummyParser;
-    let result = p
-        .parse_syllables(0, "<0,100>Hello World<100,50>!")
-        .unwrap();
+    let result = p.parse_syllables(0, "<0,100>Hello World<100,50>!").unwrap();
     assert_eq!(result.len(), 2);
     assert_eq!(result[0].text, "Hello World");
     assert_eq!(result[1].text, "!");

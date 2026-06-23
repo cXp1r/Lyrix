@@ -1,7 +1,7 @@
 use crate::error::parser::lyrics_parse::LyricsParseError;
 use crate::error::LyrixResult;
 use crate::logger;
-use crate::models::{LineInfo};
+use crate::models::LineInfo;
 use serde::Deserialize;
 
 /// Spotify color-lyrics API 返回的顶层结构
