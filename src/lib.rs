@@ -1,9 +1,9 @@
 pub mod error;
-pub mod models;
-pub mod logger;
-pub mod parsers;
 pub mod fetchers;
+pub mod files;
+pub mod logger;
+pub mod lyrix;
+pub mod models;
+pub mod parsers;
 pub mod providers;
 pub mod searchers;
-pub mod smtc_lyrics;
-pub mod files;
