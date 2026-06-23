@@ -1,7 +1,6 @@
 use crate::error::provider::auth::AuthError;
 use crate::error::{GeneralError, LyrixResult, SearcherError};
-use crate::models::{MusicPlayer, Session};
-use crate::models::{ITrackMetadata, LineInfo, LyricsData, TrackMetadata};
+use crate::models::{ITrackMetadata, LineInfo, LyricsData, TrackMetadata, MusicPlayer, Session};
 use crate::searchers::{ISearchResult, ISearcher};
 use async_trait::async_trait;
 use reqwest::Client;
