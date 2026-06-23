@@ -1,6 +1,6 @@
 use crate::error::{LyrixResult, SearcherError};
 use async_trait::async_trait;
-use crate::providers::netease::NeteaseApi;
+use crate::fetchers::netease::NeteaseApi;
 use super::{ISearcher, ISearchResult};
 pub struct NeteaseSearcher {
     api: NeteaseApi,

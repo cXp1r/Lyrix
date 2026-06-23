@@ -1,5 +1,5 @@
 use crate::error::{LyrixResult, SearcherError};
-use crate::providers::spotify::SpotifyApi;
+use crate::fetchers::spotify::SpotifyApi;
 use async_trait::async_trait;
 use super::{ISearcher, ISearchResult};
 

@@ -1,6 +1,6 @@
 use crate::error::{LyrixResult, SearcherError};
 use async_trait::async_trait;
-use crate::providers::qqmusic::QQMusicApi;
+use crate::fetchers::qqmusic::QQMusicApi;
 use super::{ISearcher, ISearchResult};
 
 pub struct QQMusicSearcher {

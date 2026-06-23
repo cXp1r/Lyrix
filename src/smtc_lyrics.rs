@@ -307,14 +307,14 @@ struct SpotifyProvider {
 #[async_trait]
 impl LyricsProvider for NeteaseProvider {
     type Searcher = crate::searchers::netease::NeteaseSearcher;
-    type Api = crate::providers::netease::NeteaseApi;
+    type Api = crate::fetchers::netease::NeteaseApi;
     type SearchResult = crate::searchers::netease::NeteaseSearchResult;
 
     async fn create_searcher(&self) -> LyrixResult<Self::Searcher> {
         Ok(crate::searchers::netease::NeteaseSearcher::with_client(self.client.clone()))
     }
     async fn create_api(&self) -> LyrixResult<Self::Api> {
-        Ok(crate::providers::netease::NeteaseApi::with_client(self.client.clone()))
+        Ok(crate::fetchers::netease::NeteaseApi::with_client(self.client.clone()))
     }
     fn label() -> &'static str {
         "网易云"
@@ -346,14 +346,14 @@ impl LyricsProvider for NeteaseProvider {
 #[async_trait]
 impl LyricsProvider for QQMusicProvider {
     type Searcher = crate::searchers::qqmusic::QQMusicSearcher;
-    type Api = crate::providers::qqmusic::QQMusicApi;
+    type Api = crate::fetchers::qqmusic::QQMusicApi;
     type SearchResult = crate::searchers::qqmusic::QQMusicSearchResult;
 
     async fn create_searcher(&self) -> LyrixResult<Self::Searcher> {
         Ok(crate::searchers::qqmusic::QQMusicSearcher::with_client(self.client.clone()))
     }
     async fn create_api(&self) -> LyrixResult<Self::Api> {
-        Ok(crate::providers::qqmusic::QQMusicApi::with_client(self.client.clone()))
+        Ok(crate::fetchers::qqmusic::QQMusicApi::with_client(self.client.clone()))
     }
     fn label() -> &'static str {
         "QQ音乐"
@@ -388,14 +388,14 @@ impl LyricsProvider for QQMusicProvider {
 #[async_trait]
 impl LyricsProvider for KugouProvider {
     type Searcher = crate::searchers::kugou::KugouSearcher;
-    type Api = crate::providers::kugou::KugouApi;
+    type Api = crate::fetchers::kugou::KugouApi;
     type SearchResult = crate::searchers::kugou::KugouSearchResult;
 
     async fn create_searcher(&self) -> LyrixResult<Self::Searcher> {
         Ok(crate::searchers::kugou::KugouSearcher::with_client(self.client.clone()))
     }
     async fn create_api(&self) -> LyrixResult<Self::Api> {
-        Ok(crate::providers::kugou::KugouApi::with_client(self.client.clone()))
+        Ok(crate::fetchers::kugou::KugouApi::with_client(self.client.clone()))
     }
     fn label() -> &'static str {
         "酷狗"
@@ -448,14 +448,14 @@ impl LyricsProvider for KugouProvider {
 #[async_trait]
 impl LyricsProvider for SpotifyProvider {
     type Searcher = crate::searchers::spotify::SpotifySearcher;
-    type Api = crate::providers::spotify::SpotifyApi;
+    type Api = crate::fetchers::spotify::SpotifyApi;
     type SearchResult = crate::searchers::spotify::SpotifySearchResult;
 
     async fn create_searcher(&self) -> LyrixResult<Self::Searcher> {
         Ok(crate::searchers::spotify::SpotifySearcher::with_client(self.client.clone(), self.cookie.clone()).await?)
     }
     async fn create_api(&self) -> LyrixResult<Self::Api> {
-        Ok(crate::providers::spotify::SpotifyApi::with_client(self.client.clone(), self.cookie.clone()).await?)
+        Ok(crate::fetchers::spotify::SpotifyApi::with_client(self.client.clone(), self.cookie.clone()).await?)
     }
     fn label() -> &'static str {
         "Spotify"
@@ -480,14 +480,14 @@ impl LyricsProvider for SpotifyProvider {
 #[async_trait]
 impl LyricsProvider for SodaMusicProvider {
     type Searcher = crate::searchers::soda_music::SodaMusicSearcher;
-    type Api = crate::providers::soda_music::SodaMusicApi;
+    type Api = crate::fetchers::soda_music::SodaMusicApi;
     type SearchResult = crate::searchers::soda_music::SodaMusicSearchResult;
 
     async fn create_searcher(&self) -> LyrixResult<Self::Searcher> {
         Ok(crate::searchers::soda_music::SodaMusicSearcher::with_client(self.client.clone()))
     }
     async fn create_api(&self) -> LyrixResult<Self::Api> {
-        Ok(crate::providers::soda_music::SodaMusicApi::with_client(self.client.clone()))
+        Ok(crate::fetchers::soda_music::SodaMusicApi::with_client(self.client.clone()))
     }
     fn label() -> &'static str {
         "汽水音乐"
@@ -523,14 +523,14 @@ impl LyricsProvider for SodaMusicProvider {
 #[async_trait]
 impl LyricsProvider for AppleMusicProvider {
     type Searcher = crate::searchers::applemusic::ApplemusicSearcher;
-    type Api = crate::providers::applemusic::ApplemusicApi;
+    type Api = crate::fetchers::applemusic::ApplemusicApi;
     type SearchResult = crate::searchers::applemusic::ApplemusicSearchResult;
 
     async fn create_searcher(&self) -> LyrixResult<Self::Searcher> {
         Ok(crate::searchers::applemusic::ApplemusicSearcher::with_client(self.client.clone(), self.token.clone()))
     }
     async fn create_api(&self) -> LyrixResult<Self::Api> {
-        Ok(crate::providers::applemusic::ApplemusicApi::with_client(self.client.clone(), self.token.clone()))
+        Ok(crate::fetchers::applemusic::ApplemusicApi::with_client(self.client.clone(), self.token.clone()))
     }
     fn label() -> &'static str {
         "applemusic"

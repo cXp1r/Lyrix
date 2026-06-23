@@ -1,6 +1,6 @@
 use crate::error::{LyrixResult, SearcherError};
 use async_trait::async_trait;
-use crate::providers::kugou::KugouApi;
+use crate::fetchers::kugou::KugouApi;
 use super::{ISearcher, ISearchResult};
 pub struct KugouSearcher {
     api: KugouApi,

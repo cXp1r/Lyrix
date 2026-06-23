@@ -1,6 +1,6 @@
 use crate::error::{LyrixResult, SearcherError};
 use async_trait::async_trait;
-use crate::providers::applemusic::ApplemusicApi;
+use crate::fetchers::applemusic::ApplemusicApi;
 use super::{log_score_gain, log_score_warn, log_score_total, ISearcher, ISearchResult};
 use crate::models::ITrackMetadata;
 

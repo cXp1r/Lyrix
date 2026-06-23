@@ -1,6 +1,6 @@
 use crate::error::{LyrixResult, SearcherError};
 use async_trait::async_trait;
-use crate::providers::soda_music::SodaMusicApi;
+use crate::fetchers::soda_music::SodaMusicApi;
 use super::{ISearcher, ISearchResult};
 pub struct SodaMusicSearcher {
     api: SodaMusicApi,
