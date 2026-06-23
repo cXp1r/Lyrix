@@ -4,8 +4,8 @@ mod test_general;
 #[path = "parser/mod.rs"]
 mod test_parser;
 
-#[path = "provider/mod.rs"]
-mod test_provider;
+#[path = "fetcher/mod.rs"]
+mod fetcher;
 
 #[path = "searcher/mod.rs"]
 mod test_searcher;
@@ -13,7 +13,7 @@ mod test_searcher;
 use lyrix::error::GeneralError;
 use lyrix::error::LyrixError;
 use lyrix::error::ParserError;
-use lyrix::error::ProviderError;
+use lyrix::error::FetcherError;
 use lyrix::error::SearcherError;
 
 #[test]
@@ -26,7 +26,7 @@ fn lyrix_error_from_parser() {
 
 #[test]
 fn lyrix_error_from_http() {
-    let e = lyrix::error::provider::http::HttpError::NotFound {
+    let e = lyrix::error::fetcher::http::HttpError::NotFound {
         url: "http://example.com".into(),
     };
     let lyrix_err: LyrixError = e.into();
@@ -38,7 +38,7 @@ fn lyrix_error_from_http() {
 #[test]
 fn lyrix_error_from_json() {
     let bad_json = serde_json::from_str::<serde_json::Value>("not json");
-    let e = lyrix::error::provider::json::JsonError {
+    let e = lyrix::error::fetcher::json::JsonError {
         api: "TestApi".into(),
         source: bad_json.unwrap_err(),
     };
@@ -49,7 +49,7 @@ fn lyrix_error_from_json() {
 
 #[test]
 fn lyrix_error_from_auth() {
-    let e = lyrix::error::provider::auth::AuthError::MissingCredential {
+    let e = lyrix::error::fetcher::auth::AuthError::MissingCredential {
         provider: "Spotify".into(),
         field: "cookie".into(),
     };
@@ -61,7 +61,7 @@ fn lyrix_error_from_auth() {
 
 #[test]
 fn lyrix_error_from_proxy() {
-    let e = lyrix::error::provider::proxy::ProxyError::InvalidUrl {
+    let e = lyrix::error::fetcher::proxy::ProxyError::InvalidUrl {
         url: "bad://url".into(),
         reason: "invalid scheme".into(),
     };
@@ -111,7 +111,7 @@ fn parser_error_display() {
 
 #[test]
 fn provider_error_display() {
-    let e = ProviderError::Auth(lyrix::error::provider::auth::AuthError::CredentialExpired {
+    let e = FetcherError::Auth(lyrix::error::fetcher::auth::AuthError::CredentialExpired {
         provider: "X".into(),
         field: "token".into(),
     });

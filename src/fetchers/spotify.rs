@@ -1,6 +1,6 @@
 use super::base_api::BaseApi;
-use crate::error::provider::http::HttpError;
-use crate::error::provider::json::JsonError;
+use crate::error::fetcher::http::HttpError;
+use crate::error::fetcher::json::JsonError;
 use crate::error::LyrixResult;
 use crate::logger;
 use crate::parsers::generate::spotify::build_totp;

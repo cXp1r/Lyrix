@@ -1,4 +1,4 @@
-use lyrix::error::provider::proxy::ProxyError;
+use lyrix::error::fetcher::proxy::ProxyError;
 
 #[test]
 fn invalid_url_display() {

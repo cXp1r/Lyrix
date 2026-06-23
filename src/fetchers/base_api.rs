@@ -1,4 +1,4 @@
-use crate::error::provider::http::HttpError;
+use crate::error::fetcher::http::HttpError;
 use crate::error::LyrixResult;
 use crate::logger;
 use reqwest::{header, Client};

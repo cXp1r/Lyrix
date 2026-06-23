@@ -1,4 +1,4 @@
-use crate::error::provider::proxy::ProxyError;
+use crate::error::fetcher::proxy::ProxyError;
 use crate::error::LyrixResult;
 use reqwest::{Client, Proxy};
 

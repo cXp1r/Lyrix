@@ -1,4 +1,4 @@
-use crate::error::provider::auth::AuthError;
+use crate::error::fetcher::auth::AuthError;
 use crate::error::{GeneralError, LyrixResult, SearcherError};
 use crate::models::{ITrackMetadata, LineInfo, LyricsData, TrackMetadata, MusicPlayer, Session};
 use crate::searchers::{ISearchResult, ISearcher};

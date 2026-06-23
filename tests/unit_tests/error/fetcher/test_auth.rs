@@ -1,4 +1,4 @@
-use lyrix::error::provider::auth::AuthError;
+use lyrix::error::fetcher::auth::AuthError;
 
 #[test]
 fn missing_credential_display() {

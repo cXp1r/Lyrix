@@ -10,7 +10,7 @@ pub use proxy::ProxyError;
 
 /// 提供器层错误
 #[derive(Debug, thiserror::Error)]
-pub enum ProviderError {
+pub enum FetcherError {
     /// HTTP 请求错误
     #[error("{0}")]
     Http(#[from] HttpError),

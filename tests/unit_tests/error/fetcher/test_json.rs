@@ -1,4 +1,4 @@
-use lyrix::error::provider::json::JsonError;
+use lyrix::error::fetcher::json::JsonError;
 
 #[test]
 fn json_error_display() {

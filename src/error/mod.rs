@@ -1,11 +1,11 @@
 pub mod general;
 pub mod parser;
-pub mod provider;
+pub mod fetcher;
 pub mod searcher;
 
 pub use general::GeneralError;
 pub use parser::ParserError;
-pub use provider::ProviderError;
+pub use fetcher::FetcherError;
 pub use searcher::SearcherError;
 
 /// 库级别 Result 别名
@@ -20,7 +20,7 @@ pub enum LyrixError {
 
     /// 提供器层错误
     #[error("{0}")]
-    Provider(#[from] ProviderError),
+    Fetcher(#[from] FetcherError),
 
     /// 搜索器层错误
     #[error("{0}")]
@@ -50,26 +50,26 @@ impl From<parser::totp_gen::TotpGenError> for LyrixError {
     }
 }
 
-impl From<provider::http::HttpError> for LyrixError {
-    fn from(e: provider::http::HttpError) -> Self {
-        LyrixError::Provider(ProviderError::Http(e))
+impl From<fetcher::http::HttpError> for LyrixError {
+    fn from(e: fetcher::http::HttpError) -> Self {
+        LyrixError::Fetcher(FetcherError::Http(e))
     }
 }
 
-impl From<provider::json::JsonError> for LyrixError {
-    fn from(e: provider::json::JsonError) -> Self {
-        LyrixError::Provider(ProviderError::Json(e))
+impl From<fetcher::json::JsonError> for LyrixError {
+    fn from(e: fetcher::json::JsonError) -> Self {
+        LyrixError::Fetcher(FetcherError::Json(e))
     }
 }
 
-impl From<provider::auth::AuthError> for LyrixError {
-    fn from(e: provider::auth::AuthError) -> Self {
-        LyrixError::Provider(ProviderError::Auth(e))
+impl From<fetcher::auth::AuthError> for LyrixError {
+    fn from(e: fetcher::auth::AuthError) -> Self {
+        LyrixError::Fetcher(FetcherError::Auth(e))
     }
 }
 
-impl From<provider::proxy::ProxyError> for LyrixError {
-    fn from(e: provider::proxy::ProxyError) -> Self {
-        LyrixError::Provider(ProviderError::Proxy(e))
+impl From<fetcher::proxy::ProxyError> for LyrixError {
+    fn from(e: fetcher::proxy::ProxyError) -> Self {
+        LyrixError::Fetcher(FetcherError::Proxy(e))
     }
 }

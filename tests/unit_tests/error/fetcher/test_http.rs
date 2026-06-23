@@ -1,4 +1,4 @@
-use lyrix::error::provider::http::HttpError;
+use lyrix::error::fetcher::http::HttpError;
 
 #[test]
 fn bad_request_display() {
