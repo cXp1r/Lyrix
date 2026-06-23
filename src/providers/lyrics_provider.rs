@@ -1,6 +1,6 @@
 use crate::error::provider::auth::AuthError;
 use crate::error::{GeneralError, LyrixResult, SearcherError};
-use crate::lyrix::{MusicPlayer, Session};
+use crate::models::{MusicPlayer, Session};
 use crate::models::{ITrackMetadata, LineInfo, LyricsData, TrackMetadata};
 use crate::searchers::{ISearchResult, ISearcher};
 use async_trait::async_trait;
