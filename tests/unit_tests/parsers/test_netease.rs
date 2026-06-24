@@ -1,4 +1,4 @@
-use lyrix::error::parser::lyrics_parse::LyricsParseError;
+use lyrix::error::parser::parse::ParseError;
 use lyrix::error::LyrixError;
 use lyrix::parsers::lrc::LrcParser;
 use lyrix::parsers::netease::{NeteaseLrcParser, NeteaseParser};
@@ -50,8 +50,8 @@ fn netease_lrc_no_second_separator_v3() {
     let err = parser.parse_lrc_time("01:0230").unwrap_err();
     assert!(matches!(
         err,
-        LyrixError::Parser(lyrix::error::ParserError::LyricsParse(
-            LyricsParseError::InvalidLrcFormat { .. }
+        LyrixError::Parser(lyrix::error::ParserError::Parse(
+            ParseError::InvalidLrcFormat { .. }
         ))
     ));
 }
@@ -62,8 +62,8 @@ fn netease_lrc_no_second_separator_v4() {
     let err = parser.parse_lrc_time("01:0230").unwrap_err();
     assert!(matches!(
         err,
-        LyrixError::Parser(lyrix::error::ParserError::LyricsParse(
-            LyricsParseError::InvalidLrcFormat { .. }
+        LyrixError::Parser(lyrix::error::ParserError::Parse(
+            ParseError::InvalidLrcFormat { .. }
         ))
     ));
 }

@@ -6,7 +6,7 @@ use lyrix::error::parser::ParserError;
 
 #[test]
 fn parser_error_from_lyrics_parse() {
-    let e = lyrix::error::parser::lyrics_parse::LyricsParseError::EmptyContent;
+    let e = lyrix::error::parser::parse::ParseError::EmptyContent;
     let pe: ParserError = e.into();
     assert!(pe.to_string().contains("empty lyrics content"));
 }

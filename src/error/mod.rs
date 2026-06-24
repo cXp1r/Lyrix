@@ -32,9 +32,9 @@ pub enum LyrixError {
 }
 // ===== From 转换：叶子错误 → LyrixError =====
 
-impl From<parser::lyrics_parse::LyricsParseError> for LyrixError {
-    fn from(e: parser::lyrics_parse::LyricsParseError) -> Self {
-        LyrixError::Parser(ParserError::LyricsParse(e))
+impl From<parser::parse::ParseError> for LyrixError {
+    fn from(e: parser::parse::ParseError) -> Self {
+        LyrixError::Parser(ParserError::Parse(e))
     }
 }
 

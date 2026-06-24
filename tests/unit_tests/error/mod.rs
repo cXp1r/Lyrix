@@ -18,7 +18,7 @@ use lyrix::error::SearcherError;
 
 #[test]
 fn lyrix_error_from_parser() {
-    let e = lyrix::error::parser::lyrics_parse::LyricsParseError::EmptyContent;
+    let e = lyrix::error::parser::parse::ParseError::EmptyContent;
     let lyrix_err: LyrixError = e.into();
     let msg = lyrix_err.to_string();
     assert!(msg.contains("empty lyrics content"));
@@ -103,8 +103,8 @@ fn lyrix_error_debug() {
 
 #[test]
 fn parser_error_display() {
-    let e = ParserError::LyricsParse(
-        lyrix::error::parser::lyrics_parse::LyricsParseError::UnknownSyncType,
+    let e = ParserError::Parse(
+        lyrix::error::parser::parse::ParseError::UnknownSyncType,
     );
     assert!(e.to_string().contains("unknown lyrics sync type"));
 }

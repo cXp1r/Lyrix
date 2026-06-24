@@ -12,9 +12,9 @@ use super::qqmusic::QQMusicProvider;
 use super::soda_music::SodaMusicProvider;
 use super::spotify::SpotifyProvider;
 
-/// LyricsProvider trait —— 定义「搜索 → API → 解析」一条龙服务接口
+/// LyrixProvider trait —— 定义「搜索 → API → 解析」一条龙服务接口
 #[async_trait]
-pub(crate) trait LyricsProvider {
+pub(crate) trait LyrixProvider {
     type Searcher: ISearcher;
     type Api: Send + Sync;
     type SearchResult: ISearchResult + 'static;
@@ -29,7 +29,7 @@ pub(crate) trait LyricsProvider {
 }
 
 /// 通用编排：搜索 → 类型转换 → API 请求 → 解析 → 组装 LyricsData
-async fn fetch_lyrics<P: LyricsProvider>(
+async fn fetch_lyrics<P: LyrixProvider>(
     provider: &P,
     track: &dyn ITrackMetadata,
 ) -> LyrixResult<LyricsData> {

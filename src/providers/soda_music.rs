@@ -1,4 +1,4 @@
-use super::lyrics_provider::LyricsProvider;
+use super::providers::LyrixProvider;
 use crate::error::{GeneralError, LyrixResult};
 use crate::models::LineInfo;
 use async_trait::async_trait;
@@ -9,7 +9,7 @@ pub(crate) struct SodaMusicProvider {
 }
 
 #[async_trait]
-impl LyricsProvider for SodaMusicProvider {
+impl LyrixProvider for SodaMusicProvider {
     type Searcher = crate::searchers::soda_music::SodaMusicSearcher;
     type Api = crate::fetchers::soda_music::SodaMusicApi;
     type SearchResult = crate::searchers::soda_music::SodaMusicSearchResult;

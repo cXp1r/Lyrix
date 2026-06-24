@@ -1,4 +1,4 @@
-use super::lyrics_provider::LyricsProvider;
+use super::providers::LyrixProvider;
 use crate::error::{GeneralError, LyrixResult};
 use crate::models::LineInfo;
 use async_trait::async_trait;
@@ -10,7 +10,7 @@ pub(crate) struct SpotifyProvider {
 }
 
 #[async_trait]
-impl LyricsProvider for SpotifyProvider {
+impl LyrixProvider for SpotifyProvider {
     type Searcher = crate::searchers::spotify::SpotifySearcher;
     type Api = crate::fetchers::spotify::SpotifyApi;
     type SearchResult = crate::searchers::spotify::SpotifySearchResult;

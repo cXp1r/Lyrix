@@ -1,4 +1,4 @@
-use lyrix::files::qqmusic::{
+use lyrix::readers::qqmusic::{
     find_qqmusic_qrc_path_by_metadata_in_dir, is_qqmusic_qrc_filename, parse_qqmusic_qrc_filename,
 };
 use lyrix::models::TrackMetadata;

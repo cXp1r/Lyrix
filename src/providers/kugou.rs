@@ -1,4 +1,4 @@
-use super::lyrics_provider::LyricsProvider;
+use super::providers::LyrixProvider;
 use crate::error::{GeneralError, LyrixResult, SearcherError};
 use crate::models::LineInfo;
 use async_trait::async_trait;
@@ -9,7 +9,7 @@ pub(crate) struct KugouProvider {
 }
 
 #[async_trait]
-impl LyricsProvider for KugouProvider {
+impl LyrixProvider for KugouProvider {
     type Searcher = crate::searchers::kugou::KugouSearcher;
     type Api = crate::fetchers::kugou::KugouApi;
     type SearchResult = crate::searchers::kugou::KugouSearchResult;

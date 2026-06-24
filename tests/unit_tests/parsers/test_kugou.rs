@@ -1,4 +1,4 @@
-use lyrix::error::parser::lyrics_parse::LyricsParseError;
+use lyrix::error::parser::parse::ParseError;
 use lyrix::error::LyrixError;
 use lyrix::parsers::kugou::KugouParser;
 use lyrix::parsers::IParsers;
@@ -31,8 +31,8 @@ fn kugou_offset_overflow() {
     let err = parser.get_offset_time(0, 65536).unwrap_err();
     assert!(matches!(
         err,
-        LyrixError::Parser(lyrix::error::ParserError::LyricsParse(
-            LyricsParseError::OffsetOverflow { .. }
+        LyrixError::Parser(lyrix::error::ParserError::Parse(
+            ParseError::OffsetOverflow { .. }
         ))
     ));
 }

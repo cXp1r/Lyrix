@@ -1,4 +1,4 @@
-use crate::error::parser::lyrics_parse::LyricsParseError;
+use crate::error::parser::parse::ParseError;
 use crate::error::LyrixResult;
 use crate::models::*;
 use crate::parsers::lrc::LrcParser;
@@ -44,7 +44,7 @@ impl IParsers for QQMusicParser {
                 break;
             };
             let s1 = content[cpos..cpos + c1].parse::<u32>().map_err(|e| {
-                LyricsParseError::SyllableParse {
+                ParseError::SyllableParse {
                     detail: format!(
                         "s1 parse error: {:?} raw={:?}",
                         e,
@@ -64,7 +64,7 @@ impl IParsers for QQMusicParser {
                 (None, None) => break,
             };
             let d1 = content[cpos..d1_end].parse::<u16>().map_err(|e| {
-                LyricsParseError::SyllableParse {
+                ParseError::SyllableParse {
                     detail: format!("d1 parse error: {:?} raw={:?}", e, &content[cpos..d1_end]),
                 }
             })?;

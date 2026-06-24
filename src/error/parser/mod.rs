@@ -1,9 +1,9 @@
 pub mod decrypt;
-pub mod lyrics_parse;
+pub mod parse;
 pub mod totp_gen;
 
 pub use decrypt::DecryptError;
-pub use lyrics_parse::LyricsParseError;
+pub use parse::ParseError;
 pub use totp_gen::TotpGenError;
 
 /// 解析器层错误
@@ -11,7 +11,7 @@ pub use totp_gen::TotpGenError;
 pub enum ParserError {
     /// 歌词文本解析失败
     #[error("{0}")]
-    LyricsParse(#[from] LyricsParseError),
+    Parse(#[from] ParseError),
 
     /// 歌词解密失败
     #[error("{0}")]

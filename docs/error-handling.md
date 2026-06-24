@@ -7,7 +7,7 @@ Lyrix 使用 `thiserror` 构建统一错误体系。所有公开 API 都返回 `
 ```text
 LyrixError
 ├── ParserError
-│   ├── LyricsParseError
+│   ├── ParseError
 │   ├── DecryptError
 │   └── TotpGenError
 ├── FetcherError
@@ -45,21 +45,21 @@ Parser 层用于歌词文本解析、解密和 TOTP 生成。
 
 ```rust
 use lyrix::error::ParserError;
-use lyrix::error::parser::LyricsParseError;
+use lyrix::error::parser::ParseError;
 
 match err {
     LyrixError::Parser(e) => match e {
         ParserError::LyricsParse(inner) => match inner {
-            LyricsParseError::InvalidStructure { detail } => {
+            ParseError::InvalidStructure { detail } => {
                 eprintln!("歌词格式异常: {detail}");
             }
-            LyricsParseError::TimestampParse { field, raw } => {
+            ParseError::TimestampParse { field, raw } => {
                 eprintln!("时间戳解析失败: field={field}, raw={raw}");
             }
-            LyricsParseError::EmptyContent => {
+            ParseError::EmptyContent => {
                 eprintln!("歌词内容为空");
             }
-            LyricsParseError::UnknownSyncType => {
+            ParseError::UnknownSyncType => {
                 eprintln!("无法识别的歌词同步类型");
             }
         },

@@ -1,4 +1,4 @@
-use super::lyrics_provider::LyricsProvider;
+use super::providers::LyrixProvider;
 use crate::error::{GeneralError, LyrixResult};
 use crate::models::LineInfo;
 use async_trait::async_trait;
@@ -9,7 +9,7 @@ pub(crate) struct QQMusicProvider {
 }
 
 #[async_trait]
-impl LyricsProvider for QQMusicProvider {
+impl LyrixProvider for QQMusicProvider {
     type Searcher = crate::searchers::qqmusic::QQMusicSearcher;
     type Api = crate::fetchers::qqmusic::QQMusicApi;
     type SearchResult = crate::searchers::qqmusic::QQMusicSearchResult;

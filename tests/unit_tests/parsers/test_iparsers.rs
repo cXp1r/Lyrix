@@ -1,4 +1,4 @@
-use lyrix::error::parser::lyrics_parse::LyricsParseError;
+use lyrix::error::parser::parse::ParseError;
 use lyrix::error::LyrixError;
 use lyrix::parsers::IParsers;
 
@@ -26,8 +26,8 @@ fn iparsers_offset_t2_lt_t1_underflow() {
     let err = p.get_offset_time(2000, 1000).unwrap_err();
     assert!(matches!(
         err,
-        LyrixError::Parser(lyrix::error::ParserError::LyricsParse(
-            LyricsParseError::OffsetOverflow { .. }
+        LyrixError::Parser(lyrix::error::ParserError::Parse(
+            ParseError::OffsetOverflow { .. }
         ))
     ));
 }

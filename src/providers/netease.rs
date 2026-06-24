@@ -1,4 +1,4 @@
-use super::lyrics_provider::LyricsProvider;
+use super::providers::LyrixProvider;
 use crate::error::{GeneralError, LyrixResult};
 use crate::models::LineInfo;
 use async_trait::async_trait;
@@ -9,7 +9,7 @@ pub(crate) struct NeteaseProvider {
 }
 
 #[async_trait]
-impl LyricsProvider for NeteaseProvider {
+impl LyrixProvider for NeteaseProvider {
     type Searcher = crate::searchers::netease::NeteaseSearcher;
     type Api = crate::fetchers::netease::NeteaseApi;
     type SearchResult = crate::searchers::netease::NeteaseSearchResult;

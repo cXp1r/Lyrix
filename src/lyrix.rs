@@ -1,6 +1,6 @@
 use crate::error::{GeneralError, LyrixResult};
 use crate::models::{id2player, LineInfo, LyricsData, MusicPlayer, Session, TrackMetadata};
-use crate::providers::lyrics_provider::fetch_lyrics_from_player;
+use crate::providers::providers::fetch_lyrics_from_player;
 use reqwest::Client;
 use std::sync::{Arc, Mutex};
 

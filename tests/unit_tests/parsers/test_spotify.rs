@@ -1,4 +1,4 @@
-use lyrix::error::parser::lyrics_parse::LyricsParseError;
+use lyrix::error::parser::parse::ParseError;
 use lyrix::error::LyrixError;
 use lyrix::parsers::spotify::SpotifyParser;
 
@@ -39,8 +39,8 @@ fn spotify_parse_unknown_sync_type() {
     let err = parser.parse_without_st(json).unwrap_err();
     assert!(matches!(
         err,
-        LyrixError::Parser(lyrix::error::ParserError::LyricsParse(
-            LyricsParseError::UnknownSyncType
+        LyrixError::Parser(lyrix::error::ParserError::Parse(
+            ParseError::UnknownSyncType
         ))
     ));
 }
@@ -52,8 +52,8 @@ fn spotify_parse_null_lines_is_empty_content() {
     let err = parser.parse_without_st(json.into()).unwrap_err();
     assert!(matches!(
         err,
-        LyrixError::Parser(lyrix::error::ParserError::LyricsParse(
-            LyricsParseError::EmptyContent
+        LyrixError::Parser(lyrix::error::ParserError::Parse(
+            ParseError::EmptyContent
         ))
     ));
 }
@@ -66,8 +66,8 @@ fn spotify_parse_missing_lines_field() {
     // serde 把 missing Option field 当 None → EmptyContent
     assert!(matches!(
         err,
-        LyrixError::Parser(lyrix::error::ParserError::LyricsParse(
-            LyricsParseError::EmptyContent
+        LyrixError::Parser(lyrix::error::ParserError::Parse(
+            ParseError::EmptyContent
         ))
     ));
 }

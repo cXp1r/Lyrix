@@ -1,4 +1,4 @@
-use crate::error::parser::lyrics_parse::LyricsParseError;
+use crate::error::parser::parse::ParseError;
 use crate::error::LyrixResult;
 use crate::logger;
 use crate::models::LineInfo;
@@ -9,17 +9,17 @@ pub trait LrcParser {
         let tag = tag.trim();
         let (minutes_str, rest) =
             tag.split_once(':')
-                .ok_or_else(|| LyricsParseError::InvalidLrcFormat {
+                .ok_or_else(|| ParseError::InvalidLrcFormat {
                     detail: format!("时间标签缺少 ':' : {:?}", tag),
                 })?;
         let (seconds_str, centis_str) =
             rest.split_once('.')
-                .ok_or_else(|| LyricsParseError::InvalidLrcFormat {
+                .ok_or_else(|| ParseError::InvalidLrcFormat {
                     detail: format!("时间标签缺少 '.' : {:?}", tag),
                 })?;
 
         if minutes_str.is_empty() || seconds_str.is_empty() || centis_str.is_empty() {
-            return Err(LyricsParseError::InvalidLrcFormat {
+            return Err(ParseError::InvalidLrcFormat {
                 detail: format!("时间标签不完整: {:?}", tag),
             }
             .into());
@@ -27,19 +27,19 @@ pub trait LrcParser {
 
         let minutes = minutes_str
             .parse::<u32>()
-            .map_err(|_| LyricsParseError::TimestampParse {
+            .map_err(|_| ParseError::TimestampParse {
                 field: "minutes".to_string(),
                 raw: minutes_str.to_string(),
             })?;
         let seconds = seconds_str
             .parse::<u32>()
-            .map_err(|_| LyricsParseError::TimestampParse {
+            .map_err(|_| ParseError::TimestampParse {
                 field: "seconds".to_string(),
                 raw: seconds_str.to_string(),
             })?;
         let centis = centis_str
             .parse::<u32>()
-            .map_err(|_| LyricsParseError::TimestampParse {
+            .map_err(|_| ParseError::TimestampParse {
                 field: "centis".to_string(),
                 raw: centis_str.to_string(),
             })?;

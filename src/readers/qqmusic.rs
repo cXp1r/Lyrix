@@ -291,3 +291,5 @@ fn is_qqmusic_qrc_path(path: &Path) -> bool {
         .and_then(parse_qqmusic_qrc_filename)
         .is_some()
 }
+
+

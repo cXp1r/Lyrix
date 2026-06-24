@@ -10,5 +10,5 @@ mod test_parsers;
 #[path = "unit_tests/searchers/mod.rs"]
 mod test_searchers;
 
-#[path = "unit_tests/files/mod.rs"]
-mod test_files;
+#[path = "unit_tests/readers/mod.rs"]
+mod readers;

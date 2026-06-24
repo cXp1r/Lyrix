@@ -1,6 +1,6 @@
 /// 歌词文本解析失败
 #[derive(Debug, thiserror::Error)]
-pub enum LyricsParseError {
+pub enum ParseError {
     /// 碰到错误的歌词结构 —— 缺少 '[' / ']' / ',' 或 tag 格式不符合预期
     #[error("invalid lyrics structure: {detail}")]
     InvalidStructure { detail: String },

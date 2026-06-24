@@ -1,4 +1,4 @@
-use crate::error::parser::lyrics_parse::LyricsParseError;
+use crate::error::parser::parse::ParseError;
 use crate::error::LyrixResult;
 use crate::logger;
 use crate::models::{LineInfo, TextInfo};
@@ -18,20 +18,20 @@ impl AppleMusicParser {
     fn get_offset_time(&self, t1: u32, t2: u32) -> LyrixResult<u16> {
         let diff = t2
             .checked_sub(t1)
-            .ok_or(LyricsParseError::OffsetOverflow { t1, t2 })?;
-        u16::try_from(diff).map_err(|_| LyricsParseError::OffsetOverflow { t1, t2 }.into())
+            .ok_or(ParseError::OffsetOverflow { t1, t2 })?;
+        u16::try_from(diff).map_err(|_| ParseError::OffsetOverflow { t1, t2 }.into())
     }
 
-    fn parse_u32_field(field: &str, name: &str) -> Result<u32, LyricsParseError> {
+    fn parse_u32_field(field: &str, name: &str) -> Result<u32, ParseError> {
         if field.is_empty() {
-            return Err(LyricsParseError::TimestampParse {
+            return Err(ParseError::TimestampParse {
                 field: name.to_string(),
                 raw: "(empty)".to_string(),
             });
         }
         field
             .parse::<u32>()
-            .map_err(|_| LyricsParseError::TimestampParse {
+            .map_err(|_| ParseError::TimestampParse {
                 field: name.to_string(),
                 raw: field.to_string(),
             })
@@ -46,7 +46,7 @@ impl AppleMusicParser {
         };
         let (seconds_str, centis_str) =
             rest.split_once('.')
-                .ok_or_else(|| LyricsParseError::InvalidLrcFormat {
+                .ok_or_else(|| ParseError::InvalidLrcFormat {
                     detail: format!("音节时间缺少 '.' : {:?}", tag),
                 })?;
         let seconds = Self::parse_u32_field(seconds_str, "seconds")? * 1_000;
@@ -58,17 +58,17 @@ impl AppleMusicParser {
         let tag = tag.trim();
         let (hours_str, rest) =
             tag.split_once(':')
-                .ok_or_else(|| LyricsParseError::InvalidLrcFormat {
+                .ok_or_else(|| ParseError::InvalidLrcFormat {
                     detail: format!("时间标签缺少 ':' : {:?}", tag),
                 })?;
         let (minutes_str, rest) =
             rest.split_once(':')
-                .ok_or_else(|| LyricsParseError::InvalidLrcFormat {
+                .ok_or_else(|| ParseError::InvalidLrcFormat {
                     detail: format!("时间标签缺少第二个 ':' : {:?}", tag),
                 })?;
         let (seconds_str, centis_str) =
             rest.split_once('.')
-                .ok_or_else(|| LyricsParseError::InvalidLrcFormat {
+                .ok_or_else(|| ParseError::InvalidLrcFormat {
                     detail: format!("时间标签缺少 '.' : {:?}", tag),
                 })?;
 
@@ -85,11 +85,11 @@ impl AppleMusicParser {
 
         pos += FINDER_IN
             .find(&bytes[pos..])
-            .ok_or_else(|| LyricsParseError::InvalidStructure {
+            .ok_or_else(|| ParseError::InvalidStructure {
                 detail: "line start_time not found".to_string(),
             })?
             + 4;
-        let w = memchr(b'"', &bytes[pos..]).ok_or_else(|| LyricsParseError::InvalidStructure {
+        let w = memchr(b'"', &bytes[pos..]).ok_or_else(|| ParseError::InvalidStructure {
             detail: "line start_time quote not found".to_string(),
         })?;
         let lst = self.parse_syllables_time(&line[pos..pos + w])?;
@@ -97,17 +97,17 @@ impl AppleMusicParser {
 
         pos += FINDER_ND
             .find(&bytes[pos..])
-            .ok_or_else(|| LyricsParseError::InvalidStructure {
+            .ok_or_else(|| ParseError::InvalidStructure {
                 detail: "line end_time not found".to_string(),
             })?
             + 4;
-        let w = memchr(b'"', &bytes[pos..]).ok_or_else(|| LyricsParseError::InvalidStructure {
+        let w = memchr(b'"', &bytes[pos..]).ok_or_else(|| ParseError::InvalidStructure {
             detail: "line end_time quote not found".to_string(),
         })?;
         let end_time = self.parse_syllables_time(&line[pos..pos + w])?;
         let ld = end_time
             .checked_sub(lst)
-            .ok_or_else(|| LyricsParseError::OffsetOverflow {
+            .ok_or_else(|| ParseError::OffsetOverflow {
                 t1: lst,
                 t2: end_time,
             })?;
@@ -121,31 +121,31 @@ impl AppleMusicParser {
             };
             pos += off + 4;
             let w =
-                memchr(b'"', &bytes[pos..]).ok_or_else(|| LyricsParseError::InvalidStructure {
+                memchr(b'"', &bytes[pos..]).ok_or_else(|| ParseError::InvalidStructure {
                     detail: "word start_time not found".to_string(),
                 })?;
             let st = self.parse_syllables_time(&line[pos..pos + w])?;
             pos += w + 1;
 
             pos += FINDER_ND.find(&bytes[pos..]).ok_or_else(|| {
-                LyricsParseError::InvalidStructure {
+                ParseError::InvalidStructure {
                     detail: "word end_time not found".to_string(),
                 }
             })? + 4;
             let w =
-                memchr(b'"', &bytes[pos..]).ok_or_else(|| LyricsParseError::InvalidStructure {
+                memchr(b'"', &bytes[pos..]).ok_or_else(|| ParseError::InvalidStructure {
                     detail: "word end_time quote not found".to_string(),
                 })?;
             let et = self.parse_syllables_time(&line[pos..pos + w])?;
             pos += w + 1;
 
             let gt =
-                memchr(b'>', &bytes[pos..]).ok_or_else(|| LyricsParseError::InvalidStructure {
+                memchr(b'>', &bytes[pos..]).ok_or_else(|| ParseError::InvalidStructure {
                     detail: "missing '>' in syllable line".to_string(),
                 })?;
             pos += gt + 1;
             let lt =
-                memchr(b'<', &bytes[pos..]).ok_or_else(|| LyricsParseError::InvalidStructure {
+                memchr(b'<', &bytes[pos..]).ok_or_else(|| ParseError::InvalidStructure {
                     detail: "missing '<' in syllable line".to_string(),
                 })?;
             let text = line[pos..pos + lt].to_string();
@@ -161,7 +161,7 @@ impl AppleMusicParser {
         Ok(LineInfo {
             start_time: lst,
             duration: u16::try_from(ld)
-                .map_err(|_| LyricsParseError::OffsetOverflow { t1: 0, t2: ld })?,
+                .map_err(|_| ParseError::OffsetOverflow { t1: 0, t2: ld })?,
             text: String::new(),
             syllables: textinfo,
         })
@@ -176,7 +176,7 @@ impl AppleMusicParser {
             let Some(l) = its.next() else { break };
             let Some(e) = ite.next() else { break };
             if l >= e {
-                return Err(LyricsParseError::InvalidStructure {
+                return Err(ParseError::InvalidStructure {
                     detail: "<p> and </p> tags mismatch".to_string(),
                 }
                 .into());
@@ -188,7 +188,7 @@ impl AppleMusicParser {
 
     pub fn parse_w(&self, lyrics: String) -> LyrixResult<Vec<LineInfo>> {
         let cpos = FINDER_DIV.find(lyrics.as_bytes()).ok_or_else(|| {
-            LyricsParseError::InvalidStructure {
+            ParseError::InvalidStructure {
                 detail: "lyrics body (div) not found".to_string(),
             }
         })?;
@@ -202,7 +202,7 @@ impl AppleMusicParser {
             let Some(u) = it.next() else { break };
             pos = u + 2;
             let Some(c) = memchr(b'"', &bytes[pos..]) else {
-                return Err(LyricsParseError::InvalidStructure {
+                return Err(ParseError::InvalidStructure {
                     detail: "start_time not found".to_string(),
                 }
                 .into());
@@ -212,7 +212,7 @@ impl AppleMusicParser {
             let Some(u) = it.next() else { break };
             pos = u + 2;
             let Some(c) = memchr(b'"', &bytes[pos..]) else {
-                return Err(LyricsParseError::InvalidStructure {
+                return Err(ParseError::InvalidStructure {
                     detail: "end_time not found".to_string(),
                 }
                 .into());
@@ -221,14 +221,14 @@ impl AppleMusicParser {
             pos += c + 1;
 
             let Some(s) = memchr(b'>', &bytes[pos..]) else {
-                return Err(LyricsParseError::InvalidStructure {
+                return Err(ParseError::InvalidStructure {
                     detail: "missing '>' after time attrs".to_string(),
                 }
                 .into());
             };
             pos += s + 1;
             let Some(s) = memchr(b'<', &bytes[pos..]) else {
-                return Err(LyricsParseError::InvalidStructure {
+                return Err(ParseError::InvalidStructure {
                     detail: "missing '<' closing tag".to_string(),
                 }
                 .into());

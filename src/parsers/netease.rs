@@ -1,4 +1,4 @@
-use crate::error::parser::lyrics_parse::LyricsParseError;
+use crate::error::parser::parse::ParseError;
 use crate::error::LyrixResult;
 use crate::models::*;
 use crate::parsers::{lrc::*, IParsers};
@@ -14,7 +14,7 @@ impl LrcParser for NeteaseLrcParser {
 
         // 找第一个 ':'
         let Some(col) = memchr(b':', tbytes) else {
-            return Err(LyricsParseError::InvalidLrcFormat {
+            return Err(ParseError::InvalidLrcFormat {
                 detail: format!("时间标签缺少 ':' : {:?}", tag),
             }
             .into());
@@ -22,14 +22,14 @@ impl LrcParser for NeteaseLrcParser {
 
         let minutes = tag[..col]
             .parse::<u32>()
-            .map_err(|_| LyricsParseError::TimestampParse {
+            .map_err(|_| ParseError::TimestampParse {
                 field: "minutes".to_string(),
                 raw: tag[..col].to_string(),
             })?;
 
         // col 之后找 ':' 或 '.'，看哪个先出现来盲判格式
         let Some(sep) = memchr2(b':', b'.', &tbytes[col + 1..]) else {
-            return Err(LyricsParseError::InvalidLrcFormat {
+            return Err(ParseError::InvalidLrcFormat {
                 detail: format!("时间标签缺少第二个分隔符: {:?}", tag),
             }
             .into());
@@ -39,14 +39,14 @@ impl LrcParser for NeteaseLrcParser {
         let seconds =
             tag[col + 1..sep]
                 .parse::<u32>()
-                .map_err(|_| LyricsParseError::TimestampParse {
+                .map_err(|_| ParseError::TimestampParse {
                     field: "seconds".to_string(),
                     raw: tag[col + 1..sep].to_string(),
                 })?;
         let centis =
             tag[sep + 1..]
                 .parse::<u32>()
-                .map_err(|_| LyricsParseError::TimestampParse {
+                .map_err(|_| ParseError::TimestampParse {
                     field: "centis".to_string(),
                     raw: tag[sep + 1..].to_string(),
                 })?;
@@ -86,7 +86,7 @@ impl IParsers for NeteaseParser {
                 break;
             };
             let s1 = content[cpos..cpos + c1].parse::<u32>().map_err(|e| {
-                LyricsParseError::SyllableParse {
+                ParseError::SyllableParse {
                     detail: format!(
                         "s1 parse error: {:?} raw={:?}",
                         e,
@@ -106,7 +106,7 @@ impl IParsers for NeteaseParser {
                 (None, None) => break,
             };
             let d1 = content[cpos..d1_end].parse::<u16>().map_err(|e| {
-                LyricsParseError::SyllableParse {
+                ParseError::SyllableParse {
                     detail: format!("d1 parse error: {:?} raw={:?}", e, &content[cpos..d1_end]),
                 }
             })?;

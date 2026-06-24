@@ -1,6 +1,6 @@
 pub mod error;
 pub mod fetchers;
-pub mod files;
+pub mod readers;
 pub mod logger;
 pub mod lyrix;
 pub mod models;

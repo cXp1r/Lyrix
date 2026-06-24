@@ -1,4 +1,4 @@
-use crate::error::parser::lyrics_parse::LyricsParseError;
+use crate::error::parser::parse::ParseError;
 use crate::error::LyrixResult;
 use crate::logger;
 use crate::models::LineInfo;
@@ -48,17 +48,17 @@ impl SpotifyParser {
     }
     pub fn parse_without_st(&self, lyrics: String) -> LyrixResult<Vec<LineInfo>> {
         let resp: LyricsResponse =
-            serde_json::from_str(&lyrics).map_err(|e| LyricsParseError::InvalidStructure {
+            serde_json::from_str(&lyrics).map_err(|e| ParseError::InvalidStructure {
                 detail: format!("JSON 解析失败: {}", e),
             })?;
 
         let data = resp.lyrics;
         let sync_type = data.sync_type.as_deref().unwrap_or("");
         if sync_type != "LINE_SYNCED" {
-            return Err(LyricsParseError::UnknownSyncType.into());
+            return Err(ParseError::UnknownSyncType.into());
         }
 
-        let lines = data.lines.ok_or_else(|| LyricsParseError::EmptyContent)?;
+        let lines = data.lines.ok_or_else(|| ParseError::EmptyContent)?;
         let mut lineinfo = Vec::with_capacity(lines.len());
 
         for raw in lines {
@@ -73,7 +73,7 @@ impl SpotifyParser {
                 .as_deref()
                 .unwrap_or("0")
                 .parse()
-                .map_err(|_| LyricsParseError::TimestampParse {
+                .map_err(|_| ParseError::TimestampParse {
                     field: "startTimeMs".to_string(),
                     raw: raw.start_time_ms.unwrap_or_default(),
                 })?;
@@ -83,7 +83,7 @@ impl SpotifyParser {
                 .as_deref()
                 .unwrap_or("0")
                 .parse()
-                .map_err(|_| LyricsParseError::TimestampParse {
+                .map_err(|_| ParseError::TimestampParse {
                     field: "endTimeMs".to_string(),
                     raw: raw.end_time_ms.unwrap_or_default(),
                 })?;

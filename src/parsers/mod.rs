@@ -7,7 +7,7 @@ pub mod netease;
 pub mod qqmusic;
 pub mod soda_music;
 pub mod spotify;
-use crate::error::parser::lyrics_parse::LyricsParseError;
+use crate::error::parser::parse::ParseError;
 use crate::error::LyrixResult;
 use crate::logger;
 use crate::models::*;
@@ -17,9 +17,9 @@ pub trait IParsers {
     fn get_offset_time(&self, t1: u32, t2: u32) -> LyrixResult<u16> {
         let diff = t2
             .checked_sub(t1)
-            .ok_or(LyricsParseError::OffsetOverflow { t1, t2 })?;
+            .ok_or(ParseError::OffsetOverflow { t1, t2 })?;
         //u16够你offset用了
-        u16::try_from(diff).map_err(|_| LyricsParseError::OffsetOverflow { t1, t2 }.into())
+        u16::try_from(diff).map_err(|_| ParseError::OffsetOverflow { t1, t2 }.into())
     }
     fn parse(&self, lyrics: String) -> LyrixResult<Vec<LineInfo>> {
         let start = std::time::Instant::now();
@@ -61,7 +61,7 @@ pub trait IParsers {
                 break;
             };
             let s1 = content[cpos..cpos + c1].parse::<u32>().map_err(|e| {
-                LyricsParseError::SyllableParse {
+                ParseError::SyllableParse {
                     detail: format!(
                         "s1 parse error: {:?} raw={:?}",
                         e,
@@ -81,7 +81,7 @@ pub trait IParsers {
                 (None, None) => break,
             };
             let d1 = content[cpos..d1_end].parse::<u16>().map_err(|e| {
-                LyricsParseError::SyllableParse {
+                ParseError::SyllableParse {
                     detail: format!("d1 parse error: {:?} raw={:?}", e, &content[cpos..d1_end]),
                 }
             })?;
@@ -137,7 +137,7 @@ pub trait IParsers {
             }
             let s = tag1_str
                 .parse::<u32>()
-                .map_err(|_| LyricsParseError::TimestampParse {
+                .map_err(|_| ParseError::TimestampParse {
                     field: "start_time".to_string(),
                     raw: tag1_str.to_string(),
                 })?;
@@ -148,7 +148,7 @@ pub trait IParsers {
                 break;
             };
             let d = lyrics[pos..pos + rb].parse::<u32>().map_err(|_| {
-                LyricsParseError::TimestampParse {
+                ParseError::TimestampParse {
                     field: "duration".to_string(),
                     raw: lyrics[pos..pos + rb].to_string(),
                 }
