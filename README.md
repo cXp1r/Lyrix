@@ -8,6 +8,10 @@
 - 封装了统一函数可以直接接收smtc信息进行歌词解析
 - memchr予以的超高性能，无需预热或优化即可实现<1ms解析
 
+## 注意
+
+- 短期内汽水音乐api校验貌似变严格了, 建议从github上clone库, 而不是cargo add lyrix了
+
 ## TODO
 
 - [待办与进度](docs/todo.md)
