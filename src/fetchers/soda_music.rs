@@ -56,17 +56,13 @@ impl SodaMusicApi {
             "https://api.qishui.com/luna/pc/track_v2?track_id={}&media_type=track&queue_type=&aid=386088",
             urlencoding::encode(id)
         );
-        match self.api.get_async(&url).await {
-            Ok(resp) => {
-                let result: Option<TrackDetailResult> =
-                    serde_json::from_str(&resp).map_err(|e| JsonError {
-                        api: "SodaMusicDetail".to_string(),
-                        source: e,
-                    })?;
-                Ok(result)
-            }
-            Err(_) => Ok(None),
-        }
+        let resp = self.api.get_async(&url).await?;
+        let result: Option<TrackDetailResult> =
+            serde_json::from_str(&resp).map_err(|e| JsonError {
+                api: "SodaMusicDetail".to_string(),
+                source: e,
+            })?;
+        Ok(result)
     }
 }
 
