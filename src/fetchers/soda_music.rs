@@ -53,7 +53,7 @@ impl SodaMusicApi {
     /// 获取曲目详情 (含歌词)
     pub async fn get_detail(&self, id: &str) -> LyrixResult<Option<TrackDetailResult>> {
         let url = format!(
-            "https://api.qishui.com/luna/pc/track_v2?track_id={}&media_type=track&queue_type=&aid=386088",
+            "https://api.qishui.com/luna/pc/track_v2?track_id={}&media_type=track&queue_type=&aid=386088&iid=114514",
             urlencoding::encode(id)
         );
         let resp = self.api.get_async(&url).await?;
