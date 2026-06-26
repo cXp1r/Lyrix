@@ -1,12 +1,14 @@
 use crate::error::{GeneralError, LyrixResult};
 use crate::models::{id2player, LineInfo, LyricsData, MusicPlayer, Session, TrackMetadata};
 use crate::providers::fetch_lyrics_from_player;
+use crate::ws_client::WsClient;
 use reqwest::Client;
 use std::sync::{Arc, Mutex};
 
 pub struct Lyrix {
     pub session: Arc<Mutex<Option<Session>>>,
     client: Client,
+    ws_client: WsClient,
 }
 
 impl Lyrix {
@@ -14,6 +16,7 @@ impl Lyrix {
         Self {
             session: Arc::new(Mutex::new(session)),
             client: Client::new(),
+            ws_client: WsClient::new(),
         }
     }
 
@@ -50,7 +53,7 @@ impl Lyrix {
             })?
             .clone()
             .unwrap_or_default();
-        fetch_lyrics_from_player(player, &track, &session, &self.client).await
+        fetch_lyrics_from_player(player, &track, &session, &self.client, &self.ws_client).await
     }
 
     pub async fn get_lyrics_with_appid(
@@ -79,7 +82,7 @@ impl Lyrix {
             })?
             .clone()
             .unwrap_or_default();
-        fetch_lyrics_from_player(&player, &metadata, &session, &self.client).await
+        fetch_lyrics_from_player(&player, &metadata, &session, &self.client, &self.ws_client).await
     }
 
     pub fn get_trial_part(&self, raw: LyricsData) -> LyrixResult<LyricsData> {
