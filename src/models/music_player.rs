@@ -8,6 +8,7 @@ pub enum MusicPlayer {
     SodaMusic,
     Spotify,
     AppleMusic,
+    MoeKoe,
     LXMusic,
     AnyListen,
 }
@@ -21,6 +22,7 @@ impl MusicPlayer {
             MusicPlayer::SodaMusic => "汽水音乐",
             MusicPlayer::Spotify => "Spotify",
             MusicPlayer::AppleMusic => "AppleMusic",
+            MusicPlayer::MoeKoe => "MoeKoe Music",
             MusicPlayer::LXMusic => "落雪音乐",
             MusicPlayer::AnyListen => "Any Listen",
         }
@@ -32,9 +34,10 @@ pub fn id2player(app_id: &str) -> LyrixResult<MusicPlayer> {
         "cloudmusic.exe" => MusicPlayer::Netease,
         "qqmusic.exe" => MusicPlayer::QQMusic,
         "kugou" => MusicPlayer::Kugou,
-        "\u{6c7d}\u{6c34}\u{97f3}\u{4e50}" => MusicPlayer::SodaMusic,
+        "汽水音乐" => MusicPlayer::SodaMusic,
         "AppleInc.AppleMusicWin_nzyj5cx40ttqa!App" => MusicPlayer::AppleMusic,
         "Spotify.exe" => MusicPlayer::Spotify,
+        "cn.MoeKoe.Music" => MusicPlayer::MoeKoe,
         "cn.toside.music.desktop" => MusicPlayer::LXMusic,
         "cn.toside.anylisten.desktop" => MusicPlayer::AnyListen,
         _ => {
