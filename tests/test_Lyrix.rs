@@ -38,15 +38,28 @@ fn choose_player(players: &[MusicPlayer], prompt: &str) -> MusicPlayer {
     players[sel]
 }
 
+fn choose_trial_key() -> &'static str {
+    let trial_labels = &["非试听(ntrial)", "试听(trial)"];
+    let trial_sel = Select::with_theme(&ColorfulTheme::default())
+        .with_prompt("选择模式")
+        .items(trial_labels)
+        .default(0)
+        .interact()
+        .unwrap();
+    if trial_sel == 0 { "ntrial" } else { "trial" }
+}
+
 fn choose_track(
     track_db: &Option<serde_json::Value>,
     player_key: Option<&str>,
+    trial_key: Option<&str>,
 ) -> (String, String, String, String, u32) {
     let mut track_keys: Vec<String> = Vec::new();
     let mut track_labels: Vec<String> = Vec::new();
 
-    if let (Some(db), Some(player_key)) = (track_db.as_ref(), player_key) {
-        if let Some(tracks) = db.get(player_key) {
+    if let (Some(db), Some(player_key), Some(trial_key)) = (track_db.as_ref(), player_key, trial_key)
+    {
+        if let Some(tracks) = db.get(player_key).and_then(|p| p.get(trial_key)) {
             if let Some(obj) = tracks.as_object() {
                 for (key, val) in obj {
                     let title = val.get("title").and_then(|v| v.as_str()).unwrap_or(key);
@@ -68,8 +81,14 @@ fn choose_track(
 
     if track_sel < track_keys.len() {
         let track_key = &track_keys[track_sel];
-        if let (Some(db), Some(player_key)) = (track_db.as_ref(), player_key) {
-            if let Some(track_data) = db.get(player_key).and_then(|t| t.get(track_key)) {
+        if let (Some(db), Some(player_key), Some(trial_key)) =
+            (track_db.as_ref(), player_key, trial_key)
+        {
+            if let Some(track_data) = db
+                .get(player_key)
+                .and_then(|p| p.get(trial_key))
+                .and_then(|t| t.get(track_key))
+            {
                 return (
                     track_data
                         .get("title")
@@ -180,17 +199,10 @@ async fn test_interactive() {
         &APP_IDS.iter().map(|(_, p)| *p).collect::<Vec<_>>(),
         "选择播放器",
     );
-    let trial_labels = &["非试听(ntrial)", "试听(trial)"];
-    let trial_sel = Select::with_theme(&ColorfulTheme::default())
-        .with_prompt("选择模式")
-        .items(trial_labels)
-        .default(0)
-        .interact()
-        .unwrap();
-    let trial_key = if trial_sel == 0 { "ntrial" } else { "trial" };
-
+    let trial_key = choose_trial_key();
     let player_key = player_json_key(player);
-    let (title, artist, album, album_artist, duration_ms) = choose_track(&track_db, player_key);
+    let (title, artist, album, album_artist, duration_ms) =
+        choose_track(&track_db, player_key, Some(trial_key));
 
     let mut session = load_session();
     if player == MusicPlayer::AppleMusic && session.applemusic_token.is_none() {
@@ -228,16 +240,8 @@ async fn test_interactive_third_party() {
     let session = load_session();
     let lyrix = Lyrix::new(Some(session));
 
-
     let result = lyrix
-        .get_lyrics_with_player(
-            &player,
-            "",
-            None,
-            None,
-            None,
-            0,
-        )
+        .get_lyrics_with_player(&player, "", None, None, None, 0)
         .await;
 
     print_result(result).await;
@@ -256,17 +260,10 @@ async fn test_benchmark() {
         &APP_IDS.iter().map(|(_, p)| *p).collect::<Vec<_>>(),
         "选择播放器",
     );
-    let trial_labels = &["非试听(ntrial)", "试听(trial)"];
-    let trial_sel = Select::with_theme(&ColorfulTheme::default())
-        .with_prompt("选择模式")
-        .items(trial_labels)
-        .default(0)
-        .interact()
-        .unwrap();
-    let trial_key = if trial_sel == 0 { "ntrial" } else { "trial" };
-
+    let trial_key = choose_trial_key();
     let player_key = player_json_key(player);
-    let (title, artist, album, album_artist, duration_ms) = choose_track(&track_db, player_key);
+    let (title, artist, album, album_artist, duration_ms) =
+        choose_track(&track_db, player_key, Some(trial_key));
 
     let mut session = load_session();
     if player == MusicPlayer::AppleMusic && session.applemusic_token.is_none() {
