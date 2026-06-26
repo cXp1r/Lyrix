@@ -1,5 +1,8 @@
 use crate::error::{GeneralError, LyrixResult};
-use crate::models::ITrackMetadata;
+use crate::models::{ITrackMetadata, LyricsData, TrackMetadata};
+use crate::parsers::qqmusic::QQMusicParser;
+use crate::readers::readers::LyrixReader;
+use async_trait::async_trait;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -16,17 +19,13 @@ pub struct QQMusicQrcFilenameInfo {
     pub album: String,
 }
 
-/// Returns the QQ Music `QQMusicLyricNew` directory on Windows.
-///
-/// The lookup flow is:
-/// 1. Read `%APPDATA%\Tencent\QQMusic\WebkitCachePath.ini`
-/// 2. Extract the `Path=` entry
-/// 3. Go to its parent directory
-/// 4. Enter `QQMusicLyricNew`
 pub fn qqmusic_lyric_new_dir() -> LyrixResult<PathBuf> {
     ensure_windows()?;
 
-    let ini_path = qqmusic_webkit_cache_path_ini()?;
+    let app_data = std::env::var_os("APPDATA").ok_or_else(|| GeneralError::MissingField {
+        field: "APPDATA".to_string(),
+    })?;
+    let ini_path = PathBuf::from(app_data).join(QQMUSIC_WEBKIT_CACHE_INI_RELATIVE);
     let ini = fs::read_to_string(&ini_path).map_err(GeneralError::Io)?;
     let webkit_cache_path = parse_webkit_cache_path(&ini)?;
     let cache_parent = webkit_cache_path
@@ -41,105 +40,6 @@ pub fn qqmusic_lyric_new_dir() -> LyrixResult<PathBuf> {
     Ok(cache_parent.join(QQMUSIC_LYRIC_NEW_DIR_NAME))
 }
 
-/// Returns the path of the `WebkitCachePath.ini` file.
-pub fn qqmusic_webkit_cache_path_ini() -> LyrixResult<PathBuf> {
-    ensure_windows()?;
-
-    let app_data = std::env::var_os("APPDATA").ok_or_else(|| GeneralError::MissingField {
-        field: "APPDATA".to_string(),
-    })?;
-
-    Ok(PathBuf::from(app_data).join(QQMUSIC_WEBKIT_CACHE_INI_RELATIVE))
-}
-
-/// Lists QQ Music qrc files under `QQMusicLyricNew`.
-///
-/// The directory is expected to contain only qrc files and no subfolders, so
-/// this scans only the current directory and filters by QQ Music filename
-/// pattern.
-pub fn qqmusic_qrc_files() -> LyrixResult<Vec<PathBuf>> {
-    let dir = qqmusic_lyric_new_dir()?;
-    let mut files = Vec::new();
-
-    collect_matching_qrc_files(&dir, &mut files)?;
-    files.sort();
-    Ok(files)
-}
-
-/// Reads a specific QQ Music qrc file.
-pub fn read_qqmusic_qrc_file(path: impl AsRef<Path>) -> LyrixResult<String> {
-    ensure_windows()?;
-    Ok(fs::read_to_string(path).map_err(GeneralError::Io)?)
-}
-
-/// Reads the first `.qrc` file found in `QQMusicLyricNew`.
-pub fn read_first_qqmusic_qrc() -> LyrixResult<String> {
-    let qrc_path =
-        qqmusic_qrc_files()?
-            .into_iter()
-            .next()
-            .ok_or_else(|| GeneralError::MissingField {
-                field: "QQMusic qrc file".to_string(),
-            })?;
-
-    read_qqmusic_qrc_file(qrc_path)
-}
-
-/// Finds a QQ Music qrc path by exact file name under `QQMusicLyricNew`.
-pub fn find_qqmusic_qrc_path(file_name: impl AsRef<str>) -> LyrixResult<Option<PathBuf>> {
-    let dir = qqmusic_lyric_new_dir()?;
-    find_qqmusic_qrc_path_in_dir(dir, file_name)
-}
-
-/// Finds a QQ Music qrc path by exact file name inside a given directory.
-///
-/// This is useful for real-file tests and fixture-based tests.
-pub fn find_qqmusic_qrc_path_in_dir(
-    dir: impl AsRef<Path>,
-    file_name: impl AsRef<str>,
-) -> LyrixResult<Option<PathBuf>> {
-    let target = file_name.as_ref().trim();
-    if !is_qqmusic_qrc_filename(target) {
-        return Ok(None);
-    }
-
-    for entry in fs::read_dir(dir.as_ref()).map_err(GeneralError::Io)? {
-        let entry = entry.map_err(GeneralError::Io)?;
-        let path = entry.path();
-        if !is_qrc_file(&path) {
-            continue;
-        }
-
-        let Some(name) = path.file_name().and_then(|n| n.to_str()) else {
-            continue;
-        };
-
-        if name == target {
-            return Ok(Some(path));
-        }
-    }
-
-    Ok(None)
-}
-
-/// Reads a QQ Music qrc file by exact file name.
-pub fn read_qqmusic_qrc_by_filename(file_name: impl AsRef<str>) -> LyrixResult<String> {
-    let qrc_path = find_qqmusic_qrc_path(file_name)?.ok_or_else(|| GeneralError::MissingField {
-        field: "QQMusic qrc file".to_string(),
-    })?;
-
-    read_qqmusic_qrc_file(qrc_path)
-}
-
-/// Finds a QQ Music qrc path by track metadata, ignoring the random index.
-pub fn find_qqmusic_qrc_path_by_metadata(
-    track: &dyn ITrackMetadata,
-) -> LyrixResult<Option<PathBuf>> {
-    let dir = qqmusic_lyric_new_dir()?;
-    find_qqmusic_qrc_path_by_metadata_in_dir(dir, track)
-}
-
-/// Finds a QQ Music qrc path by track metadata inside a given directory.
 pub fn find_qqmusic_qrc_path_by_metadata_in_dir(
     dir: impl AsRef<Path>,
     track: &dyn ITrackMetadata,
@@ -186,18 +86,6 @@ pub fn find_qqmusic_qrc_path_by_metadata_in_dir(
     Ok(None)
 }
 
-/// Reads a QQ Music qrc file by track metadata.
-pub fn read_qqmusic_qrc_by_metadata(track: &dyn ITrackMetadata) -> LyrixResult<String> {
-    let qrc_path =
-        find_qqmusic_qrc_path_by_metadata(track)?.ok_or_else(|| GeneralError::MissingField {
-            field: "QQMusic qrc file".to_string(),
-        })?;
-
-    read_qqmusic_qrc_file(qrc_path)
-}
-
-/// Parses a QQ Music qrc file name such as:
-/// `artist - title - 303 - album_qm.qrc`
 pub fn parse_qqmusic_qrc_filename(file_name: impl AsRef<str>) -> Option<QQMusicQrcFilenameInfo> {
     let file_name = file_name.as_ref().trim();
     let base = file_name.strip_suffix(QQMUSIC_QRC_SUFFIX)?;
@@ -223,7 +111,6 @@ pub fn parse_qqmusic_qrc_filename(file_name: impl AsRef<str>) -> Option<QQMusicQ
     })
 }
 
-/// Returns true when the file name follows the QQ Music qrc naming pattern.
 pub fn is_qqmusic_qrc_filename(file_name: impl AsRef<str>) -> bool {
     parse_qqmusic_qrc_filename(file_name).is_some()
 }
@@ -265,19 +152,6 @@ fn parse_webkit_cache_path(content: &str) -> LyrixResult<PathBuf> {
     .into())
 }
 
-fn collect_matching_qrc_files(dir: &Path, out: &mut Vec<PathBuf>) -> LyrixResult<()> {
-    for entry in fs::read_dir(dir).map_err(GeneralError::Io)? {
-        let entry = entry.map_err(GeneralError::Io)?;
-        let path = entry.path();
-
-        if is_qrc_file(&path) && is_qqmusic_qrc_path(&path) {
-            out.push(path);
-        }
-    }
-
-    Ok(())
-}
-
 fn is_qrc_file(path: &Path) -> bool {
     path.extension()
         .and_then(|ext| ext.to_str())
@@ -285,11 +159,37 @@ fn is_qrc_file(path: &Path) -> bool {
         .unwrap_or(false)
 }
 
-fn is_qqmusic_qrc_path(path: &Path) -> bool {
-    path.file_name()
-        .and_then(|name| name.to_str())
-        .and_then(parse_qqmusic_qrc_filename)
-        .is_some()
+pub struct QQMusicReaders;
+
+#[async_trait]
+impl LyrixReader for QQMusicReaders {
+    fn label() -> &'static str {
+        "QQMusic"
+    }
+
+    async fn read_and_parse(track: &dyn ITrackMetadata) -> LyrixResult<LyricsData> {
+        let qrc_path = find_qqmusic_qrc_path_by_metadata_in_dir(qqmusic_lyric_new_dir()?, track)?
+            .ok_or_else(|| {
+            GeneralError::MissingField {
+                field: "QQMusic qrc file".to_string(),
+            }
+        })?;
+
+        ensure_windows()?;
+        let qrc = fs::read_to_string(qrc_path).map_err(GeneralError::Io)?;
+        let lines = QQMusicParser {}.decrypt_and_parse(qrc)?;
+
+        Ok(LyricsData {
+            file: None,
+            lines,
+            track_metadata: Some(TrackMetadata {
+                title: track.title().map(|s| s.to_string()),
+                artist: track.artist().map(|s| s.to_string()),
+                album: track.album().map(|s| s.to_string()),
+                album_artist: track.album_artist().map(|s| s.to_string()),
+                duration_ms: track.duration_ms(),
+                ..Default::default()
+            }),
+        })
+    }
 }
-
-
