@@ -22,14 +22,14 @@ impl QQMusicFetcher {
     }
 
     /// 搜索歌曲
-    pub async fn search(&self, keyword: &str) -> LyrixResult<Option<MusicFcgApiResult1>> {
+    pub async fn search_by_page(&self, keyword: &str, page: &str) -> LyrixResult<Option<MusicFcgApiResult1>> {
         let data = serde_json::json!({
             "req_1": {
                 "method": "DoSearchForQQMusicDesktop",
                 "module": "music.search.SearchCgiService",
                 "param": {
                     "num_per_page": "20",
-                    "page_num": "1",
+                    "page_num": page,
                     "query": keyword,
                     "search_type": 0
                 }
@@ -41,6 +41,27 @@ impl QQMusicFetcher {
             .post_json_async("https://u.y.qq.com/cgi-bin/musicu.fcg", &data)
             .await?;
         let result: Option<MusicFcgApiResult1> =
+            serde_json::from_str(&resp).map_err(|e| JsonError {
+                api: "QQMusicSearch".to_string(),
+                source: e,
+            })?;
+        Ok(result)
+    }
+
+    pub async fn search(&self, keyword: &str) -> LyrixResult<Option<MusicFcgApiResult1>> {
+        Ok(match self.search_by_page(keyword, "1").await? {
+            Some(r) => Some(r),
+            None => self.search_by_page(keyword, "2").await?
+        })
+    }
+
+    pub async fn search2(&self, keyword: &str) -> LyrixResult<Option<MusicFcgApiResult2>> {
+        let url = format!(
+            "https://shc.y.qq.com/soso/fcgi-bin/search_for_qq_cp?_=1657641526460&g_tk=1037878909&uin=1804681355&format=json&inCharset=utf-8&outCharset=utf-8&notice=0&platform=h5&needNewCode=1&zhidaqu=1&catZhida=1&t=0&flag=1&ie=utf-8&sem=&aggr=0&perpage=20&n=20&p=1&remoteplace=txt.mqq.all&w={}",
+            urlencoding::encode(keyword)
+        );
+        let resp = self.api.get_async(&url).await?;
+        let result: Option<MusicFcgApiResult2> =
             serde_json::from_str(&resp).map_err(|e| JsonError {
                 api: "QQMusicSearch".to_string(),
                 source: e,
@@ -247,4 +268,24 @@ impl LyricResult1 {
 pub struct QqLyricsResponse1 {
     pub lyrics: String,
     pub trans: String,
+}
+#[derive(Debug, Deserialize, Default)]
+pub struct MusicFcgApiResult2 {
+    pub code: u32,
+    pub data: QQMData2,
+}
+#[derive(Debug, Deserialize, Default)]
+pub struct QQMData2 {
+    pub song: Vec<QQMSong2>
+}
+#[derive(Debug, Deserialize, Default)]
+pub struct QQMSong2 {
+    pub songname: String,
+    pub albumname: String,
+    pub songid: String,
+    pub singer: Vec<Singer2>
+}
+#[derive(Debug, Deserialize, Default)]
+pub struct Singer2 {
+    pub name: Option<String>,
 }
