@@ -1,4 +1,4 @@
-use super::providers::LyrixProvider;
+use crate::providers::LyrixProvider;
 use crate::error::{GeneralError, LyrixResult};
 use crate::models::LineInfo;
 use async_trait::async_trait;
