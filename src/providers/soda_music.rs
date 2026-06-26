@@ -1,6 +1,5 @@
-use crate::providers::LyrixProvider;
 use crate::error::{GeneralError, LyrixResult};
-use crate::models::LineInfo;
+use crate::providers::{LyrixProvider, RawLyricsContent, RawLyricsFormat};
 use async_trait::async_trait;
 use reqwest::Client;
 
@@ -17,21 +16,18 @@ impl LyrixProvider for SodaMusicProvider {
     async fn create_searcher(&self) -> LyrixResult<Self::Searcher> {
         Ok(crate::searchers::soda_music::SodaMusicSearcher::with_client(self.client.clone()))
     }
+
     async fn create_api(&self) -> LyrixResult<Self::Api> {
         Ok(crate::fetchers::soda_music::SodaMusicFetcher::with_client(
             self.client.clone(),
         ))
     }
+
     fn label() -> &'static str {
         "汽水音乐"
     }
 
-    async fn fetch_and_parse(
-        api: &Self::Api,
-        best: &Self::SearchResult,
-    ) -> LyrixResult<Vec<LineInfo>> {
-        use crate::parsers::soda_music::SodaParser;
-        use crate::parsers::IParsers;
+    async fn fetch(api: &Self::Api, best: &Self::SearchResult) -> LyrixResult<RawLyricsContent> {
         let detail = api
             .get_detail(&best.id)
             .await?
@@ -52,6 +48,10 @@ impl LyrixProvider for SodaMusicProvider {
             }
             .into());
         }
-        Ok(SodaParser {}.parse(content)?)
+
+        Ok(RawLyricsContent {
+            content,
+            format: RawLyricsFormat::SodaMusic,
+        })
     }
 }

@@ -1,6 +1,5 @@
-use crate::providers::LyrixProvider;
 use crate::error::{GeneralError, LyrixResult};
-use crate::models::LineInfo;
+use crate::providers::{LyrixProvider, RawLyricsContent, RawLyricsFormat};
 use async_trait::async_trait;
 use reqwest::Client;
 
@@ -19,38 +18,40 @@ impl LyrixProvider for NeteaseProvider {
             self.client.clone(),
         ))
     }
+
     async fn create_api(&self) -> LyrixResult<Self::Api> {
         Ok(crate::fetchers::netease::NeteaseFetcher::with_client(
             self.client.clone(),
         ))
     }
+
     fn label() -> &'static str {
         "网易云"
     }
 
-    async fn fetch_and_parse(
-        api: &Self::Api,
-        best: &Self::SearchResult,
-    ) -> LyrixResult<Vec<LineInfo>> {
-        use crate::parsers::lrc::LrcParser;
-        use crate::parsers::netease::{NeteaseLrcParser, NeteaseParser};
-        use crate::parsers::IParsers;
+    async fn fetch(api: &Self::Api, best: &Self::SearchResult) -> LyrixResult<RawLyricsContent> {
         let lyric_result = api.get_lyric(&best.id).await?;
         if let Some(yrc) = lyric_result.yrc.and_then(|y| y.lyric) {
             if !yrc.is_empty() {
-                return Ok(NeteaseParser {}.parse(yrc)?);
+                return Ok(RawLyricsContent {
+                    content: yrc,
+                    format: RawLyricsFormat::NeteaseYrc,
+                });
             }
         }
+
         let lrc = lyric_result.lrc.ok_or_else(|| GeneralError::MissingField {
             field: "网易云: LRC也没有哟".to_string(),
         })?;
-        let parser = NeteaseLrcParser {
-            version: lrc.version.unwrap_or(3) as u8,
-        };
-        Ok(
-            parser.parse(lrc.lyric.ok_or_else(|| GeneralError::MissingField {
-                field: "网易云: LRC也没有哟".to_string(),
-            })?)?,
-        )
+        let content = lrc.lyric.ok_or_else(|| GeneralError::MissingField {
+            field: "网易云: LRC也没有哟".to_string(),
+        })?;
+
+        Ok(RawLyricsContent {
+            content,
+            format: RawLyricsFormat::NeteaseLrc {
+                version: lrc.version.unwrap_or(3) as u8,
+            },
+        })
     }
 }

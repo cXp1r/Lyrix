@@ -1,6 +1,5 @@
-use crate::providers::LyrixProvider;
 use crate::error::{GeneralError, LyrixResult};
-use crate::models::LineInfo;
+use crate::providers::{LyrixProvider, RawLyricsContent, RawLyricsFormat};
 use async_trait::async_trait;
 use reqwest::Client;
 
@@ -22,6 +21,7 @@ impl LyrixProvider for SpotifyProvider {
         )
         .await?)
     }
+
     async fn create_api(&self) -> LyrixResult<Self::Api> {
         Ok(crate::fetchers::spotify::SpotifyFetcher::with_client(
             self.client.clone(),
@@ -29,22 +29,23 @@ impl LyrixProvider for SpotifyProvider {
         )
         .await?)
     }
+
     fn label() -> &'static str {
         "Spotify"
     }
 
-    async fn fetch_and_parse(
-        api: &Self::Api,
-        best: &Self::SearchResult,
-    ) -> LyrixResult<Vec<LineInfo>> {
-        use crate::parsers::spotify::SpotifyParser;
-        let lryics = api.get_lyrics(&best.id).await?;
-        if lryics.is_empty() {
+    async fn fetch(api: &Self::Api, best: &Self::SearchResult) -> LyrixResult<RawLyricsContent> {
+        let content = api.get_lyrics(&best.id).await?;
+        if content.is_empty() {
             return Err(GeneralError::MissingField {
                 field: "Spotify: 歌词内容为空".to_string(),
             }
             .into());
         }
-        Ok(SpotifyParser {}.parse(lryics)?)
+
+        Ok(RawLyricsContent {
+            content,
+            format: RawLyricsFormat::SpotifyJson,
+        })
     }
 }

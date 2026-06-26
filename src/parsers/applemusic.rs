@@ -120,34 +120,31 @@ impl AppleMusicParser {
                 break;
             };
             pos += off + 4;
-            let w =
-                memchr(b'"', &bytes[pos..]).ok_or_else(|| ParseError::InvalidStructure {
-                    detail: "word start_time not found".to_string(),
-                })?;
+            let w = memchr(b'"', &bytes[pos..]).ok_or_else(|| ParseError::InvalidStructure {
+                detail: "word start_time not found".to_string(),
+            })?;
             let st = self.parse_syllables_time(&line[pos..pos + w])?;
             pos += w + 1;
 
-            pos += FINDER_ND.find(&bytes[pos..]).ok_or_else(|| {
-                ParseError::InvalidStructure {
+            pos += FINDER_ND
+                .find(&bytes[pos..])
+                .ok_or_else(|| ParseError::InvalidStructure {
                     detail: "word end_time not found".to_string(),
-                }
-            })? + 4;
-            let w =
-                memchr(b'"', &bytes[pos..]).ok_or_else(|| ParseError::InvalidStructure {
-                    detail: "word end_time quote not found".to_string(),
-                })?;
+                })?
+                + 4;
+            let w = memchr(b'"', &bytes[pos..]).ok_or_else(|| ParseError::InvalidStructure {
+                detail: "word end_time quote not found".to_string(),
+            })?;
             let et = self.parse_syllables_time(&line[pos..pos + w])?;
             pos += w + 1;
 
-            let gt =
-                memchr(b'>', &bytes[pos..]).ok_or_else(|| ParseError::InvalidStructure {
-                    detail: "missing '>' in syllable line".to_string(),
-                })?;
+            let gt = memchr(b'>', &bytes[pos..]).ok_or_else(|| ParseError::InvalidStructure {
+                detail: "missing '>' in syllable line".to_string(),
+            })?;
             pos += gt + 1;
-            let lt =
-                memchr(b'<', &bytes[pos..]).ok_or_else(|| ParseError::InvalidStructure {
-                    detail: "missing '<' in syllable line".to_string(),
-                })?;
+            let lt = memchr(b'<', &bytes[pos..]).ok_or_else(|| ParseError::InvalidStructure {
+                detail: "missing '<' in syllable line".to_string(),
+            })?;
             let text = line[pos..pos + lt].to_string();
             pos += lt + 1;
 
@@ -187,11 +184,12 @@ impl AppleMusicParser {
     }
 
     pub fn parse_w(&self, lyrics: String) -> LyrixResult<Vec<LineInfo>> {
-        let cpos = FINDER_DIV.find(lyrics.as_bytes()).ok_or_else(|| {
-            ParseError::InvalidStructure {
-                detail: "lyrics body (div) not found".to_string(),
-            }
-        })?;
+        let cpos =
+            FINDER_DIV
+                .find(lyrics.as_bytes())
+                .ok_or_else(|| ParseError::InvalidStructure {
+                    detail: "lyrics body (div) not found".to_string(),
+                })?;
         let ulyrics = &lyrics[cpos..];
         let bytes = ulyrics.as_bytes();
         let mut it = FINDER_EQ.find_iter(bytes);

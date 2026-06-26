@@ -169,10 +169,8 @@ impl LyrixReader for QQMusicReaders {
 
     async fn read_and_parse(track: &dyn ITrackMetadata) -> LyrixResult<LyricsData> {
         let qrc_path = find_qqmusic_qrc_path_by_metadata_in_dir(qqmusic_lyric_new_dir()?, track)?
-            .ok_or_else(|| {
-            GeneralError::MissingField {
-                field: "QQMusic qrc file".to_string(),
-            }
+            .ok_or_else(|| GeneralError::MissingField {
+            field: "QQMusic qrc file".to_string(),
         })?;
 
         ensure_windows()?;

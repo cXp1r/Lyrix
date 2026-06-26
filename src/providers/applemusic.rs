@@ -1,6 +1,5 @@
-use crate::providers::LyrixProvider;
 use crate::error::{GeneralError, LyrixResult};
-use crate::models::LineInfo;
+use crate::providers::{LyrixProvider, RawLyricsContent, RawLyricsFormat};
 use async_trait::async_trait;
 use reqwest::Client;
 
@@ -23,54 +22,56 @@ impl LyrixProvider for AppleMusicProvider {
             ),
         )
     }
+
     async fn create_api(&self) -> LyrixResult<Self::Api> {
         Ok(crate::fetchers::applemusic::AppleMusicFetcher::with_client(
             self.client.clone(),
             self.token.clone(),
         ))
     }
+
     fn label() -> &'static str {
         "applemusic"
     }
 
-    async fn fetch_and_parse(
-        api: &Self::Api,
-        best: &Self::SearchResult,
-    ) -> LyrixResult<Vec<LineInfo>> {
-        use crate::parsers::applemusic::AppleMusicParser;
+    async fn fetch(api: &Self::Api, best: &Self::SearchResult) -> LyrixResult<RawLyricsContent> {
         let detail = api
             .get_lyric(&best.id)
             .await?
             .ok_or_else(|| GeneralError::MissingField {
                 field: "applemusic: 获取歌曲详情失败".to_string(),
             })?;
-        //虽然是vec 但是实际上只有一项(目前来看是的)
         let lyric_data = detail.data.ok_or_else(|| GeneralError::MissingField {
             field: "applemusic: 歌曲没有歌词".to_string(),
         })?;
-        let u = lyric_data
-            .get(0)
+        let item = lyric_data
+            .first()
             .ok_or_else(|| GeneralError::MissingField {
                 field: "applemusic: 歌曲没有歌词".to_string(),
             })?;
-        let att = u
+        let attributes = item
             .attributes
             .as_ref()
             .ok_or_else(|| GeneralError::MissingField {
                 field: "applemusic: 无歌曲详细信息".to_string(),
             })?;
-        let lyrics = att
+        let content = attributes
             .ttml_localizations
             .as_ref()
             .ok_or_else(|| GeneralError::MissingField {
                 field: "applemusic: 歌词内容为空".to_string(),
-            })?;
-        if lyrics.is_empty() {
+            })?
+            .to_string();
+        if content.is_empty() {
             return Err(GeneralError::MissingField {
                 field: "applemusic: 歌词内容为空".to_string(),
             }
             .into());
         }
-        Ok(AppleMusicParser {}.parse(lyrics.to_string())?)
+
+        Ok(RawLyricsContent {
+            content,
+            format: RawLyricsFormat::AppleMusicTtml,
+        })
     }
 }

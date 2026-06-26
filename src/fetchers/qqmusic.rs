@@ -120,7 +120,7 @@ impl QQMusicFetcher {
 
             // 判断是不是 CDATA[
             if cpos + 6 <= len && &resp[cpos..cpos + 6] == "CDATA[" {
-                cpos += 6; 
+                cpos += 6;
                 //别几把改了, 这<![CDATA[xxx]]>里面是加密的结果第一个]就是结束的地方
                 let Some(end) = memchr(b']', &content[cpos..]) else {
                     break;

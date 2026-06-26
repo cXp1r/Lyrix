@@ -8,7 +8,10 @@ mod spotify;
 use crate::error::fetcher::auth::AuthError;
 use crate::error::{GeneralError, LyrixResult, SearcherError};
 use crate::models::{ITrackMetadata, LineInfo, LyricsData, MusicPlayer, Session, TrackMetadata};
+use crate::parsers::lrc::LrcParser;
+use crate::parsers::IParsers;
 use crate::searchers::{ISearchResult, ISearcher};
+use crate::ws_client::WsClient;
 use async_trait::async_trait;
 use reqwest::Client;
 
@@ -19,7 +22,32 @@ use qqmusic::QQMusicProvider;
 use soda_music::SodaMusicProvider;
 use spotify::SpotifyProvider;
 
-/// LyrixProvider trait —— 定义「搜索 → API → 解析」一条龙服务接口
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum RawLyricsFormat {
+    NeteaseYrc,
+    NeteaseLrc { version: u8 },
+    QQMusicQrc,
+    QQMusicLrc,
+    KugouKrc,
+    SodaMusic,
+    SpotifyJson,
+    AppleMusicTtml,
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct RawLyricsContent {
+    pub(crate) content: String,
+    pub(crate) format: RawLyricsFormat,
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct RawLyrics {
+    pub(crate) content: String,
+    pub(crate) format: RawLyricsFormat,
+    pub(crate) track_metadata: Option<TrackMetadata>,
+}
+
+/// Provider only searches and fetches raw lyrics. Parsing is selected later by player and format.
 #[async_trait]
 pub(crate) trait LyrixProvider {
     type Searcher: ISearcher;
@@ -29,17 +57,13 @@ pub(crate) trait LyrixProvider {
     async fn create_searcher(&self) -> LyrixResult<Self::Searcher>;
     async fn create_api(&self) -> LyrixResult<Self::Api>;
     fn label() -> &'static str;
-    async fn fetch_and_parse(
-        api: &Self::Api,
-        best: &Self::SearchResult,
-    ) -> LyrixResult<Vec<LineInfo>>;
+    async fn fetch(api: &Self::Api, best: &Self::SearchResult) -> LyrixResult<RawLyricsContent>;
 }
 
-/// 通用编排：搜索 → 类型转换 → API 请求 → 解析 → 组装 LyricsData
-async fn fetch_lyrics<P: LyrixProvider>(
+async fn fetch_raw_lyrics<P: LyrixProvider>(
     provider: &P,
     track: &dyn ITrackMetadata,
-) -> LyrixResult<LyricsData> {
+) -> LyrixResult<RawLyrics> {
     let label = P::label();
 
     let searcher = provider.create_searcher().await?;
@@ -56,21 +80,15 @@ async fn fetch_lyrics<P: LyrixProvider>(
         .as_any()
         .downcast_ref::<P::SearchResult>()
         .ok_or_else(|| GeneralError::Internal {
-            detail: format!("{}: 搜索结果类型不匹配", label),
+            detail: format!("{}: search result type mismatch", label),
         })?;
 
     let api = provider.create_api().await?;
-    let lines = P::fetch_and_parse(&api, best).await?;
+    let raw = P::fetch(&api, best).await?;
 
-    if lines.is_empty() {
-        return Err(GeneralError::MissingField {
-            field: format!("{}: 未获取到歌词内容", label),
-        }
-        .into());
-    }
-    Ok(LyricsData {
-        file: None,
-        lines,
+    Ok(RawLyrics {
+        content: raw.content,
+        format: raw.format,
         track_metadata: Some(TrackMetadata {
             title: Some(best.title().to_string()),
             artist: Some(best.artists().join(", ")),
@@ -84,16 +102,73 @@ async fn fetch_lyrics<P: LyrixProvider>(
     })
 }
 
-/// 按播放器类型分发到具体 Provider
-pub(crate) async fn fetch_lyrics_from_player(
+pub(crate) fn parse_lyrics_for_player(
+    player: &MusicPlayer,
+    raw: RawLyrics,
+) -> LyrixResult<LyricsData> {
+    let lines: Vec<LineInfo> = match raw.format {
+        RawLyricsFormat::NeteaseYrc => {
+            crate::parsers::netease::NeteaseParser {}.parse(raw.content)?
+        }
+        RawLyricsFormat::NeteaseLrc { version } => {
+            crate::parsers::netease::NeteaseLrcParser { version }.parse(raw.content)?
+        }
+        RawLyricsFormat::QQMusicQrc => {
+            crate::parsers::qqmusic::QQMusicParser {}.decrypt_and_parse(raw.content)?
+        }
+        RawLyricsFormat::QQMusicLrc => {
+            crate::parsers::qqmusic::QQMusicLrcParser {}.parse(raw.content)?
+        }
+        RawLyricsFormat::KugouKrc => {
+            crate::parsers::kugou::KugouParser {}.decrypt_and_parse(raw.content)?
+        }
+        RawLyricsFormat::SodaMusic => {
+            crate::parsers::soda_music::SodaParser {}.parse(raw.content)?
+        }
+        RawLyricsFormat::SpotifyJson => {
+            crate::parsers::spotify::SpotifyParser {}.parse(raw.content)?
+        }
+        RawLyricsFormat::AppleMusicTtml => {
+            crate::parsers::applemusic::AppleMusicParser {}.parse(raw.content)?
+        }
+    };
+
+    if lines.is_empty() {
+        return Err(GeneralError::MissingField {
+            field: format!("{}: no lyrics content", player.display_name()),
+        }
+        .into());
+    }
+
+    Ok(LyricsData {
+        file: None,
+        lines,
+        track_metadata: raw.track_metadata,
+    })
+}
+
+async fn fetch_third_party_raw_lyrics(
+    player: &MusicPlayer,
+    _track: &dyn ITrackMetadata,
+    _session: &Session,
+    _ws_client: &WsClient,
+) -> LyrixResult<RawLyrics> {
+    Err(GeneralError::UnsupportedPlayer {
+        name: format!("{} third-party fetch placeholder", player.display_name()),
+    }
+    .into())
+}
+
+pub(crate) async fn fetch_raw_lyrics_from_player(
     player: &MusicPlayer,
     track: &dyn ITrackMetadata,
     session: &Session,
     client: &Client,
-) -> LyrixResult<LyricsData> {
+    ws_client: &WsClient,
+) -> LyrixResult<RawLyrics> {
     match player {
         MusicPlayer::Netease => {
-            fetch_lyrics(
+            fetch_raw_lyrics(
                 &NeteaseProvider {
                     client: client.clone(),
                 },
@@ -102,7 +177,7 @@ pub(crate) async fn fetch_lyrics_from_player(
             .await
         }
         MusicPlayer::QQMusic => {
-            fetch_lyrics(
+            fetch_raw_lyrics(
                 &QQMusicProvider {
                     client: client.clone(),
                 },
@@ -111,7 +186,7 @@ pub(crate) async fn fetch_lyrics_from_player(
             .await
         }
         MusicPlayer::Kugou => {
-            fetch_lyrics(
+            fetch_raw_lyrics(
                 &KugouProvider {
                     client: client.clone(),
                 },
@@ -120,7 +195,7 @@ pub(crate) async fn fetch_lyrics_from_player(
             .await
         }
         MusicPlayer::SodaMusic => {
-            fetch_lyrics(
+            fetch_raw_lyrics(
                 &SodaMusicProvider {
                     client: client.clone(),
                 },
@@ -137,7 +212,7 @@ pub(crate) async fn fetch_lyrics_from_player(
                     field: "spotify_cookie".to_string(),
                 })?
                 .clone();
-            fetch_lyrics(
+            fetch_raw_lyrics(
                 &SpotifyProvider {
                     cookie,
                     client: client.clone(),
@@ -155,7 +230,7 @@ pub(crate) async fn fetch_lyrics_from_player(
                     field: "applemusic_token".to_string(),
                 })?
                 .clone();
-            fetch_lyrics(
+            fetch_raw_lyrics(
                 &AppleMusicProvider {
                     token,
                     client: client.clone(),
@@ -164,13 +239,19 @@ pub(crate) async fn fetch_lyrics_from_player(
             )
             .await
         }
-        MusicPlayer::LXMusic => Err(GeneralError::UnsupportedPlayer {
-            name: "落雪音乐".to_string(),
+        MusicPlayer::LXMusic | MusicPlayer::AnyListen => {
+            fetch_third_party_raw_lyrics(player, track, session, ws_client).await
         }
-        .into()),
-        MusicPlayer::AnyListen => Err(GeneralError::UnsupportedPlayer {
-            name: "Any Listen".to_string(),
-        }
-        .into()),
     }
+}
+
+pub(crate) async fn fetch_lyrics_from_player(
+    player: &MusicPlayer,
+    track: &dyn ITrackMetadata,
+    session: &Session,
+    client: &Client,
+    ws_client: &WsClient,
+) -> LyrixResult<LyricsData> {
+    let raw = fetch_raw_lyrics_from_player(player, track, session, client, ws_client).await?;
+    parse_lyrics_for_player(player, raw)
 }

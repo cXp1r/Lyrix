@@ -21,7 +21,10 @@ impl KugouFetcher {
     }
 
     /// 搜索歌曲
-    pub async fn get_search_song(&self, keywords: &str) -> LyrixResult<Option<SearchSongResponse1>> {
+    pub async fn get_search_song(
+        &self,
+        keywords: &str,
+    ) -> LyrixResult<Option<SearchSongResponse1>> {
         let url = format!(
             "http://mobilecdn.kugou.com/api/v3/search/song?format=json&keyword={}&page=1&pagesize=20&showtype=1",
             urlencoding::encode(keywords)

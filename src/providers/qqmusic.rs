@@ -1,6 +1,5 @@
-use crate::providers::LyrixProvider;
 use crate::error::{GeneralError, LyrixResult};
-use crate::models::LineInfo;
+use crate::providers::{LyrixProvider, RawLyricsContent, RawLyricsFormat};
 use async_trait::async_trait;
 use reqwest::Client;
 
@@ -19,24 +18,27 @@ impl LyrixProvider for QQMusicProvider {
             self.client.clone(),
         ))
     }
+
     async fn create_api(&self) -> LyrixResult<Self::Api> {
         Ok(crate::fetchers::qqmusic::QQMusicFetcher::with_client(
             self.client.clone(),
         ))
     }
+
     fn label() -> &'static str {
         "QQ音乐"
     }
 
-    async fn fetch_and_parse(
-        api: &Self::Api,
-        best: &Self::SearchResult,
-    ) -> LyrixResult<Vec<LineInfo>> {
-        use crate::parsers::lrc::LrcParser;
-        use crate::parsers::qqmusic::{QQMusicLrcParser, QQMusicParser};
+    async fn fetch(api: &Self::Api, best: &Self::SearchResult) -> LyrixResult<RawLyricsContent> {
         if let Ok(qrc) = api.get_lyrics_qrc(&best.id.to_string()).await {
-            return Ok(QQMusicParser {}.decrypt_and_parse(qrc)?);
+            if !qrc.is_empty() {
+                return Ok(RawLyricsContent {
+                    content: qrc,
+                    format: RawLyricsFormat::QQMusicQrc,
+                });
+            }
         }
+
         let lyric_result =
             api.get_lyric(&best.mid)
                 .await?
@@ -45,9 +47,13 @@ impl LyrixProvider for QQMusicProvider {
                 })?;
         if let Some(lrc) = lyric_result.lyric {
             if !lrc.is_empty() {
-                return Ok(QQMusicLrcParser {}.parse(lrc)?);
+                return Ok(RawLyricsContent {
+                    content: lrc,
+                    format: RawLyricsFormat::QQMusicLrc,
+                });
             }
         }
+
         Err(GeneralError::MissingField {
             field: "QQ音乐: 未获取到歌词内容".to_string(),
         }

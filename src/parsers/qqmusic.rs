@@ -43,15 +43,16 @@ impl IParsers for QQMusicParser {
             let Some(c1) = memchr(b',', &cbytes[cpos..]) else {
                 break;
             };
-            let s1 = content[cpos..cpos + c1].parse::<u32>().map_err(|e| {
-                ParseError::SyllableParse {
-                    detail: format!(
-                        "s1 parse error: {:?} raw={:?}",
-                        e,
-                        &content[cpos..cpos + c1]
-                    ),
-                }
-            })?;
+            let s1 =
+                content[cpos..cpos + c1]
+                    .parse::<u32>()
+                    .map_err(|e| ParseError::SyllableParse {
+                        detail: format!(
+                            "s1 parse error: {:?} raw={:?}",
+                            e,
+                            &content[cpos..cpos + c1]
+                        ),
+                    })?;
             cpos += c1 + 1;
 
             // d1，兼容 (s,d,x)
@@ -63,11 +64,12 @@ impl IParsers for QQMusicParser {
                 (None, Some(np)) => np,
                 (None, None) => break,
             };
-            let d1 = content[cpos..d1_end].parse::<u16>().map_err(|e| {
-                ParseError::SyllableParse {
-                    detail: format!("d1 parse error: {:?} raw={:?}", e, &content[cpos..d1_end]),
-                }
-            })?;
+            let d1 =
+                content[cpos..d1_end]
+                    .parse::<u16>()
+                    .map_err(|e| ParseError::SyllableParse {
+                        detail: format!("d1 parse error: {:?} raw={:?}", e, &content[cpos..d1_end]),
+                    })?;
 
             let Some(rp) = memchr(b')', &cbytes[cpos..]) else {
                 break;

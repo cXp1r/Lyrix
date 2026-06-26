@@ -60,15 +60,16 @@ pub trait IParsers {
             let Some(c1) = memchr(b',', &cbytes[cpos..]) else {
                 break;
             };
-            let s1 = content[cpos..cpos + c1].parse::<u32>().map_err(|e| {
-                ParseError::SyllableParse {
-                    detail: format!(
-                        "s1 parse error: {:?} raw={:?}",
-                        e,
-                        &content[cpos..cpos + c1]
-                    ),
-                }
-            })?;
+            let s1 =
+                content[cpos..cpos + c1]
+                    .parse::<u32>()
+                    .map_err(|e| ParseError::SyllableParse {
+                        detail: format!(
+                            "s1 parse error: {:?} raw={:?}",
+                            e,
+                            &content[cpos..cpos + c1]
+                        ),
+                    })?;
             cpos += c1 + 1;
 
             // d1，兼容 <s,d> 和 <s,d,x>
@@ -80,11 +81,12 @@ pub trait IParsers {
                 (None, Some(na)) => na,
                 (None, None) => break,
             };
-            let d1 = content[cpos..d1_end].parse::<u16>().map_err(|e| {
-                ParseError::SyllableParse {
-                    detail: format!("d1 parse error: {:?} raw={:?}", e, &content[cpos..d1_end]),
-                }
-            })?;
+            let d1 =
+                content[cpos..d1_end]
+                    .parse::<u16>()
+                    .map_err(|e| ParseError::SyllableParse {
+                        detail: format!("d1 parse error: {:?} raw={:?}", e, &content[cpos..d1_end]),
+                    })?;
 
             // 跳到 '>' 后面
             let Some(ra) = memchr(b'>', &cbytes[cpos..]) else {
@@ -147,12 +149,13 @@ pub trait IParsers {
             let Some(rb) = memchr(b']', &src[pos..]) else {
                 break;
             };
-            let d = lyrics[pos..pos + rb].parse::<u32>().map_err(|_| {
-                ParseError::TimestampParse {
-                    field: "duration".to_string(),
-                    raw: lyrics[pos..pos + rb].to_string(),
-                }
-            })?;
+            let d =
+                lyrics[pos..pos + rb]
+                    .parse::<u32>()
+                    .map_err(|_| ParseError::TimestampParse {
+                        field: "duration".to_string(),
+                        raw: lyrics[pos..pos + rb].to_string(),
+                    })?;
             pos += rb + 1;
 
             // 4. content 到下一个 '[' 或末尾

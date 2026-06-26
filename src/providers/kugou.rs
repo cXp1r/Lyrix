@@ -1,6 +1,5 @@
-use crate::providers::LyrixProvider;
 use crate::error::{GeneralError, LyrixResult, SearcherError};
-use crate::models::LineInfo;
+use crate::providers::{LyrixProvider, RawLyricsContent, RawLyricsFormat};
 use async_trait::async_trait;
 use reqwest::Client;
 
@@ -19,20 +18,18 @@ impl LyrixProvider for KugouProvider {
             self.client.clone(),
         ))
     }
+
     async fn create_api(&self) -> LyrixResult<Self::Api> {
         Ok(crate::fetchers::kugou::KugouFetcher::with_client(
             self.client.clone(),
         ))
     }
+
     fn label() -> &'static str {
         "酷狗"
     }
 
-    async fn fetch_and_parse(
-        api: &Self::Api,
-        best: &Self::SearchResult,
-    ) -> LyrixResult<Vec<LineInfo>> {
-        use crate::parsers::kugou::KugouParser;
+    async fn fetch(api: &Self::Api, best: &Self::SearchResult) -> LyrixResult<RawLyricsContent> {
         let keyword = format!("{} {}", best.title, best.artists.join(", "));
         let lyrics_resp = api
             .get_search_lyrics(Some(&keyword), Some(&best.hash))
@@ -68,15 +65,19 @@ impl LyrixProvider for KugouProvider {
                 field: "酷狗: 下载 KRC 失败".to_string(),
             }
         })?;
-        let krc = dl_resp.content.ok_or_else(|| GeneralError::MissingField {
+        let content = dl_resp.content.ok_or_else(|| GeneralError::MissingField {
             field: "酷狗: KRC 内容为空".to_string(),
         })?;
-        if krc.is_empty() {
+        if content.is_empty() {
             return Err(GeneralError::MissingField {
                 field: "酷狗: KRC 内容为空".to_string(),
             }
             .into());
         }
-        Ok(KugouParser {}.decrypt_and_parse(krc)?)
+
+        Ok(RawLyricsContent {
+            content,
+            format: RawLyricsFormat::KugouKrc,
+        })
     }
 }
