@@ -4,11 +4,11 @@ use crate::error::LyrixResult;
 use memchr::memchr;
 use serde::Deserialize;
 use std::collections::HashMap;
-pub struct QQMusicApi {
+pub struct QQMusicFetcher {
     api: BaseApi,
 }
 
-impl QQMusicApi {
+impl QQMusicFetcher {
     pub fn new() -> Self {
         Self {
             api: BaseApi::new(Some("https://c.y.qq.com/"), None),
@@ -136,7 +136,7 @@ impl QQMusicApi {
     }
 }
 
-impl Default for QQMusicApi {
+impl Default for QQMusicFetcher {
     fn default() -> Self {
         Self::new()
     }

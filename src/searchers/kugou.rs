@@ -1,21 +1,21 @@
 use super::{ISearchResult, ISearcher};
 use crate::error::{LyrixResult, SearcherError};
-use crate::fetchers::kugou::KugouApi;
+use crate::fetchers::kugou::KugouFetcher;
 use async_trait::async_trait;
 pub struct KugouSearcher {
-    api: KugouApi,
+    api: KugouFetcher,
 }
 
 impl KugouSearcher {
     pub fn new() -> Self {
         Self {
-            api: KugouApi::new(),
+            api: KugouFetcher::new(),
         }
     }
 
     pub fn with_client(client: reqwest::Client) -> Self {
         Self {
-            api: KugouApi::with_client(client),
+            api: KugouFetcher::with_client(client),
         }
     }
 }

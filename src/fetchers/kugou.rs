@@ -3,11 +3,11 @@ use crate::error::fetcher::json::JsonError;
 use crate::error::LyrixResult;
 use serde::Deserialize;
 
-pub struct KugouApi {
+pub struct KugouFetcher {
     api: BaseApi,
 }
 
-impl KugouApi {
+impl KugouFetcher {
     pub fn new() -> Self {
         Self {
             api: BaseApi::new(None, None),
@@ -77,7 +77,7 @@ impl KugouApi {
     }
 }
 
-impl Default for KugouApi {
+impl Default for KugouFetcher {
     fn default() -> Self {
         Self::new()
     }

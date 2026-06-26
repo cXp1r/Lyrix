@@ -4,12 +4,12 @@ use crate::error::LyrixResult;
 use serde::Deserialize;
 use std::collections::HashMap;
 
-pub struct ApplemusicApi {
+pub struct AppleMusicFetcher {
     api: BaseApi,
     _token: String,
 }
 
-impl ApplemusicApi {
+impl AppleMusicFetcher {
     fn applemusic_headers(token: &str) -> HashMap<String, String> {
         let mut h = HashMap::new();
         h.insert("Authorization".to_string(), "Bearer eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IldlYlBsYXlLaWQifQ.eyJpc3MiOiJBTVBXZWJQbGF5IiwiaWF0IjoxNzc3MjQwMjk4LCJleHAiOjE3ODQ0OTc4OTgsInJvb3RfaHR0cHNfb3JpZ2luIjpbImFwcGxlLmNvbSJdfQ.VYQzXEvKE1lE7AUim5cnBwge3aOWDOi1Y5E0gf6cUQeF3qLOS8clnzOkmiHySfr0wgGcDKM49l4YQe-K5GiuZg".to_string());
@@ -66,7 +66,7 @@ impl ApplemusicApi {
     }
 }
 
-impl Default for ApplemusicApi {
+impl Default for AppleMusicFetcher {
     fn default() -> Self {
         Self::new(String::new())
     }

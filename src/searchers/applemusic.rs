@@ -1,23 +1,23 @@
 use super::{log_score_gain, log_score_total, log_score_warn, ISearchResult, ISearcher};
 use crate::error::{LyrixResult, SearcherError};
-use crate::fetchers::applemusic::ApplemusicApi;
+use crate::fetchers::applemusic::AppleMusicFetcher;
 use crate::models::ITrackMetadata;
 use async_trait::async_trait;
 
 pub struct ApplemusicSearcher {
-    api: ApplemusicApi,
+    api: AppleMusicFetcher,
 }
 
 impl ApplemusicSearcher {
     pub fn new(token: String) -> Self {
         Self {
-            api: ApplemusicApi::new(token),
+            api: AppleMusicFetcher::new(token),
         }
     }
 
     pub fn with_client(client: reqwest::Client, token: String) -> Self {
         Self {
-            api: ApplemusicApi::with_client(client, token),
+            api: AppleMusicFetcher::with_client(client, token),
         }
     }
 }

@@ -1,21 +1,21 @@
 use super::{ISearchResult, ISearcher};
 use crate::error::{LyrixResult, SearcherError};
-use crate::fetchers::soda_music::SodaMusicApi;
+use crate::fetchers::soda_music::SodaMusicFetcher;
 use async_trait::async_trait;
 pub struct SodaMusicSearcher {
-    api: SodaMusicApi,
+    api: SodaMusicFetcher,
 }
 
 impl SodaMusicSearcher {
     pub fn new() -> Self {
         Self {
-            api: SodaMusicApi::new(),
+            api: SodaMusicFetcher::new(),
         }
     }
 
     pub fn with_client(client: reqwest::Client) -> Self {
         Self {
-            api: SodaMusicApi::with_client(client),
+            api: SodaMusicFetcher::with_client(client),
         }
     }
 }

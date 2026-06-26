@@ -7,11 +7,11 @@ use crate::parsers::generate::spotify::build_totp;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-pub struct SpotifyApi {
+pub struct SpotifyFetcher {
     api: BaseApi,
 }
 
-impl SpotifyApi {
+impl SpotifyFetcher {
     pub async fn new(cookie: String) -> LyrixResult<Self> {
         init_spotify(&cookie, None).await
     }
@@ -67,7 +67,7 @@ impl SpotifyApi {
 async fn init_spotify(
     cookie: &str,
     async_client: Option<reqwest::Client>,
-) -> LyrixResult<SpotifyApi> {
+) -> LyrixResult<SpotifyFetcher> {
     let start = std::time::Instant::now();
     logger::debug("provider::spotify", "initializing client tokens");
 
@@ -180,7 +180,7 @@ async fn init_spotify(
         format_args!("client tokens initialized | elapsed={:?}", start.elapsed()),
     );
 
-    Ok(SpotifyApi { api })
+    Ok(SpotifyFetcher { api })
 }
 
 fn http_err(url: &str, e: &reqwest::Error) -> HttpError {

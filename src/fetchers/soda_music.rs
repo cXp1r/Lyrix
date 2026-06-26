@@ -19,11 +19,11 @@ mod string_or_int {
     }
 }
 
-pub struct SodaMusicApi {
+pub struct SodaMusicFetcher {
     api: BaseApi,
 }
 
-impl SodaMusicApi {
+impl SodaMusicFetcher {
     pub fn new() -> Self {
         Self {
             api: BaseApi::new(Some("https://api.qishui.com/"), None),
@@ -66,7 +66,7 @@ impl SodaMusicApi {
     }
 }
 
-impl Default for SodaMusicApi {
+impl Default for SodaMusicFetcher {
     fn default() -> Self {
         Self::new()
     }

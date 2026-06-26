@@ -141,7 +141,7 @@ logger::error("my-app", format!("请求失败: {}", err));
 
 ```rust
 use lyrix::providers::proxy;
-use lyrix::providers::netease::NeteaseApi;
+use lyrix::providers::netease::NeteaseFetcher;
 
 let client = proxy::create_proxy_client(
     "127.0.0.1",
@@ -149,7 +149,7 @@ let client = proxy::create_proxy_client(
     None,
     None,
 )?;
-let api = NeteaseApi::with_client(client);
+let api = NeteaseFetcher::with_client(client);
 ```
 
 ## 8. LyricsData 结构

@@ -11,7 +11,7 @@ pub(crate) struct KugouProvider {
 #[async_trait]
 impl LyrixProvider for KugouProvider {
     type Searcher = crate::searchers::kugou::KugouSearcher;
-    type Api = crate::fetchers::kugou::KugouApi;
+    type Api = crate::fetchers::kugou::KugouFetcher;
     type SearchResult = crate::searchers::kugou::KugouSearchResult;
 
     async fn create_searcher(&self) -> LyrixResult<Self::Searcher> {
@@ -20,7 +20,7 @@ impl LyrixProvider for KugouProvider {
         ))
     }
     async fn create_api(&self) -> LyrixResult<Self::Api> {
-        Ok(crate::fetchers::kugou::KugouApi::with_client(
+        Ok(crate::fetchers::kugou::KugouFetcher::with_client(
             self.client.clone(),
         ))
     }

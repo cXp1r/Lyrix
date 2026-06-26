@@ -11,14 +11,14 @@ pub(crate) struct SodaMusicProvider {
 #[async_trait]
 impl LyrixProvider for SodaMusicProvider {
     type Searcher = crate::searchers::soda_music::SodaMusicSearcher;
-    type Api = crate::fetchers::soda_music::SodaMusicApi;
+    type Api = crate::fetchers::soda_music::SodaMusicFetcher;
     type SearchResult = crate::searchers::soda_music::SodaMusicSearchResult;
 
     async fn create_searcher(&self) -> LyrixResult<Self::Searcher> {
         Ok(crate::searchers::soda_music::SodaMusicSearcher::with_client(self.client.clone()))
     }
     async fn create_api(&self) -> LyrixResult<Self::Api> {
-        Ok(crate::fetchers::soda_music::SodaMusicApi::with_client(
+        Ok(crate::fetchers::soda_music::SodaMusicFetcher::with_client(
             self.client.clone(),
         ))
     }

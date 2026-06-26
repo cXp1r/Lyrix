@@ -1,22 +1,22 @@
 use super::{ISearchResult, ISearcher};
 use crate::error::{LyrixResult, SearcherError};
-use crate::fetchers::spotify::SpotifyApi;
+use crate::fetchers::spotify::SpotifyFetcher;
 use async_trait::async_trait;
 
 pub struct SpotifySearcher {
-    api: SpotifyApi,
+    api: SpotifyFetcher,
 }
 
 impl SpotifySearcher {
     pub async fn new(cookie: String) -> LyrixResult<Self> {
         Ok(Self {
-            api: SpotifyApi::new(cookie).await?,
+            api: SpotifyFetcher::new(cookie).await?,
         })
     }
 
     pub async fn with_client(client: reqwest::Client, cookie: String) -> LyrixResult<Self> {
         Ok(Self {
-            api: SpotifyApi::with_client(client, cookie).await?,
+            api: SpotifyFetcher::with_client(client, cookie).await?,
         })
     }
 }

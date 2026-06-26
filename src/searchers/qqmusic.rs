@@ -1,22 +1,22 @@
 use super::{ISearchResult, ISearcher};
 use crate::error::{LyrixResult, SearcherError};
-use crate::fetchers::qqmusic::QQMusicApi;
+use crate::fetchers::qqmusic::QQMusicFetcher;
 use async_trait::async_trait;
 
 pub struct QQMusicSearcher {
-    api: QQMusicApi,
+    api: QQMusicFetcher,
 }
 
 impl QQMusicSearcher {
     pub fn new() -> Self {
         Self {
-            api: QQMusicApi::new(),
+            api: QQMusicFetcher::new(),
         }
     }
 
     pub fn with_client(client: reqwest::Client) -> Self {
         Self {
-            api: QQMusicApi::with_client(client),
+            api: QQMusicFetcher::with_client(client),
         }
     }
 }

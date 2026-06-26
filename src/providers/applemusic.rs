@@ -12,7 +12,7 @@ pub(crate) struct AppleMusicProvider {
 #[async_trait]
 impl LyrixProvider for AppleMusicProvider {
     type Searcher = crate::searchers::applemusic::ApplemusicSearcher;
-    type Api = crate::fetchers::applemusic::ApplemusicApi;
+    type Api = crate::fetchers::applemusic::AppleMusicFetcher;
     type SearchResult = crate::searchers::applemusic::ApplemusicSearchResult;
 
     async fn create_searcher(&self) -> LyrixResult<Self::Searcher> {
@@ -24,7 +24,7 @@ impl LyrixProvider for AppleMusicProvider {
         )
     }
     async fn create_api(&self) -> LyrixResult<Self::Api> {
-        Ok(crate::fetchers::applemusic::ApplemusicApi::with_client(
+        Ok(crate::fetchers::applemusic::AppleMusicFetcher::with_client(
             self.client.clone(),
             self.token.clone(),
         ))

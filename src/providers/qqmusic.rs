@@ -11,7 +11,7 @@ pub(crate) struct QQMusicProvider {
 #[async_trait]
 impl LyrixProvider for QQMusicProvider {
     type Searcher = crate::searchers::qqmusic::QQMusicSearcher;
-    type Api = crate::fetchers::qqmusic::QQMusicApi;
+    type Api = crate::fetchers::qqmusic::QQMusicFetcher;
     type SearchResult = crate::searchers::qqmusic::QQMusicSearchResult;
 
     async fn create_searcher(&self) -> LyrixResult<Self::Searcher> {
@@ -20,7 +20,7 @@ impl LyrixProvider for QQMusicProvider {
         ))
     }
     async fn create_api(&self) -> LyrixResult<Self::Api> {
-        Ok(crate::fetchers::qqmusic::QQMusicApi::with_client(
+        Ok(crate::fetchers::qqmusic::QQMusicFetcher::with_client(
             self.client.clone(),
         ))
     }

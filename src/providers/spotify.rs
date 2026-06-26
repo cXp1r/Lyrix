@@ -12,7 +12,7 @@ pub(crate) struct SpotifyProvider {
 #[async_trait]
 impl LyrixProvider for SpotifyProvider {
     type Searcher = crate::searchers::spotify::SpotifySearcher;
-    type Api = crate::fetchers::spotify::SpotifyApi;
+    type Api = crate::fetchers::spotify::SpotifyFetcher;
     type SearchResult = crate::searchers::spotify::SpotifySearchResult;
 
     async fn create_searcher(&self) -> LyrixResult<Self::Searcher> {
@@ -23,7 +23,7 @@ impl LyrixProvider for SpotifyProvider {
         .await?)
     }
     async fn create_api(&self) -> LyrixResult<Self::Api> {
-        Ok(crate::fetchers::spotify::SpotifyApi::with_client(
+        Ok(crate::fetchers::spotify::SpotifyFetcher::with_client(
             self.client.clone(),
             self.cookie.clone(),
         )

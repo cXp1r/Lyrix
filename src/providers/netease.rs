@@ -11,7 +11,7 @@ pub(crate) struct NeteaseProvider {
 #[async_trait]
 impl LyrixProvider for NeteaseProvider {
     type Searcher = crate::searchers::netease::NeteaseSearcher;
-    type Api = crate::fetchers::netease::NeteaseApi;
+    type Api = crate::fetchers::netease::NeteaseFetcher;
     type SearchResult = crate::searchers::netease::NeteaseSearchResult;
 
     async fn create_searcher(&self) -> LyrixResult<Self::Searcher> {
@@ -20,7 +20,7 @@ impl LyrixProvider for NeteaseProvider {
         ))
     }
     async fn create_api(&self) -> LyrixResult<Self::Api> {
-        Ok(crate::fetchers::netease::NeteaseApi::with_client(
+        Ok(crate::fetchers::netease::NeteaseFetcher::with_client(
             self.client.clone(),
         ))
     }

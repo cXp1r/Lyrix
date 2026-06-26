@@ -1,21 +1,21 @@
 use super::{ISearchResult, ISearcher};
 use crate::error::{LyrixResult, SearcherError};
-use crate::fetchers::netease::NeteaseApi;
+use crate::fetchers::netease::NeteaseFetcher;
 use async_trait::async_trait;
 pub struct NeteaseSearcher {
-    api: NeteaseApi,
+    api: NeteaseFetcher,
 }
 
 impl NeteaseSearcher {
     pub fn new() -> Self {
         Self {
-            api: NeteaseApi::new(),
+            api: NeteaseFetcher::new(),
         }
     }
 
     pub fn with_client(client: reqwest::Client) -> Self {
         Self {
-            api: NeteaseApi::with_client(client),
+            api: NeteaseFetcher::with_client(client),
         }
     }
 }
