@@ -1,8 +1,11 @@
-use crate::{fetchers::spotify::TrackData, models::LyricsData};
+use crate::models::{TrackMetadata, LyricsData};
 use crate::error::LyrixResult;
-pub(crate) trait LyricsReader {
+use async_trait::async_trait;
+#[async_trait]
+pub(crate) trait LyrixReader {
     fn label() -> &'static str;
-    async fn fetch_and_parse(
-        track: &TrackData
+
+    async fn read_and_parse<'a>(
+        track: &'a TrackMetadata
     ) -> LyrixResult<LyricsData>;
 }
