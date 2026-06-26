@@ -1,5 +1,5 @@
 use crate::error::{GeneralError, LyrixResult};
-use crate::providers::{LyrixProvider, RawLyricsContent, RawLyricsFormat};
+use crate::providers::LyrixProvider;
 use async_trait::async_trait;
 use reqwest::Client;
 
@@ -29,13 +29,10 @@ impl LyrixProvider for QQMusicProvider {
         "QQ音乐"
     }
 
-    async fn fetch(api: &Self::Api, best: &Self::SearchResult) -> LyrixResult<RawLyricsContent> {
+    async fn fetch(api: &Self::Api, best: &Self::SearchResult) -> LyrixResult<String> {
         if let Ok(qrc) = api.get_lyrics_qrc(&best.id.to_string()).await {
             if !qrc.is_empty() {
-                return Ok(RawLyricsContent {
-                    content: qrc,
-                    format: RawLyricsFormat::QQMusicQrc,
-                });
+                return Ok(qrc);
             }
         }
 
@@ -47,10 +44,7 @@ impl LyrixProvider for QQMusicProvider {
                 })?;
         if let Some(lrc) = lyric_result.lyric {
             if !lrc.is_empty() {
-                return Ok(RawLyricsContent {
-                    content: lrc,
-                    format: RawLyricsFormat::QQMusicLrc,
-                });
+                return Ok(lrc);
             }
         }
 

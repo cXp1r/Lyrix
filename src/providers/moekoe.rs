@@ -1,5 +1,4 @@
 use crate::error::{GeneralError, LyrixResult};
-use crate::providers::{RawLyricsContent, RawLyricsFormat};
 use crate::ws_client::WsClient;
 use futures_util::StreamExt;
 use serde::Deserialize;
@@ -23,7 +22,7 @@ struct LyricsPayload {
     lyrics_data: Option<String>,
 }
 
-pub(crate) async fn fetch_lyrics(ws_client: &WsClient) -> LyrixResult<RawLyricsContent> {
+pub(crate) async fn fetch_lyrics(ws_client: &WsClient) -> LyrixResult<String> {
     let mut stream = ws_client.connect(MOEKOE_WS_URL).await?;
     let deadline = Instant::now() + RECEIVE_TIMEOUT;
 
@@ -48,10 +47,7 @@ pub(crate) async fn fetch_lyrics(ws_client: &WsClient) -> LyrixResult<RawLyricsC
         })?;
 
         if let Some(content) = extract_lyrics(&message)? {
-            return Ok(RawLyricsContent {
-                content,
-                format: RawLyricsFormat::KugouKrc {},
-            });
+            return Ok(content);
         }
     }
 }

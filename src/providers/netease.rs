@@ -1,5 +1,5 @@
 use crate::error::{GeneralError, LyrixResult};
-use crate::providers::{LyrixProvider, RawLyricsContent, RawLyricsFormat};
+use crate::providers::LyrixProvider;
 use async_trait::async_trait;
 use reqwest::Client;
 
@@ -29,14 +29,11 @@ impl LyrixProvider for NeteaseProvider {
         "网易云"
     }
 
-    async fn fetch(api: &Self::Api, best: &Self::SearchResult) -> LyrixResult<RawLyricsContent> {
+    async fn fetch(api: &Self::Api, best: &Self::SearchResult) -> LyrixResult<String> {
         let lyric_result = api.get_lyric(&best.id).await?;
         if let Some(yrc) = lyric_result.yrc.and_then(|y| y.lyric) {
             if !yrc.is_empty() {
-                return Ok(RawLyricsContent {
-                    content: yrc,
-                    format: RawLyricsFormat::NeteaseYrc,
-                });
+                return Ok(yrc);
             }
         }
 
@@ -47,11 +44,6 @@ impl LyrixProvider for NeteaseProvider {
             field: "网易云: LRC也没有哟".to_string(),
         })?;
 
-        Ok(RawLyricsContent {
-            content,
-            format: RawLyricsFormat::NeteaseLrc {
-                version: lrc.version.unwrap_or(3) as u8,
-            },
-        })
+        Ok(content)
     }
 }

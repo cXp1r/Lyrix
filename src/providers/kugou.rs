@@ -1,5 +1,5 @@
 use crate::error::{GeneralError, LyrixResult, SearcherError};
-use crate::providers::{LyrixProvider, RawLyricsContent, RawLyricsFormat};
+use crate::providers::LyrixProvider;
 use async_trait::async_trait;
 use reqwest::Client;
 
@@ -29,7 +29,7 @@ impl LyrixProvider for KugouProvider {
         "酷狗"
     }
 
-    async fn fetch(api: &Self::Api, best: &Self::SearchResult) -> LyrixResult<RawLyricsContent> {
+    async fn fetch(api: &Self::Api, best: &Self::SearchResult) -> LyrixResult<String> {
         let keyword = format!("{} {}", best.title, best.artists.join(", "));
         let lyrics_resp = api
             .get_search_lyrics(Some(&keyword), Some(&best.hash))
@@ -75,9 +75,6 @@ impl LyrixProvider for KugouProvider {
             .into());
         }
 
-        Ok(RawLyricsContent {
-            content,
-            format: RawLyricsFormat::KugouKrc,
-        })
+        Ok(content)
     }
 }

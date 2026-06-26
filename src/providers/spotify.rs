@@ -1,5 +1,5 @@
 use crate::error::{GeneralError, LyrixResult};
-use crate::providers::{LyrixProvider, RawLyricsContent, RawLyricsFormat};
+use crate::providers::LyrixProvider;
 use async_trait::async_trait;
 use reqwest::Client;
 
@@ -34,7 +34,7 @@ impl LyrixProvider for SpotifyProvider {
         "Spotify"
     }
 
-    async fn fetch(api: &Self::Api, best: &Self::SearchResult) -> LyrixResult<RawLyricsContent> {
+    async fn fetch(api: &Self::Api, best: &Self::SearchResult) -> LyrixResult<String> {
         let content = api.get_lyrics(&best.id).await?;
         if content.is_empty() {
             return Err(GeneralError::MissingField {
@@ -43,9 +43,6 @@ impl LyrixProvider for SpotifyProvider {
             .into());
         }
 
-        Ok(RawLyricsContent {
-            content,
-            format: RawLyricsFormat::SpotifyJson,
-        })
+        Ok(content)
     }
 }

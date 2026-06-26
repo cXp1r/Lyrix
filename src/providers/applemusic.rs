@@ -1,5 +1,5 @@
 use crate::error::{GeneralError, LyrixResult};
-use crate::providers::{LyrixProvider, RawLyricsContent, RawLyricsFormat};
+use crate::providers::LyrixProvider;
 use async_trait::async_trait;
 use reqwest::Client;
 
@@ -34,7 +34,7 @@ impl LyrixProvider for AppleMusicProvider {
         "applemusic"
     }
 
-    async fn fetch(api: &Self::Api, best: &Self::SearchResult) -> LyrixResult<RawLyricsContent> {
+    async fn fetch(api: &Self::Api, best: &Self::SearchResult) -> LyrixResult<String> {
         let detail = api
             .get_lyric(&best.id)
             .await?
@@ -69,9 +69,6 @@ impl LyrixProvider for AppleMusicProvider {
             .into());
         }
 
-        Ok(RawLyricsContent {
-            content,
-            format: RawLyricsFormat::AppleMusicTtml,
-        })
+        Ok(content)
     }
 }
