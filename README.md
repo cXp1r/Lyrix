@@ -1,7 +1,7 @@
 ﻿# Lyrix
 
 ![Rust](https://img.shields.io/badge/Rust-1.70+-red)
-![Version](https://img.shields.io/badge/version-26.9.0-green)
+![Version](https://img.shields.io/badge/version-26.10.0-green)
 
 ## 优点
 
@@ -38,7 +38,7 @@ cargo add lyrix
 在 `Cargo.toml` 中添加：
 ```toml
 [dependencies]
-lyrix = { version = "26.9.0" }
+lyrix = { version = "26.10.0" }
 tokio = { version = "1", features = ["full"] }
 ```
 
