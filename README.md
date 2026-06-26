@@ -52,6 +52,7 @@ tokio = { version = "1", features = ["full"] }
 | 汽水音乐 | `MusicPlayer::SodaMusic` | `汽水音乐` | 汽水音乐 API |
 | Spotify | `MusicPlayer::Spotify` | `Spotify.exe` | Spotify API（需 `spotify_cookie`） |
 | AppleMusic | `MusicPlayer::AppleMusic` | `AppleInc.AppleMusicWin_nzyj5cx40ttqa!App` | AppleMusic API（需 `applemusic_token`） |
+| MoeKoe Music | `MusicPlayer::MoeKoe` | `cn.MoeKoe.Music` | MoeKoe WebSocket（连接 `ws://127.0.0.1:6520`） |
 | 落雪音乐 | `MusicPlayer::LXMusic` | `cn.toside.music.desktop` | 开发中 |
 | Any Listen | `MusicPlayer::AnyListen` | `cn.toside.anylisten.desktop` | 开发中 |
 
