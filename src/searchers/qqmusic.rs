@@ -1,6 +1,7 @@
 use super::{ISearchResult, ISearcher};
 use crate::error::{LyrixResult, SearcherError};
 use crate::fetchers::qqmusic::QQMusicFetcher;
+use crate::logger;
 use async_trait::async_trait;
 
 pub struct QQMusicSearcher {
@@ -19,20 +20,9 @@ impl QQMusicSearcher {
             api: QQMusicFetcher::with_client(client),
         }
     }
-}
 
-impl Default for QQMusicSearcher {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-#[async_trait]
-impl ISearcher for QQMusicSearcher {
-    async fn search_for_results_by_string(
-        &self,
-        search_string: &str,
-    ) -> LyrixResult<Vec<Box<dyn ISearchResult>>> {
+    
+    async fn search(&self, search_string: &str) -> LyrixResult<Vec<Box<dyn ISearchResult>>>{
         let result = self.api.search(search_string).await?;
         let mut results: Vec<Box<dyn ISearchResult>> = Vec::new();
 
@@ -98,7 +88,6 @@ impl ISearcher for QQMusicSearcher {
                 is_trial: false,
             }));
         }
-
         if results.is_empty() {
             return Err(SearcherError::NoResults {
                 label: self.label().to_string(),
@@ -107,6 +96,90 @@ impl ISearcher for QQMusicSearcher {
             .into());
         }
         Ok(results)
+    }
+
+    async fn search2(&self, search_string: &str) -> LyrixResult<Vec<Box<dyn ISearchResult>>>{
+        let result = self.api.search2(search_string).await?;
+        let mut results: Vec<Box<dyn ISearchResult>> = Vec::new();
+
+        let resp = result.ok_or_else(|| SearcherError::NoResults {
+            label: self.label().to_string(),
+            query: search_string.to_string(),
+        })?;
+        let data = resp.data.ok_or_else(|| SearcherError::NoResults {
+            label: self.label().to_string(),
+            query: search_string.to_string(),
+        })?;
+        let song = data.song.ok_or_else(|| SearcherError::NoResults {
+            label: self.label().to_string(),
+            query: search_string.to_string(),
+        })?;
+        let list = song.list.ok_or_else(|| SearcherError::NoResults {
+            label: self.label().to_string(),
+            query: search_string.to_string(),
+        })?;
+        for song in list {
+            let title = song.songname.unwrap_or_default();
+            let artists: Vec<String> = song
+                .singer
+                .unwrap_or_default()
+                .iter()
+                .filter_map(|s| s.name.clone())
+                .collect();
+            let album = song
+                .albumname
+                .unwrap_or_default();
+            let duration = song.interval.map(|i| (i * 1000) as u32);
+            let mid = song.songmid.unwrap_or_default();
+            let id = song.songid.unwrap_or_default();
+            results.push(Box::new(QQMusicSearchResult {
+                id,
+                mid,
+                title,
+                artists,
+                album,
+                duration_ms: duration,
+                match_score: 0,
+                trial: None,
+                is_trial: false,
+            }));
+        }
+        if results.is_empty() {
+            return Err(SearcherError::NoResults {
+                label: self.label().to_string(),
+                query: search_string.to_string(),
+            }
+            .into());
+        }
+        Ok(results)
+    }
+}
+
+impl Default for QQMusicSearcher {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[async_trait]
+impl ISearcher for QQMusicSearcher {
+    async fn search_for_results_by_string(
+        &self,
+        search_string: &str,
+    ) -> LyrixResult<Vec<Box<dyn ISearchResult>>> {
+        let results = self.search(search_string).await;
+
+        if results.is_err() {
+            let _ = results.map_err(|e| {
+                logger::error("QQMusic", e.to_string());
+                e
+            });
+
+            Ok(self.search2(search_string).await?)
+        } else {
+            results
+        }
+        
     }
 
     fn label(&self) -> &'static str {

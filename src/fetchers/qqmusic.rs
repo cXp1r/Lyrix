@@ -66,6 +66,7 @@ impl QQMusicFetcher {
                 api: "QQMusicSearch".to_string(),
                 source: e,
             })?;
+            
         Ok(result)
     }
 
@@ -271,19 +272,25 @@ pub struct QqLyricsResponse1 {
 }
 #[derive(Debug, Deserialize, Default)]
 pub struct MusicFcgApiResult2 {
-    pub code: u32,
-    pub data: QQMData2,
+    pub code: Option<u32>,
+    pub data: Option<QQMData2>,
 }
 #[derive(Debug, Deserialize, Default)]
 pub struct QQMData2 {
-    pub song: Vec<QQMSong2>
+    pub song: Option<QQMSong2>
 }
 #[derive(Debug, Deserialize, Default)]
 pub struct QQMSong2 {
-    pub songname: String,
-    pub albumname: String,
-    pub songid: String,
-    pub singer: Vec<Singer2>
+    pub list: Option<Vec<QQMList2>>
+}
+#[derive(Debug, Deserialize, Default)]
+pub struct QQMList2 {
+    pub songname: Option<String>,
+    pub albumname: Option<String>,
+    pub songid: Option<u32>,
+    pub songmid: Option<String>,
+    pub singer: Option<Vec<Singer2>>,
+    pub interval: Option<u32>,
 }
 #[derive(Debug, Deserialize, Default)]
 pub struct Singer2 {
