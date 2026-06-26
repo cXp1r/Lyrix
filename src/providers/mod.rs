@@ -1,5 +1,6 @@
 mod applemusic;
 mod kugou;
+mod moekoe;
 mod netease;
 mod qqmusic;
 mod soda_music;
@@ -146,19 +147,6 @@ pub(crate) fn parse_lyrics_for_player(
         track_metadata: raw.track_metadata,
     })
 }
-
-async fn fetch_third_party_raw_lyrics(
-    player: &MusicPlayer,
-    _track: &dyn ITrackMetadata,
-    _session: &Session,
-    _ws_client: &WsClient,
-) -> LyrixResult<RawLyrics> {
-    Err(GeneralError::UnsupportedPlayer {
-        name: format!("{} third-party fetch placeholder", player.display_name()),
-    }
-    .into())
-}
-
 pub(crate) async fn fetch_raw_lyrics_from_player(
     player: &MusicPlayer,
     track: &dyn ITrackMetadata,
@@ -239,8 +227,16 @@ pub(crate) async fn fetch_raw_lyrics_from_player(
             )
             .await
         }
+        MusicPlayer::MoeKoe => {
+            let raw = moekoe::fetch_lyrics(ws_client).await?;
+            Ok(RawLyrics {
+                content: raw.content,
+                format: raw.format,
+                track_metadata: None,
+            })
+        },
         MusicPlayer::LXMusic | MusicPlayer::AnyListen => {
-            fetch_third_party_raw_lyrics(player, track, session, ws_client).await
+            Err(GeneralError::UnsupportedPlayer { name: player.display_name().to_string() }.into())
         }
     }
 }
