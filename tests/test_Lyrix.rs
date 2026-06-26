@@ -46,7 +46,11 @@ fn choose_trial_key() -> &'static str {
         .default(0)
         .interact()
         .unwrap();
-    if trial_sel == 0 { "ntrial" } else { "trial" }
+    if trial_sel == 0 {
+        "ntrial"
+    } else {
+        "trial"
+    }
 }
 
 fn choose_track(
@@ -57,7 +61,8 @@ fn choose_track(
     let mut track_keys: Vec<String> = Vec::new();
     let mut track_labels: Vec<String> = Vec::new();
 
-    if let (Some(db), Some(player_key), Some(trial_key)) = (track_db.as_ref(), player_key, trial_key)
+    if let (Some(db), Some(player_key), Some(trial_key)) =
+        (track_db.as_ref(), player_key, trial_key)
     {
         if let Some(tracks) = db.get(player_key).and_then(|p| p.get(trial_key)) {
             if let Some(obj) = tracks.as_object() {

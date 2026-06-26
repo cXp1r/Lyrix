@@ -103,9 +103,7 @@ fn lyrix_error_debug() {
 
 #[test]
 fn parser_error_display() {
-    let e = ParserError::Parse(
-        lyrix::error::parser::parse::ParseError::UnknownSyncType,
-    );
+    let e = ParserError::Parse(lyrix::error::parser::parse::ParseError::UnknownSyncType);
     assert!(e.to_string().contains("unknown lyrics sync type"));
 }
 

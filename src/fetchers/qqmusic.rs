@@ -22,7 +22,11 @@ impl QQMusicFetcher {
     }
 
     /// 搜索歌曲
-    pub async fn search_by_page(&self, keyword: &str, page: &str) -> LyrixResult<Option<MusicFcgApiResult1>> {
+    pub async fn search_by_page(
+        &self,
+        keyword: &str,
+        page: &str,
+    ) -> LyrixResult<Option<MusicFcgApiResult1>> {
         let data = serde_json::json!({
             "req_1": {
                 "method": "DoSearchForQQMusicDesktop",
@@ -51,7 +55,7 @@ impl QQMusicFetcher {
     pub async fn search(&self, keyword: &str) -> LyrixResult<Option<MusicFcgApiResult1>> {
         Ok(match self.search_by_page(keyword, "1").await? {
             Some(r) => Some(r),
-            None => self.search_by_page(keyword, "2").await?
+            None => self.search_by_page(keyword, "2").await?,
         })
     }
 
@@ -66,7 +70,7 @@ impl QQMusicFetcher {
                 api: "QQMusicSearch".to_string(),
                 source: e,
             })?;
-            
+
         Ok(result)
     }
 
@@ -277,11 +281,11 @@ pub struct MusicFcgApiResult2 {
 }
 #[derive(Debug, Deserialize, Default)]
 pub struct QQMData2 {
-    pub song: Option<QQMSong2>
+    pub song: Option<QQMSong2>,
 }
 #[derive(Debug, Deserialize, Default)]
 pub struct QQMSong2 {
-    pub list: Option<Vec<QQMList2>>
+    pub list: Option<Vec<QQMList2>>,
 }
 #[derive(Debug, Deserialize, Default)]
 pub struct QQMList2 {

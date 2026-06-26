@@ -27,11 +27,11 @@ pub(crate) async fn fetch_lyrics(ws_client: &WsClient) -> LyrixResult<String> {
     let deadline = Instant::now() + RECEIVE_TIMEOUT;
 
     loop {
-        let remaining = deadline.checked_duration_since(Instant::now()).ok_or_else(|| {
-            GeneralError::Internal {
+        let remaining = deadline
+            .checked_duration_since(Instant::now())
+            .ok_or_else(|| GeneralError::Internal {
                 detail: "MoeKoe lyric receive timeout".to_string(),
-            }
-        })?;
+            })?;
 
         let message = timeout(remaining, stream.next())
             .await
@@ -83,9 +83,11 @@ fn extract_lyrics(message: &Message) -> LyrixResult<Option<String>> {
             detail: format!("MoeKoe lyrics payload parse failed: {e}"),
         })?;
 
-    let content = payload.lyrics_data.ok_or_else(|| GeneralError::MissingField {
-        field: "MoeKoe lyricsData".to_string(),
-    })?;
+    let content = payload
+        .lyrics_data
+        .ok_or_else(|| GeneralError::MissingField {
+            field: "MoeKoe lyricsData".to_string(),
+        })?;
 
     if content.is_empty() {
         return Err(GeneralError::MissingField {

@@ -21,8 +21,7 @@ impl QQMusicSearcher {
         }
     }
 
-    
-    async fn search(&self, search_string: &str) -> LyrixResult<Vec<Box<dyn ISearchResult>>>{
+    async fn search(&self, search_string: &str) -> LyrixResult<Vec<Box<dyn ISearchResult>>> {
         let result = self.api.search(search_string).await?;
         let mut results: Vec<Box<dyn ISearchResult>> = Vec::new();
 
@@ -98,7 +97,7 @@ impl QQMusicSearcher {
         Ok(results)
     }
 
-    async fn search2(&self, search_string: &str) -> LyrixResult<Vec<Box<dyn ISearchResult>>>{
+    async fn search2(&self, search_string: &str) -> LyrixResult<Vec<Box<dyn ISearchResult>>> {
         let result = self.api.search2(search_string).await?;
         let mut results: Vec<Box<dyn ISearchResult>> = Vec::new();
 
@@ -126,9 +125,7 @@ impl QQMusicSearcher {
                 .iter()
                 .filter_map(|s| s.name.clone())
                 .collect();
-            let album = song
-                .albumname
-                .unwrap_or_default();
+            let album = song.albumname.unwrap_or_default();
             let duration = song.interval.map(|i| (i * 1000) as u32);
             let mid = song.songmid.unwrap_or_default();
             let id = song.songid.unwrap_or_default();
@@ -179,7 +176,6 @@ impl ISearcher for QQMusicSearcher {
         } else {
             results
         }
-        
     }
 
     fn label(&self) -> &'static str {

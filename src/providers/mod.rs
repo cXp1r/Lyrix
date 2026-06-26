@@ -49,13 +49,14 @@ async fn fetch_raw_lyrics<P: LyrixProvider>(
     let label = P::label();
 
     let searcher = provider.create_searcher().await?;
-    let result = searcher
-        .search_for_result(track)
-        .await?
-        .ok_or_else(|| SearcherError::NoMatch {
-            label: label.to_string(),
-            title: track.title().unwrap_or_default().to_string(),
-        })?;
+    let result =
+        searcher
+            .search_for_result(track)
+            .await?
+            .ok_or_else(|| SearcherError::NoMatch {
+                label: label.to_string(),
+                title: track.title().unwrap_or_default().to_string(),
+            })?;
 
     let best = result
         .as_any()
@@ -93,7 +94,9 @@ pub(crate) fn parse_lyrics_for_player(
         MusicPlayer::Kugou => crate::parsers::kugou::KugouParser {}.decrypt_and_parse(content)?,
         MusicPlayer::SodaMusic => crate::parsers::soda_music::SodaParser {}.parse(content)?,
         MusicPlayer::Spotify => crate::parsers::spotify::SpotifyParser {}.parse(content)?,
-        MusicPlayer::AppleMusic => crate::parsers::applemusic::AppleMusicParser {}.parse(content)?,
+        MusicPlayer::AppleMusic => {
+            crate::parsers::applemusic::AppleMusicParser {}.parse(content)?
+        }
         MusicPlayer::MoeKoe => crate::parsers::kugou::KugouParser {}.parse(content)?,
         MusicPlayer::LXMusic | MusicPlayer::AnyListen => {
             return Err(GeneralError::UnsupportedPlayer {
@@ -128,7 +131,8 @@ fn parse_netease_lyrics(content: String) -> LyrixResult<Vec<LineInfo>> {
 }
 
 fn parse_qqmusic_lyrics(content: String) -> LyrixResult<Vec<LineInfo>> {
-    if let Ok(lines) = (crate::parsers::qqmusic::QQMusicParser {}).decrypt_and_parse(content.clone())
+    if let Ok(lines) =
+        (crate::parsers::qqmusic::QQMusicParser {}).decrypt_and_parse(content.clone())
     {
         if !lines.is_empty() {
             return Ok(lines);

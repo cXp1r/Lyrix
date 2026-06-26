@@ -1,7 +1,7 @@
+use lyrix::models::TrackMetadata;
 use lyrix::readers::qqmusic::{
     find_qqmusic_qrc_path_by_metadata_in_dir, is_qqmusic_qrc_filename, parse_qqmusic_qrc_filename,
 };
-use lyrix::models::TrackMetadata;
 use std::fs;
 use std::path::PathBuf;
 

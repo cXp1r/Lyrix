@@ -52,9 +52,7 @@ fn spotify_parse_null_lines_is_empty_content() {
     let err = parser.parse_without_st(json.into()).unwrap_err();
     assert!(matches!(
         err,
-        LyrixError::Parser(lyrix::error::ParserError::Parse(
-            ParseError::EmptyContent
-        ))
+        LyrixError::Parser(lyrix::error::ParserError::Parse(ParseError::EmptyContent))
     ));
 }
 
@@ -66,9 +64,7 @@ fn spotify_parse_missing_lines_field() {
     // serde 把 missing Option field 当 None → EmptyContent
     assert!(matches!(
         err,
-        LyrixError::Parser(lyrix::error::ParserError::Parse(
-            ParseError::EmptyContent
-        ))
+        LyrixError::Parser(lyrix::error::ParserError::Parse(ParseError::EmptyContent))
     ));
 }
 
