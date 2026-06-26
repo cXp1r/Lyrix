@@ -22,7 +22,7 @@ impl QQMusicApi {
     }
 
     /// 搜索歌曲
-    pub async fn search(&self, keyword: &str) -> LyrixResult<Option<MusicFcgApiResult>> {
+    pub async fn search(&self, keyword: &str) -> LyrixResult<Option<MusicFcgApiResult1>> {
         let data = serde_json::json!({
             "req_1": {
                 "method": "DoSearchForQQMusicDesktop",
@@ -40,7 +40,7 @@ impl QQMusicApi {
             .api
             .post_json_async("https://u.y.qq.com/cgi-bin/musicu.fcg", &data)
             .await?;
-        let result: Option<MusicFcgApiResult> =
+        let result: Option<MusicFcgApiResult1> =
             serde_json::from_str(&resp).map_err(|e| JsonError {
                 api: "QQMusicSearch".to_string(),
                 source: e,
@@ -49,7 +49,7 @@ impl QQMusicApi {
     }
 
     /// 获取歌词
-    pub async fn get_lyric(&self, song_mid: &str) -> LyrixResult<Option<LyricResult>> {
+    pub async fn get_lyric(&self, song_mid: &str) -> LyrixResult<Option<LyricResult1>> {
         let current_millis = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()
@@ -84,7 +84,7 @@ impl QQMusicApi {
             return Ok(None);
         }
 
-        let mut result: LyricResult = serde_json::from_str(&json_str).map_err(|e| JsonError {
+        let mut result: LyricResult1 = serde_json::from_str(&json_str).map_err(|e| JsonError {
             api: "QQMusicLyric".to_string(),
             source: e,
         })?;
@@ -157,53 +157,53 @@ fn resolve_resp_json(callback_sign: &str, val: &str) -> String {
 // ===== Response Models =====
 
 #[derive(Debug, Deserialize, Default)]
-pub struct MusicFcgApiResult {
+pub struct MusicFcgApiResult1 {
     pub code: Option<i64>,
-    pub req_1: Option<MusicFcgReq1>,
+    pub req_1: Option<MusicFcgReq11>,
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct MusicFcgReq1 {
+pub struct MusicFcgReq11 {
     pub code: Option<i64>,
-    pub data: Option<MusicFcgReq1Data>,
+    pub data: Option<MusicFcgReq1Data1>,
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct MusicFcgReq1Data {
-    pub body: Option<MusicFcgReq1DataBody>,
+pub struct MusicFcgReq1Data1 {
+    pub body: Option<MusicFcgReq1DataBody1>,
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct MusicFcgReq1DataBody {
-    pub song: Option<SongList>,
+pub struct MusicFcgReq1DataBody1 {
+    pub song: Option<SongList1>,
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct SongList {
-    pub list: Option<Vec<Song>>,
+pub struct SongList1 {
+    pub list: Option<Vec<Song1>>,
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct Song {
-    pub album: Option<Album>,
+pub struct Song1 {
+    pub album: Option<Album1>,
     pub id: Option<u32>,
     pub interval: Option<i32>,
     pub mid: Option<String>,
     pub name: Option<String>,
     pub title: Option<String>,
     pub subtitle: Option<String>,
-    pub singer: Option<Vec<Singer>>,
+    pub singer: Option<Vec<Singer1>>,
     pub time_public: Option<String>,
-    pub file: Option<Preview>,
+    pub file: Option<Preview1>,
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct Preview {
+pub struct Preview1 {
     pub b_30s: Option<u32>, //试听开始ms
     pub e_30s: Option<u32>,
 }
 #[derive(Debug, Deserialize, Default)]
-pub struct Singer {
+pub struct Singer1 {
     pub id: Option<i64>,
     pub mid: Option<String>,
     pub name: Option<String>,
@@ -211,7 +211,7 @@ pub struct Singer {
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct Album {
+pub struct Album1 {
     pub id: Option<i32>,
     pub mid: Option<String>,
     pub name: Option<String>,
@@ -219,14 +219,14 @@ pub struct Album {
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct LyricResult {
+pub struct LyricResult1 {
     pub code: Option<i64>,
     #[serde(rename = "lyric")]
     pub lyric: Option<String>,
     pub trans: Option<String>,
 }
 
-impl LyricResult {
+impl LyricResult1 {
     pub fn decode(&mut self) {
         use base64::engine::general_purpose::STANDARD;
         use base64::Engine;
@@ -244,7 +244,7 @@ impl LyricResult {
 }
 
 #[derive(Debug, Default)]
-pub struct QqLyricsResponse {
+pub struct QqLyricsResponse1 {
     pub lyrics: String,
     pub trans: String,
 }

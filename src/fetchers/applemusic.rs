@@ -34,21 +34,21 @@ impl ApplemusicApi {
         }
     }
 
-    pub async fn search(&self, keyword: &str) -> LyrixResult<Option<SearchResult>> {
+    pub async fn search(&self, keyword: &str) -> LyrixResult<Option<SearchResult1>> {
         let encoded = urlencoding::encode(keyword);
         let url = format!(
             "https://amp-api-edge.music.apple.com/v1/catalog/cn/search?term={}&types=songs&limit=20",
             encoded
         );
         let resp = self.api.get_async(&url).await?;
-        let result: Option<SearchResult> = serde_json::from_str(&resp).map_err(|e| JsonError {
+        let result: Option<SearchResult1> = serde_json::from_str(&resp).map_err(|e| JsonError {
             api: "AppleMusicSearch".to_string(),
             source: e,
         })?;
         Ok(result)
     }
 
-    pub async fn get_lyric(&self, id: &str) -> LyrixResult<Option<LyricResult>> {
+    pub async fn get_lyric(&self, id: &str) -> LyrixResult<Option<LyricResult1>> {
         let url = format!(
             "https://amp-api.music.apple.com/v1/catalog/cn/songs/{}/syllable-lyrics?{}={}&{}={}&extend=ttmlLocalizations",
             id,
@@ -58,7 +58,7 @@ impl ApplemusicApi {
             urlencoding::encode("zh-Hans"),
         );
         let resp = self.api.get_async(&url).await?;
-        let result: Option<LyricResult> = serde_json::from_str(&resp).map_err(|e| JsonError {
+        let result: Option<LyricResult1> = serde_json::from_str(&resp).map_err(|e| JsonError {
             api: "AppleMusicLyric".to_string(),
             source: e,
         })?;
@@ -75,32 +75,32 @@ impl Default for ApplemusicApi {
 // ===== Response Models =====
 
 #[derive(Debug, Deserialize, Default)]
-pub struct SearchResult {
-    pub results: Option<Results>,
+pub struct SearchResult1 {
+    pub results: Option<Results1>,
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct Results {
-    pub songs: Option<Songs>,
+pub struct Results1 {
+    pub songs: Option<Songs1>,
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct Songs {
-    pub data: Option<Vec<Song>>,
+pub struct Songs1 {
+    pub data: Option<Vec<Song1>>,
 }
 
 #[derive(Debug, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
-pub struct Song {
+pub struct Song1 {
     pub id: Option<String>,
     #[serde(rename = "type")]
     pub song_type: Option<String>,
-    pub attributes: Option<SongAttributes>,
+    pub attributes: Option<SongAttributes1>,
 }
 
 #[derive(Debug, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
-pub struct SongAttributes {
+pub struct SongAttributes1 {
     pub name: Option<String>,
     pub artist_name: Option<String>,
     pub album_name: Option<String>,
@@ -111,18 +111,18 @@ pub struct SongAttributes {
 
 #[derive(Debug, Deserialize, Default)]
 
-pub struct LyricResult {
-    pub data: Option<Vec<Data>>,
+pub struct LyricResult1 {
+    pub data: Option<Vec<Data1>>,
 }
 #[derive(Debug, Deserialize, Default)]
-pub struct Data {
+pub struct Data1 {
     #[serde(rename = "type")]
     pub lyrics_type: Option<String>,
-    pub attributes: Option<LyricAttributes>,
+    pub attributes: Option<LyricAttributes1>,
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct LyricAttributes {
+pub struct LyricAttributes1 {
     #[serde(rename = "ttmlLocalizations")]
     pub ttml_localizations: Option<String>,
 }

@@ -37,13 +37,13 @@ impl SodaMusicApi {
     }
 
     /// 搜索歌曲
-    pub async fn search(&self, keyword: &str) -> LyrixResult<Option<SearchResult>> {
+    pub async fn search(&self, keyword: &str) -> LyrixResult<Option<SearchResult1>> {
         let url = format!(
             "https://api.qishui.com/luna/pc/search/track?aid=386088&app_name=&region=&geo_region=&os_region=&sim_region=&device_id=&cdid=&iid=&version_name=&version_code=&channel=&build_mode=&network_carrier=&ac=&tz_name=&resolution=&device_platform=&device_type=&os_version=&fp=&q={}&cursor=&search_id=&search_method=input&debug_params=&from_search_id=&search_scene=",
             urlencoding::encode(keyword)
         );
         let resp = self.api.get_async(&url).await?;
-        let result: Option<SearchResult> = serde_json::from_str(&resp).map_err(|e| JsonError {
+        let result: Option<SearchResult1> = serde_json::from_str(&resp).map_err(|e| JsonError {
             api: "SodaMusicSearch".to_string(),
             source: e,
         })?;
@@ -51,13 +51,13 @@ impl SodaMusicApi {
     }
 
     /// 获取曲目详情 (含歌词)
-    pub async fn get_detail(&self, id: &str) -> LyrixResult<Option<TrackDetailResult>> {
+    pub async fn get_detail(&self, id: &str) -> LyrixResult<Option<TrackDetailResult1>> {
         let url = format!(
             "https://api.qishui.com/luna/pc/track_v2?track_id={}&media_type=track&queue_type=&aid=386088&iid=114514",
             urlencoding::encode(id)
         );
         let resp = self.api.get_async(&url).await?;
-        let result: Option<TrackDetailResult> =
+        let result: Option<TrackDetailResult1> =
             serde_json::from_str(&resp).map_err(|e| JsonError {
                 api: "SodaMusicDetail".to_string(),
                 source: e,
@@ -74,15 +74,15 @@ impl Default for SodaMusicApi {
 // ===== Response Models =====
 
 #[derive(Debug, Deserialize, Default)]
-pub struct SearchResult {
+pub struct SearchResult1 {
     #[serde(rename = "status_info")]
-    pub status_info: Option<StatusInfo>,
+    pub status_info: Option<StatusInfo1>,
     #[serde(rename = "result_groups")]
-    pub result_groups: Option<Vec<ResultGroup>>,
+    pub result_groups: Option<Vec<ResultGroup1>>,
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct StatusInfo {
+pub struct StatusInfo1 {
     #[serde(rename = "log_id")]
     pub log_id: Option<String>,
     pub now: Option<i64>,
@@ -91,71 +91,71 @@ pub struct StatusInfo {
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct ResultGroup {
+pub struct ResultGroup1 {
     pub id: Option<String>,
     #[serde(rename = "has_more")]
     pub has_more: Option<bool>,
-    pub data: Option<Vec<ResultGroupItem>>,
+    pub data: Option<Vec<ResultGroupItem1>>,
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct ResultGroupItem {
-    pub meta: Option<Meta>,
-    pub entity: Option<Entity>,
+pub struct ResultGroupItem1 {
+    pub meta: Option<Meta1>,
+    pub entity: Option<Entity1>,
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct Meta {
+pub struct Meta1 {
     #[serde(rename = "item_type")]
     pub item_type: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct Entity {
-    pub track: Option<TrackContainer>,
+pub struct Entity1 {
+    pub track: Option<TrackContainer1>,
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct TrackContainer {
+pub struct TrackContainer1 {
     #[serde(default, deserialize_with = "string_or_int::deserialize")]
     pub id: Option<String>,
-    pub album: Option<SodaAlbum>,
-    pub artists: Option<Vec<SodaArtist>>,
+    pub album: Option<SodaAlbum1>,
+    pub artists: Option<Vec<SodaArtist1>>,
     pub duration: Option<i64>,
     pub name: Option<String>,
-    pub preview: Option<Trial>,
+    pub preview: Option<Trial1>,
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct Trial {
+pub struct Trial1 {
     pub start: Option<u32>,
     pub duration: Option<u32>,
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct SodaAlbum {
+pub struct SodaAlbum1 {
     #[serde(default, deserialize_with = "string_or_int::deserialize")]
     pub id: Option<String>,
     pub name: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct SodaArtist {
+pub struct SodaArtist1 {
     #[serde(default, deserialize_with = "string_or_int::deserialize")]
     pub id: Option<String>,
     pub name: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct TrackDetailResult {
+pub struct TrackDetailResult1 {
     #[serde(rename = "status_info")]
-    pub status_info: Option<StatusInfo>,
-    pub lyric: Option<LyricInfo>,
-    pub track: Option<TrackInfo>,
+    pub status_info: Option<StatusInfo1>,
+    pub lyric: Option<LyricInfo1>,
+    pub track: Option<TrackInfo1>,
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct LyricInfo {
+pub struct LyricInfo1 {
     pub content: Option<String>,
     pub lang: Option<String>,
     #[serde(rename = "type")]
@@ -163,21 +163,21 @@ pub struct LyricInfo {
     #[serde(default, deserialize_with = "string_or_int::deserialize")]
     pub id: Option<String>,
     #[serde(rename = "lang_translations")]
-    pub lang_translations: Option<HashMap<String, LyricTranslation>>,
+    pub lang_translations: Option<HashMap<String, LyricTranslation1>>,
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct LyricTranslation {
+pub struct LyricTranslation1 {
     pub content: Option<String>,
     pub lang: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct TrackInfo {
+pub struct TrackInfo1 {
     #[serde(default, deserialize_with = "string_or_int::deserialize")]
     pub id: Option<String>,
     pub name: Option<String>,
     pub duration: Option<i64>,
-    pub artists: Option<Vec<SodaArtist>>,
-    pub album: Option<SodaAlbum>,
+    pub artists: Option<Vec<SodaArtist1>>,
+    pub album: Option<SodaAlbum1>,
 }

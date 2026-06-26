@@ -21,7 +21,7 @@ impl SpotifyApi {
     }
 
     /// 搜索歌曲
-    pub async fn search(&self, keyword: &str) -> LyrixResult<Option<SearchResult>> {
+    pub async fn search(&self, keyword: &str) -> LyrixResult<Option<SearchResult1>> {
         let body = serde_json::json!({
             "variables": {
                 "query": keyword,
@@ -46,7 +46,7 @@ impl SpotifyApi {
             .post_json_async("https://api-partner.spotify.com/pathfinder/v2/query", &body)
             .await?;
 
-        let result: Option<SearchResult> = serde_json::from_str(&resp).map_err(|e| JsonError {
+        let result: Option<SearchResult1> = serde_json::from_str(&resp).map_err(|e| JsonError {
             api: "SpotifySearch".to_string(),
             source: e,
         })?;
@@ -94,7 +94,7 @@ async fn init_spotify(
         .text()
         .await
         .map_err(|e| http_err(&token_url, &e))?;
-    let token_result: TokenResult = serde_json::from_str(&token_resp).map_err(|e| JsonError {
+    let token_result: TokenResult1 = serde_json::from_str(&token_resp).map_err(|e| JsonError {
         api: "SpotifyToken".to_string(),
         source: e,
     })?;
@@ -143,7 +143,7 @@ async fn init_spotify(
         .text()
         .await
         .map_err(|e| http_err(options_url, &e))?;
-    let client_token_result: ClientTokenResult =
+    let client_token_result: ClientTokenResult1 =
         serde_json::from_str(&ct_resp).map_err(|e| JsonError {
             api: "SpotifyClientToken".to_string(),
             source: e,
@@ -232,7 +232,7 @@ struct JsSdkData {
 
 #[derive(Debug, Default, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct TokenResult {
+pub struct TokenResult1 {
     pub client_id: String,
     pub access_token: String,
     pub access_token_expiration_timestamp_ms: u64,
@@ -240,84 +240,84 @@ pub struct TokenResult {
 }
 
 #[derive(Debug, Default, Deserialize)]
-pub struct ClientTokenResult {
-    pub granted_token: GrantedToken,
+pub struct ClientTokenResult1 {
+    pub granted_token: GrantedToken1,
 }
 
 #[derive(Debug, Default, Deserialize)]
-pub struct GrantedToken {
+pub struct GrantedToken1 {
     pub token: String,
     pub expires_after_seconds: u32,
     pub refresh_after_seconds: u32,
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct SearchResult {
-    pub data: Option<SearchData>,
+pub struct SearchResult1 {
+    pub data: Option<SearchData1>,
 }
 
 #[derive(Debug, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
-pub struct SearchData {
-    pub search_v2: Option<SearchV2>,
+pub struct SearchData1 {
+    pub search_v2: Option<SearchV21>,
 }
 
 #[derive(Debug, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
-pub struct SearchV2 {
-    pub top_results_v2: Option<Top>,
+pub struct SearchV21 {
+    pub top_results_v2: Option<Top1>,
 }
 #[derive(Debug, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
-pub struct Top {
-    pub items_v2: Option<Vec<SearchItem>>,
+pub struct Top1 {
+    pub items_v2: Option<Vec<SearchItem1>>,
 }
 #[derive(Debug, Deserialize, Default)]
-pub struct SearchItem {
-    pub item: Option<ItemWrapper>,
-}
-
-#[derive(Debug, Deserialize, Default)]
-pub struct ItemWrapper {
-    pub data: Option<TrackData>,
+pub struct SearchItem1 {
+    pub item: Option<ItemWrapper1>,
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct TrackData {
+pub struct ItemWrapper1 {
+    pub data: Option<TrackData1>,
+}
+
+#[derive(Debug, Deserialize, Default)]
+pub struct TrackData1 {
     pub id: Option<String>,
     pub name: Option<String>,
     pub uri: Option<String>,
-    pub artists: Option<Artists>,
-    pub duration: Option<Duration>,
+    pub artists: Option<Artists1>,
+    pub duration: Option<Duration1>,
 
     #[serde(rename = "albumOfTrack")]
-    pub album_of_track: Option<AlbumOfTrack>,
+    pub album_of_track: Option<AlbumOfTrack1>,
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct Artists {
-    pub items: Option<Vec<ArtistItem>>,
+pub struct Artists1 {
+    pub items: Option<Vec<ArtistItem1>>,
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct ArtistItem {
-    pub profile: Option<ArtistProfile>,
+pub struct ArtistItem1 {
+    pub profile: Option<ArtistProfile1>,
     pub uri: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct ArtistProfile {
+pub struct ArtistProfile1 {
     pub name: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
-pub struct Duration {
+pub struct Duration1 {
     pub total_milliseconds: Option<u32>,
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct AlbumOfTrack {
+pub struct AlbumOfTrack1 {
     pub name: Option<String>,
     pub uri: Option<String>,
 }

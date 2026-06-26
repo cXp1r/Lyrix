@@ -21,13 +21,13 @@ impl KugouApi {
     }
 
     /// 搜索歌曲
-    pub async fn get_search_song(&self, keywords: &str) -> LyrixResult<Option<SearchSongResponse>> {
+    pub async fn get_search_song(&self, keywords: &str) -> LyrixResult<Option<SearchSongResponse1>> {
         let url = format!(
             "http://mobilecdn.kugou.com/api/v3/search/song?format=json&keyword={}&page=1&pagesize=20&showtype=1",
             urlencoding::encode(keywords)
         );
         let resp = self.api.get_async(&url).await?;
-        let result: Option<SearchSongResponse> =
+        let result: Option<SearchSongResponse1> =
             serde_json::from_str(&resp).map_err(|e| JsonError {
                 api: "KugouSearchSong".to_string(),
                 source: e,
@@ -40,13 +40,13 @@ impl KugouApi {
         &self,
         id: &str,
         access_key: &str,
-    ) -> LyrixResult<Option<DownloadKrcResponse>> {
+    ) -> LyrixResult<Option<DownloadKrcResponse1>> {
         let url = format!(
             "https://lyrics.kugou.com/download?ver=1&client=pc&id={}&accesskey={}&fmt=krc&charset=utf8",
             id, access_key
         );
         let resp = self.api.get_async(&url).await?;
-        let result: Option<DownloadKrcResponse> =
+        let result: Option<DownloadKrcResponse1> =
             serde_json::from_str(&resp).map_err(|e| JsonError {
                 api: "KugouDownloadKrc".to_string(),
                 source: e,
@@ -59,7 +59,7 @@ impl KugouApi {
         &self,
         keywords: Option<&str>,
         hash: Option<&str>,
-    ) -> LyrixResult<Option<SearchLyricsResponse>> {
+    ) -> LyrixResult<Option<SearchLyricsResponse1>> {
         let hash_val = hash.unwrap_or("");
         let keyword_val = keywords.unwrap_or("");
         let url = format!(
@@ -68,7 +68,7 @@ impl KugouApi {
             hash_val
         );
         let resp = self.api.get_async(&url).await?;
-        let result: Option<SearchLyricsResponse> =
+        let result: Option<SearchLyricsResponse1> =
             serde_json::from_str(&resp).map_err(|e| JsonError {
                 api: "KugouSearchLyrics".to_string(),
                 source: e,
@@ -86,23 +86,23 @@ impl Default for KugouApi {
 // ===== Response Models =====
 
 #[derive(Debug, Deserialize, Default)]
-pub struct SearchSongResponse {
+pub struct SearchSongResponse1 {
     pub status: Option<i32>,
     pub error: Option<String>,
-    pub data: Option<SearchSongData>,
+    pub data: Option<SearchSongData1>,
     #[serde(rename = "errcode")]
     pub error_code: Option<i32>,
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct SearchSongData {
+pub struct SearchSongData1 {
     pub timestamp: Option<i64>,
     pub total: Option<i32>,
-    pub info: Option<Vec<SearchSongInfo>>,
+    pub info: Option<Vec<SearchSongInfo1>>,
 }
 
 #[derive(Debug, Deserialize, Default, Clone)]
-pub struct SearchSongInfo {
+pub struct SearchSongInfo1 {
     #[serde(rename = "hash")]
     pub hash: Option<String>,
     #[serde(rename = "songname")]
@@ -116,11 +116,11 @@ pub struct SearchSongInfo {
     pub duration: Option<i32>,
     #[serde(rename = "filename")]
     pub filename: Option<String>,
-    pub group: Option<Vec<SearchSongInfo>>,
+    pub group: Option<Vec<SearchSongInfo1>>,
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct SearchLyricsResponse {
+pub struct SearchLyricsResponse1 {
     pub status: Option<i32>,
     pub info: Option<String>,
     #[serde(rename = "errcode")]
@@ -128,11 +128,11 @@ pub struct SearchLyricsResponse {
     #[serde(rename = "errmsg")]
     pub error_message: Option<String>,
     pub proposal: Option<String>,
-    pub candidates: Option<Vec<LyricsCandidate>>,
+    pub candidates: Option<Vec<LyricsCandidate1>>,
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct LyricsCandidate {
+pub struct LyricsCandidate1 {
     pub id: Option<String>,
     #[serde(rename = "product_from")]
     pub product_from: Option<String>,
@@ -154,7 +154,7 @@ pub struct LyricsCandidate {
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct DownloadKrcResponse {
+pub struct DownloadKrcResponse1 {
     pub content: Option<String>,
     pub info: Option<String>,
     pub status: Option<i32>,

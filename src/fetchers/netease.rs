@@ -37,7 +37,7 @@ impl NeteaseApi {
     }
 
     /// 搜索歌曲
-    pub async fn search(&self, keyword: &str, search_type: i32) -> LyrixResult<SearchResult> {
+    pub async fn search(&self, keyword: &str, search_type: i32) -> LyrixResult<SearchResult1> {
         let mut params = HashMap::new();
         params.insert("s".to_string(), keyword.to_string());
         params.insert("type".to_string(), search_type.to_string());
@@ -49,7 +49,7 @@ impl NeteaseApi {
             .post_form_async("https://music.163.com/api/search/get/web", &params)
             .await?;
 
-        let parsed: SearchResult = serde_json::from_str(&resp).map_err(|e| JsonError {
+        let parsed: SearchResult1 = serde_json::from_str(&resp).map_err(|e| JsonError {
             api: "NeteaseSearch".to_string(),
             source: e,
         })?;
@@ -58,7 +58,7 @@ impl NeteaseApi {
     }
 
     /// 获取歌词
-    pub async fn get_lyric(&self, id: &str) -> LyrixResult<LyricResult> {
+    pub async fn get_lyric(&self, id: &str) -> LyrixResult<LyricResult1> {
         let mut params = HashMap::new();
         params.insert("id".to_string(), id.to_string());
         params.insert("lv".to_string(), "-1".to_string());
@@ -77,7 +77,7 @@ impl NeteaseApi {
             )
             .await?;
 
-        let parsed: LyricResult = serde_json::from_str(&resp).map_err(|e| JsonError {
+        let parsed: LyricResult1 = serde_json::from_str(&resp).map_err(|e| JsonError {
             api: "NeteaseLyric".to_string(),
             source: e,
         })?;
@@ -86,7 +86,7 @@ impl NeteaseApi {
     }
 
     /// 获取歌曲详情
-    pub async fn get_detail(&self, id: &str) -> LyrixResult<Option<DetailResult>> {
+    pub async fn get_detail(&self, id: &str) -> LyrixResult<Option<DetailResult1>> {
         let url = "/api/song/enhance/player/url/v1";
         let body = format!(
             r#"{{"ids":"[\"{id}\"]","level":"exhigh","encodeType":"aac","csrf_token":""}}"#
@@ -142,7 +142,7 @@ impl NeteaseApi {
             ),
         }
         let resp = result?;
-        let detail: Option<DetailResult> = serde_json::from_str(&resp).map_err(|e| JsonError {
+        let detail: Option<DetailResult1> = serde_json::from_str(&resp).map_err(|e| JsonError {
             api: "NeteaseDetail".to_string(),
             source: e,
         })?;
@@ -158,80 +158,80 @@ impl Default for NeteaseApi {
 // ===== Response Models =====
 
 #[derive(Debug, Deserialize, Default)]
-pub struct SearchResult {
+pub struct SearchResult1 {
     pub code: i64,
-    pub result: Option<SearchResultData>,
+    pub result: Option<SearchResultData1>,
 }
 
 #[derive(Debug, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
-pub struct SearchResultData {
-    pub songs: Option<Vec<Song>>,
+pub struct SearchResultData1 {
+    pub songs: Option<Vec<Song1>>,
     pub song_count: Option<i64>,
-    pub albums: Option<Vec<Album>>,
+    pub albums: Option<Vec<Album1>>,
     pub album_count: Option<i64>,
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct LyricResult {
+pub struct LyricResult1 {
     pub code: Option<i64>,
     pub nolyric: Option<bool>,
     pub uncollected: Option<bool>,
-    pub lrc: Option<Lyrics>,
-    pub klyric: Option<Lyrics>,
-    pub tlyric: Option<Lyrics>,
-    pub romalrc: Option<Lyrics>,
-    pub yrc: Option<Lyrics>,
-    pub ytlrc: Option<Lyrics>,
-    pub yromalrc: Option<Lyrics>,
+    pub lrc: Option<Lyrics1>,
+    pub klyric: Option<Lyrics1>,
+    pub tlyric: Option<Lyrics1>,
+    pub romalrc: Option<Lyrics1>,
+    pub yrc: Option<Lyrics1>,
+    pub ytlrc: Option<Lyrics1>,
+    pub yromalrc: Option<Lyrics1>,
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct Lyrics {
+pub struct Lyrics1 {
     pub version: Option<i64>,
     pub lyric: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct DetailResult {
-    pub data: Option<Vec<Detail>>,
+pub struct DetailResult1 {
+    pub data: Option<Vec<Detail1>>,
     pub code: Option<i64>,
 }
 
 #[derive(Debug, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
-pub struct Detail {
-    pub free_trial_info: Option<Trial>,
+pub struct Detail1 {
+    pub free_trial_info: Option<Trial1>,
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct Trial {
+pub struct Trial1 {
     pub start: Option<u8>,
     pub end: Option<u8>,
 }
 
 #[derive(Debug, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
-pub struct Song {
+pub struct Song1 {
     pub name: Option<String>,
     pub id: Option<serde_json::Value>,
     #[serde(alias = "ar")]
-    pub artists: Option<Vec<Ar>>,
+    pub artists: Option<Vec<Ar1>>,
     #[serde(alias = "al")]
-    pub album: Option<Al>,
+    pub album: Option<Al1>,
     #[serde(alias = "dt")]
     pub duration: Option<i64>,
     pub publish_time: Option<i64>,
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct Ar {
+pub struct Ar1 {
     pub id: Option<i64>,
     pub name: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct Al {
+pub struct Al1 {
     pub id: Option<i64>,
     pub name: Option<String>,
     #[serde(rename = "picUrl")]
@@ -239,15 +239,15 @@ pub struct Al {
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Album {
+pub struct Album1 {
     pub name: Option<String>,
     pub id: Option<i64>,
     pub size: Option<i64>,
-    pub artist: Option<Artist>,
+    pub artist: Option<Artist1>,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct Artist {
+pub struct Artist1 {
     pub name: Option<String>,
     pub id: Option<i64>,
 }
