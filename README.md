@@ -72,8 +72,8 @@ src/
 │   ├── mod.rs
 │   ├── parser
 │   │   ├── decrypt.rs
-│   │   ├── lyrics_parse.rs
 │   │   ├── mod.rs
+│   │   ├── parse.rs
 │   │   └── totp_gen.rs
 │   └── searcher
 │       └── mod.rs
@@ -87,9 +87,6 @@ src/
 │   ├── qqmusic.rs
 │   ├── soda_music.rs
 │   └── spotify.rs
-├── files
-│   ├── mod.rs
-│   └── qqmusic.rs
 ├── lib.rs
 ├── logger.rs
 ├── lyrix.rs
@@ -123,20 +120,25 @@ src/
 ├── providers
 │   ├── applemusic.rs
 │   ├── kugou.rs
-│   ├── lyrics_provider.rs
+│   ├── mod.rs
+│   ├── moekoe.rs
+│   ├── netease.rs
+│   ├── qqmusic.rs
+│   ├── soda_music.rs
+│   └── spotify.rs
+├── readers
+│   ├── mod.rs
+│   ├── qqmusic.rs
+│   └── readers.rs
+├── searchers
+│   ├── applemusic.rs
+│   ├── kugou.rs
 │   ├── mod.rs
 │   ├── netease.rs
 │   ├── qqmusic.rs
 │   ├── soda_music.rs
 │   └── spotify.rs
-└── searchers
-    ├── applemusic.rs
-    ├── kugou.rs
-    ├── mod.rs
-    ├── netease.rs
-    ├── qqmusic.rs
-    ├── soda_music.rs
-    └── spotify.rs
+└── ws_client.rs
 ```
 
 ## 许可证
