@@ -3,14 +3,15 @@
 ![Rust](https://img.shields.io/badge/Rust-1.70+-red)
 ![Version](https://img.shields.io/badge/version-26.10.0-green)
 
+## 注意 2026.6.28
+- qq音乐新增一个搜索接口, 命中率貌似提高了
+- 酷狗用户建议使用moekoe, 对上游软件实现也好
+- 短期内汽水音乐api校验貌似变严格了, 建议从github上clone库, 而不是cargo add lyrix了
+
 ## 优点
 
 - 封装了统一函数可以直接接收smtc信息进行歌词解析
 - memchr予以的超高性能，无需预热或优化即可实现<1ms解析
-
-## 注意
-
-- 短期内汽水音乐api校验貌似变严格了, 建议从github上clone库, 而不是cargo add lyrix了
 
 ## TODO
 
