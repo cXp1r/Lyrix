@@ -30,27 +30,14 @@ impl LyrixProvider for QQMusicProvider {
     }
 
     async fn fetch(api: &Self::Api, best: &Self::SearchResult) -> LyrixResult<String> {
-        if let Ok(qrc) = api.get_lyrics_qrc(&best.id.to_string()).await {
-            if !qrc.is_empty() {
-                return Ok(qrc);
+        let qrc = api.get_lyrics_qrc(&best.id.to_string()).await?;
+        if qrc.is_empty() {
+            return Err(GeneralError::MissingField {
+                field: "QQMusic network qrc content".to_string(),
             }
+            .into());
         }
 
-        let lyric_result =
-            api.get_lyric(&best.mid)
-                .await?
-                .ok_or_else(|| GeneralError::MissingField {
-                    field: "QQ音乐: 获取歌词失败".to_string(),
-                })?;
-        if let Some(lrc) = lyric_result.lyric {
-            if !lrc.is_empty() {
-                return Ok(lrc);
-            }
-        }
-
-        Err(GeneralError::MissingField {
-            field: "QQ音乐: 未获取到歌词内容".to_string(),
-        }
-        .into())
+        Ok(qrc)
     }
 }
