@@ -1,6 +1,175 @@
 use dialoguer::{theme::ColorfulTheme, Input, Select};
 use lyrix::{Lyrix, MusicPlayer, Session};
 
+#[test]
+fn test_logger() {
+    lyrix::logger::set_level("debug");
+    lyrix::logger::debug("test", "hello logger");
+}
+
+#[tokio::test]
+async fn test_interactive() {
+    lyrix::logger::set_level("debug");
+    let track_db: Option<serde_json::Value> = std::fs::read_to_string("tests/track.json")
+        .ok()
+        .and_then(|s| serde_json::from_str(&s).ok());
+
+    let player = choose_player(
+        &APP_IDS.iter().map(|(_, p)| *p).collect::<Vec<_>>(),
+        "选择播放器",
+    );
+    let trial_key = choose_trial_key();
+    let player_key = player_json_key(player);
+    let (title, artist, album, album_artist, duration_ms) =
+        choose_track(&track_db, player_key, Some(trial_key));
+
+    let mut session = load_session();
+    if player == MusicPlayer::AppleMusic && session.applemusic_token.is_none() {
+        let token: String = Input::with_theme(&ColorfulTheme::default())
+            .with_prompt("Apple Music token")
+            .interact_text()
+            .unwrap();
+        session.applemusic_token = Some(token);
+    }
+
+    let lyrix = Lyrix::new(Some(session));
+    let artist_opt = (!artist.is_empty()).then_some(artist.as_str());
+    let album_opt = (!album.is_empty()).then_some(album.as_str());
+    let album_artist_opt = (!album_artist.is_empty()).then_some(album_artist.as_str());
+
+    let result = lyrix
+        .get_lyrics_with_player(
+            &player,
+            &title,
+            artist_opt,
+            album_opt,
+            album_artist_opt,
+            duration_ms,
+        )
+        .await;
+
+    print_result(result).await;
+}
+
+#[tokio::test]
+async fn test_interactive_third_party() {
+    lyrix::logger::set_level("debug");
+
+    let player = choose_player(THIRD_PARTY_PLAYERS, "选择第三方播放器");
+    let session = load_session();
+    let lyrix = Lyrix::new(Some(session));
+
+    let result = lyrix
+        .get_lyrics_with_player(&player, "", None, None, None, 0)
+        .await;
+
+    print_result(result).await;
+}
+
+#[tokio::test]
+async fn test_benchmark() {
+    use std::time::Instant;
+
+    lyrix::logger::set_level("error");
+    let track_db: Option<serde_json::Value> = std::fs::read_to_string("tests/track.json")
+        .ok()
+        .and_then(|s| serde_json::from_str(&s).ok());
+
+    let player = choose_player(
+        &APP_IDS.iter().map(|(_, p)| *p).collect::<Vec<_>>(),
+        "选择播放器",
+    );
+    let trial_key = choose_trial_key();
+    let player_key = player_json_key(player);
+    let (title, artist, album, album_artist, duration_ms) =
+        choose_track(&track_db, player_key, Some(trial_key));
+
+    let mut session = load_session();
+    if player == MusicPlayer::AppleMusic && session.applemusic_token.is_none() {
+        let token: String = Input::with_theme(&ColorfulTheme::default())
+            .with_prompt("Apple Music token")
+            .interact_text()
+            .unwrap();
+        session.applemusic_token = Some(token);
+    }
+
+    let lyrix = Lyrix::new(Some(session));
+    let artist_opt = (!artist.is_empty()).then_some(artist.as_str());
+    let album_opt = (!album.is_empty()).then_some(album.as_str());
+    let album_artist_opt = (!album_artist.is_empty()).then_some(album_artist.as_str());
+
+    const N: usize = 10;
+    let mut elapsed_ms: Vec<f64> = Vec::with_capacity(N);
+    let mut ok_count = 0u32;
+    let mut fail_count = 0u32;
+
+    let total_start = Instant::now();
+    for i in 0..N {
+        let t0 = Instant::now();
+        let result = lyrix
+            .get_lyrics_with_player(
+                &player,
+                &title,
+                artist_opt,
+                album_opt,
+                album_artist_opt,
+                duration_ms,
+            )
+            .await;
+        let dt = t0.elapsed().as_secs_f64() * 1000.0;
+        elapsed_ms.push(dt);
+
+        match &result {
+            Ok(data) if data.lines.len() > 1 => {
+                ok_count += 1;
+                println!(
+                    "[{}/{}] {:>10.3}ms  OK | {} lines | score={:?}",
+                    i + 1,
+                    N,
+                    dt,
+                    data.lines.len(),
+                    data.track_metadata.as_ref().map(|m| m.score),
+                );
+            }
+            Ok(data) => {
+                fail_count += 1;
+                println!(
+                    "[{}/{}] {:>10.3}ms FAIL | {} lines (<=1) | score={:?}",
+                    i + 1,
+                    N,
+                    dt,
+                    data.lines.len(),
+                    data.track_metadata.as_ref().map(|m| m.score),
+                );
+            }
+            Err(e) => {
+                fail_count += 1;
+                println!("[{}/{}] {:>10.3}ms FAIL | Error: {}", i + 1, N, dt, e);
+            }
+        }
+    }
+    let total_ms = total_start.elapsed().as_secs_f64() * 1000.0;
+
+    elapsed_ms.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    let sum: f64 = elapsed_ms.iter().sum();
+    let avg = sum / N as f64;
+    let min = elapsed_ms[0];
+    let max = elapsed_ms[N - 1];
+    let p50 = elapsed_ms[N / 2];
+    let p90 = elapsed_ms[(N * 9) / 10];
+
+    println!("\n========== 10次测试汇总 ==========");
+    println!("成功: {} / 失败: {}", ok_count, fail_count);
+    println!("总耗时:  {:.3}ms", total_ms);
+    println!("平均:    {:.3}ms", avg);
+    println!("最小:    {:.3}ms", min);
+    println!("最大:    {:.3}ms", max);
+    println!("P50:     {:.3}ms", p50);
+    println!("P90:     {:.3}ms", p90);
+    println!("==================================");
+}
+
+
 const APP_IDS: &[(&str, MusicPlayer)] = &[
     ("cloudmusic.exe", MusicPlayer::Netease),
     ("qqmusic.exe", MusicPlayer::QQMusic),
@@ -185,172 +354,4 @@ async fn print_result(result: lyrix::error::LyrixResult<lyrix::models::LyricsDat
         }
         Err(e) => println!("\nError: {}", e),
     }
-}
-
-#[test]
-fn test_logger() {
-    lyrix::logger::set_level("debug");
-    lyrix::logger::debug("test", "hello logger");
-}
-
-#[tokio::test]
-async fn test_interactive() {
-    lyrix::logger::set_level("debug");
-    let track_db: Option<serde_json::Value> = std::fs::read_to_string("tests/track.json")
-        .ok()
-        .and_then(|s| serde_json::from_str(&s).ok());
-
-    let player = choose_player(
-        &APP_IDS.iter().map(|(_, p)| *p).collect::<Vec<_>>(),
-        "选择播放器",
-    );
-    let trial_key = choose_trial_key();
-    let player_key = player_json_key(player);
-    let (title, artist, album, album_artist, duration_ms) =
-        choose_track(&track_db, player_key, Some(trial_key));
-
-    let mut session = load_session();
-    if player == MusicPlayer::AppleMusic && session.applemusic_token.is_none() {
-        let token: String = Input::with_theme(&ColorfulTheme::default())
-            .with_prompt("Apple Music token")
-            .interact_text()
-            .unwrap();
-        session.applemusic_token = Some(token);
-    }
-
-    let lyrix = Lyrix::new(Some(session));
-    let artist_opt = (!artist.is_empty()).then_some(artist.as_str());
-    let album_opt = (!album.is_empty()).then_some(album.as_str());
-    let album_artist_opt = (!album_artist.is_empty()).then_some(album_artist.as_str());
-
-    let result = lyrix
-        .get_lyrics_with_player(
-            &player,
-            &title,
-            artist_opt,
-            album_opt,
-            album_artist_opt,
-            duration_ms,
-        )
-        .await;
-
-    print_result(result).await;
-}
-
-#[tokio::test]
-async fn test_interactive_third_party() {
-    lyrix::logger::set_level("debug");
-
-    let player = choose_player(THIRD_PARTY_PLAYERS, "选择第三方播放器");
-    let session = load_session();
-    let lyrix = Lyrix::new(Some(session));
-
-    let result = lyrix
-        .get_lyrics_with_player(&player, "", None, None, None, 0)
-        .await;
-
-    print_result(result).await;
-}
-
-#[tokio::test]
-async fn test_benchmark() {
-    use std::time::Instant;
-
-    lyrix::logger::set_level("error");
-    let track_db: Option<serde_json::Value> = std::fs::read_to_string("tests/track.json")
-        .ok()
-        .and_then(|s| serde_json::from_str(&s).ok());
-
-    let player = choose_player(
-        &APP_IDS.iter().map(|(_, p)| *p).collect::<Vec<_>>(),
-        "选择播放器",
-    );
-    let trial_key = choose_trial_key();
-    let player_key = player_json_key(player);
-    let (title, artist, album, album_artist, duration_ms) =
-        choose_track(&track_db, player_key, Some(trial_key));
-
-    let mut session = load_session();
-    if player == MusicPlayer::AppleMusic && session.applemusic_token.is_none() {
-        let token: String = Input::with_theme(&ColorfulTheme::default())
-            .with_prompt("Apple Music token")
-            .interact_text()
-            .unwrap();
-        session.applemusic_token = Some(token);
-    }
-
-    let lyrix = Lyrix::new(Some(session));
-    let artist_opt = (!artist.is_empty()).then_some(artist.as_str());
-    let album_opt = (!album.is_empty()).then_some(album.as_str());
-    let album_artist_opt = (!album_artist.is_empty()).then_some(album_artist.as_str());
-
-    const N: usize = 10;
-    let mut elapsed_ms: Vec<f64> = Vec::with_capacity(N);
-    let mut ok_count = 0u32;
-    let mut fail_count = 0u32;
-
-    let total_start = Instant::now();
-    for i in 0..N {
-        let t0 = Instant::now();
-        let result = lyrix
-            .get_lyrics_with_player(
-                &player,
-                &title,
-                artist_opt,
-                album_opt,
-                album_artist_opt,
-                duration_ms,
-            )
-            .await;
-        let dt = t0.elapsed().as_secs_f64() * 1000.0;
-        elapsed_ms.push(dt);
-
-        match &result {
-            Ok(data) if data.lines.len() > 1 => {
-                ok_count += 1;
-                println!(
-                    "[{}/{}] {:>10.3}ms  OK | {} lines | score={:?}",
-                    i + 1,
-                    N,
-                    dt,
-                    data.lines.len(),
-                    data.track_metadata.as_ref().map(|m| m.score),
-                );
-            }
-            Ok(data) => {
-                fail_count += 1;
-                println!(
-                    "[{}/{}] {:>10.3}ms FAIL | {} lines (<=1) | score={:?}",
-                    i + 1,
-                    N,
-                    dt,
-                    data.lines.len(),
-                    data.track_metadata.as_ref().map(|m| m.score),
-                );
-            }
-            Err(e) => {
-                fail_count += 1;
-                println!("[{}/{}] {:>10.3}ms FAIL | Error: {}", i + 1, N, dt, e);
-            }
-        }
-    }
-    let total_ms = total_start.elapsed().as_secs_f64() * 1000.0;
-
-    elapsed_ms.sort_by(|a, b| a.partial_cmp(b).unwrap());
-    let sum: f64 = elapsed_ms.iter().sum();
-    let avg = sum / N as f64;
-    let min = elapsed_ms[0];
-    let max = elapsed_ms[N - 1];
-    let p50 = elapsed_ms[N / 2];
-    let p90 = elapsed_ms[(N * 9) / 10];
-
-    println!("\n========== 10次测试汇总 ==========");
-    println!("成功: {} / 失败: {}", ok_count, fail_count);
-    println!("总耗时:  {:.3}ms", total_ms);
-    println!("平均:    {:.3}ms", avg);
-    println!("最小:    {:.3}ms", min);
-    println!("最大:    {:.3}ms", max);
-    println!("P50:     {:.3}ms", p50);
-    println!("P90:     {:.3}ms", p90);
-    println!("==================================");
 }
