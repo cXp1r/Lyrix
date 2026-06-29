@@ -8,6 +8,7 @@ mod spotify;
 
 use crate::error::fetcher::auth::AuthError;
 use crate::error::{GeneralError, LyrixResult, SearcherError};
+use crate::logger;
 use crate::models::{ITrackMetadata, LineInfo, LyricsData, MusicPlayer, Session, TrackMetadata};
 use crate::parsers::lrc::LrcParser;
 use crate::parsers::IParsers;
@@ -15,6 +16,7 @@ use crate::searchers::{ISearchResult, ISearcher};
 use crate::ws_client::WsClient;
 use async_trait::async_trait;
 use reqwest::Client;
+use tokio::task::JoinSet;
 
 use applemusic::AppleMusicProvider;
 use kugou::KugouProvider;
@@ -23,10 +25,19 @@ use qqmusic::QQMusicProvider;
 use soda_music::SodaMusicProvider;
 use spotify::SpotifyProvider;
 
+use crate::readers::qqmusic::QQMusicReaders;
+use crate::readers::readers::LyrixReader;
+
 #[derive(Debug, Clone)]
 pub(crate) struct RawLyrics {
     pub(crate) content: String,
     pub(crate) track_metadata: Option<TrackMetadata>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum RawLyricsSource {
+    Local,
+    Network,
 }
 
 /// Provider only searches and fetches raw lyrics. Parsing is selected later by player.
@@ -81,6 +92,116 @@ async fn fetch_raw_lyrics<P: LyrixProvider>(
             ..Default::default()
         }),
     })
+}
+
+fn track_metadata_snapshot(track: &dyn ITrackMetadata) -> TrackMetadata {
+    TrackMetadata {
+        title: track.title().map(|s| s.to_string()),
+        artist: track.artist().map(|s| s.to_string()),
+        album: track.album().map(|s| s.to_string()),
+        album_artist: track.album_artist().map(|s| s.to_string()),
+        duration_ms: track.duration_ms(),
+        ..Default::default()
+    }
+}
+
+fn log_lyrics_source(provider_label: &str, source: &str) {
+    logger::info(
+        provider_label,
+        format_args!("lyrics selected | source={}", source,),
+    );
+}
+
+async fn fetch_raw_lyrics_with_reader<P, R>(
+    provider: P,
+    _reader: R,
+    track: &dyn ITrackMetadata,
+) -> LyrixResult<RawLyrics>
+where
+    P: LyrixProvider + Send + Sync + 'static,
+    R: LyrixReader + Send + Sync + 'static,
+{
+    let local_track = track_metadata_snapshot(track);
+    let network_track = local_track.clone();
+    let provider_label = P::label().to_string();
+    let reader_label = R::label().to_string();
+
+    let mut tasks = JoinSet::new();
+    tasks.spawn(async move {
+        let result = R::read_raw(&local_track).await.map(|content| RawLyrics {
+            content,
+            track_metadata: Some(local_track),
+        });
+        (RawLyricsSource::Local, result)
+    });
+    tasks.spawn(async move {
+        let result = fetch_raw_lyrics(&provider, &network_track).await;
+        (RawLyricsSource::Network, result)
+    });
+
+    let mut local_finished = false;
+    let mut network_lyrics = None;
+    let mut local_error = None;
+    let mut network_error = None;
+    let mut join_error = None;
+
+    // Local lyrics are authoritative; hold a network hit until the local read fails.
+    while let Some(result) = tasks.join_next().await {
+        match result {
+            Ok((RawLyricsSource::Local, Ok(lyrics))) => {
+                tasks.abort_all();
+                log_lyrics_source(&provider_label, &format!("reader:{}", reader_label));
+                return Ok(lyrics);
+            }
+            Ok((RawLyricsSource::Local, Err(err))) => {
+                local_finished = true;
+                local_error = Some(err.to_string());
+                if let Some(lyrics) = network_lyrics.take() {
+                    tasks.abort_all();
+                    log_lyrics_source(&provider_label, "network");
+                    return Ok(lyrics);
+                }
+                if network_error.is_some() {
+                    break;
+                }
+            }
+            Ok((RawLyricsSource::Network, Ok(lyrics))) => {
+                if local_finished {
+                    tasks.abort_all();
+                    log_lyrics_source(&provider_label, "network");
+                    return Ok(lyrics);
+                }
+                network_lyrics = Some(lyrics);
+            }
+            Ok((RawLyricsSource::Network, Err(err))) => {
+                network_error = Some(err.to_string());
+                if local_finished {
+                    break;
+                }
+            }
+            Err(err) => {
+                join_error = Some(err.to_string());
+            }
+        }
+    }
+
+    if let Some(lyrics) = network_lyrics {
+        log_lyrics_source(&provider_label, "network");
+        return Ok(lyrics);
+    }
+
+    let mut field = format!("{}: no lyrics content", provider_label);
+    if let Some(err) = local_error {
+        field.push_str(&format!("; local: {err}"));
+    }
+    if let Some(err) = network_error {
+        field.push_str(&format!("; network: {err}"));
+    }
+    if let Some(err) = join_error {
+        field.push_str(&format!("; join: {err}"));
+    }
+
+    Err(GeneralError::MissingField { field }.into())
 }
 
 pub(crate) fn parse_lyrics_for_player(
@@ -243,6 +364,18 @@ pub(crate) async fn fetch_lyrics_from_player(
     client: &Client,
     ws_client: &WsClient,
 ) -> LyrixResult<LyricsData> {
-    let raw = fetch_raw_lyrics_from_player(player, track, session, client, ws_client).await?;
+    let raw = if matches!(player, MusicPlayer::QQMusic) {
+        fetch_raw_lyrics_with_reader(
+            QQMusicProvider {
+                client: client.clone(),
+            },
+            QQMusicReaders,
+            track,
+        )
+        .await?
+    } else {
+        fetch_raw_lyrics_from_player(player, track, session, client, ws_client).await?
+    };
+
     parse_lyrics_for_player(player, raw)
 }
