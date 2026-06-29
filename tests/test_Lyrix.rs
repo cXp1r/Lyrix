@@ -169,7 +169,6 @@ async fn test_benchmark() {
     println!("==================================");
 }
 
-
 const APP_IDS: &[(&str, MusicPlayer)] = &[
     ("cloudmusic.exe", MusicPlayer::Netease),
     ("qqmusic.exe", MusicPlayer::QQMusic),
