@@ -12,7 +12,7 @@ fn parses_qqmusic_qrc_filename() {
     )
     .expect("should parse");
 
-    assert_eq!(info.artist, "安月名莉子 (Azuna Riko)");
+    assert_eq!(info.artist, vec!["安月名莉子 (Azuna Riko)"]);
     assert_eq!(info.title, "rise");
     assert_eq!(info.index, "303");
     assert_eq!(
