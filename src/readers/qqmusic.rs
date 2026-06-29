@@ -1,6 +1,6 @@
 use crate::error::{GeneralError, LyrixResult};
-use crate::models::{ITrackMetadata, LyricsData, TrackMetadata};
-use crate::parsers::qqmusic::QQMusicParser;
+use crate::models::ITrackMetadata;
+use crate::parsers::decrypt::qrc::qrc_decrypt_file;
 use crate::readers::readers::LyrixReader;
 use async_trait::async_trait;
 use std::fs;
@@ -13,7 +13,7 @@ const QQMUSIC_QRC_PART_SEPARATOR: &str = " - ";
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct QQMusicQrcFilenameInfo {
-    pub artist: String,
+    pub artist: Vec<String>,
     pub title: String,
     pub index: String,
     pub album: String,
@@ -50,7 +50,7 @@ pub fn find_qqmusic_qrc_path_by_metadata_in_dir(
         }
         .into());
     };
-    let Some(artist) = track.artist().map(str::trim) else {
+    let Some(_artist) = track.artist().map(str::trim) else {
         return Err(GeneralError::MissingField {
             field: "track_metadata.artist".to_string(),
         }
@@ -77,8 +77,8 @@ pub fn find_qqmusic_qrc_path_by_metadata_in_dir(
         let Some(info) = parse_qqmusic_qrc_filename(name) else {
             continue;
         };
-
-        if info.artist == artist && info.title == title && info.album == album {
+        // artist比较暂不处理
+        if info.title == title && info.album == album {
             return Ok(Some(path));
         }
     }
@@ -104,7 +104,7 @@ pub fn parse_qqmusic_qrc_filename(file_name: impl AsRef<str>) -> Option<QQMusicQ
     }
 
     Some(QQMusicQrcFilenameInfo {
-        artist: artist.to_string(),
+        artist: artist.split("_").map(String::from).collect(),
         title: title.to_string(),
         index: index.to_string(),
         album: album.to_string(),
@@ -167,27 +167,12 @@ impl LyrixReader for QQMusicReaders {
         "QQMusic"
     }
 
-    async fn read_and_parse(track: &dyn ITrackMetadata) -> LyrixResult<LyricsData> {
+    async fn read_raw(track: &dyn ITrackMetadata) -> LyrixResult<String> {
         let qrc_path = find_qqmusic_qrc_path_by_metadata_in_dir(qqmusic_lyric_new_dir()?, track)?
             .ok_or_else(|| GeneralError::MissingField {
             field: "QQMusic qrc file".to_string(),
         })?;
 
-        ensure_windows()?;
-        let qrc = fs::read_to_string(qrc_path).map_err(GeneralError::Io)?;
-        let lines = QQMusicParser {}.decrypt_and_parse(qrc)?;
-
-        Ok(LyricsData {
-            file: None,
-            lines,
-            track_metadata: Some(TrackMetadata {
-                title: track.title().map(|s| s.to_string()),
-                artist: track.artist().map(|s| s.to_string()),
-                album: track.album().map(|s| s.to_string()),
-                album_artist: track.album_artist().map(|s| s.to_string()),
-                duration_ms: track.duration_ms(),
-                ..Default::default()
-            }),
-        })
+        qrc_decrypt_file(qrc_path)
     }
 }
