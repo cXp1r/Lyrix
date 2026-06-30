@@ -1,7 +1,7 @@
 ﻿# Lyrix
 
 ![Rust](https://img.shields.io/badge/Rust-1.70+-red)
-![Version](https://img.shields.io/badge/version-26.10.0-green)
+![Version](https://img.shields.io/badge/version-26.10.1-green)
 
 ## 注意 2026.6.28
 - qq音乐新增一个搜索接口, 命中率貌似提高了
